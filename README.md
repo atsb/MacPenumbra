@@ -1,4 +1,4 @@
-HPL1 Rehatched
+MacPenumbra
 ==============
 A project to create a modernised version of Frictional Games' HPL1 game engine and Penumbra game series source code.
 
@@ -9,10 +9,10 @@ All dependencies are included in the repository. This is mostly because many of 
 ### macOS
 
 * Open the Xcode project
-* Select Penumbra Overture target
+* Select Penumbra Overture target or build each target seperately, make sure to select Universal Macs as the system.
 * Build the target
 * Copy the built application and the `rehatched` folder into your pre-existing Penumbra game folder
-* Run the app (macOS 10.13.6 High Sierra or newer required)
+* Run the app (macOS 11.6 or newer required)
 
 I have it setup to build the app straight into the game folder and I've symlinked the rehatched folder
 in there as well, but setting that up is left as an exercise for the reader.
@@ -20,14 +20,7 @@ in there as well, but setting that up is left as an exercise for the reader.
 Project Goals
 -------------
 The primary goal is to get Penumbra Overture fully functional as a 64-bit Mac app so that it
-can be enjoyed on macOS 10.15 and newer that have removed 32-bit Intel support. This is ongoing.
-
-There are still some outstanding physics reliability issues,
-which will be resolved as the project progresses. Upcoming big ticket items include:
-
-* Modernise graphics backend to core OpenGL profile (3.3+ / OpenGL ES 3.1)
-* Windows and Linux builds
-* Gamepad support
+can be enjoyed on macOS 11.6 and newer.  A fully vanilla experience is the goal, nothing more, nothing less.
 
 Project Links
 -------------
