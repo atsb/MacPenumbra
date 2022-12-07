@@ -2,6 +2,8 @@ MacPenumbra
 ==============
 A project to create a modernised version of Frictional Games' HPL1 game engine and Penumbra game series source code.
 
+To play the game after building.  Copy your Penumber Overture game data into Applications/Penumbra Overture.  After that, copy the .app bundle into this directory also.  Then just run the app bundle.  Penumbra and HPL1 were never designed to read/write from the Application Support directory and changing this is quite a convoluted process as there is a lot of Objective-C code handling resources and files as well as all the file read/write code depending on this structure.
+
 Building
 --------
 All dependencies are included in the repository. This is mostly because many of them are (very) old versions.
