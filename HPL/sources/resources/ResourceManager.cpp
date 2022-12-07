@@ -24,6 +24,7 @@
 #include "system/System.h"
 #include "system/Log.h"
 
+#include <stdint.h>
 #include <algorithm>
 
 namespace hpl {
@@ -63,7 +64,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	iResourceBase* iResourceManager::GetByHandle(unsigned long alHandle)
+	iResourceBase* iResourceManager::GetByHandle(uint32_t alHandle)
 	{
 		tResourceHandleMapIt it = m_mapHandleResources.find(alHandle);
 		if(it == m_mapHandleResources.end())return NULL;
@@ -230,7 +231,7 @@ namespace hpl {
 
 		if(abLog && iResourceBase::GetLogCreateAndDelete())
 		{
-			unsigned long lTime = GetAppTimeMS() - mlTimeStart;
+			uintptr_t lTime = GetAppTimeMS() - mlTimeStart;
 			Log("%sLoaded resource %s in %d ms\n",GetTabs().c_str(), apResource->GetName().c_str(),lTime);
 			apResource->SetLogDestruction(true);
 		}
@@ -250,7 +251,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	unsigned long iResourceManager::GetHandle()
+	uint32_t iResourceManager::GetHandle()
 	{
 		return mlHandleCount++;
 	}

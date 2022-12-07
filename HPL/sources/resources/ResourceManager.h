@@ -20,6 +20,7 @@
 #define HPL_RESOURCEMANAGER_H
 
 #include <map>
+#include <stdint.h>
 #include "system/SystemTypes.h"
 
 namespace hpl {
@@ -27,7 +28,7 @@ namespace hpl {
 	class cFileSearcher;
 	class iResourceBase;
 
-	typedef std::map<unsigned long, iResourceBase*> tResourceHandleMap;
+	typedef std::map<uint32_t, iResourceBase*> tResourceHandleMap;
 	typedef tResourceHandleMap::iterator tResourceHandleMapIt;
 
 	typedef std::map<tString, iResourceBase*> tResourceNameMap;
@@ -48,7 +49,7 @@ namespace hpl {
 		virtual iResourceBase* Create(const tString& asName)=0;
 
 		iResourceBase* GetByName(const tString& asName);
-		iResourceBase* GetByHandle(unsigned long alHandle);
+		iResourceBase* GetByHandle(uint32_t alHandle);
 
 		cResourceBaseIterator GetResourceBaseIterator();
 
@@ -60,7 +61,7 @@ namespace hpl {
 		virtual void Update(float afTimeStep){}
 
 	protected:
-		unsigned long mlHandleCount;
+		uintptr_t mlHandleCount;
 		tResourceNameMap m_mapNameResources;
 		tResourceHandleMap m_mapHandleResources;
 
@@ -69,7 +70,7 @@ namespace hpl {
 		void BeginLoad(const tString& asFile);
 		void EndLoad();
 
-		unsigned long mlTimeStart;
+		uintptr_t mlTimeStart;
 
 		/**
 		 * Checks if a resource alllready is in the manager, else searches the resources.
@@ -81,7 +82,7 @@ namespace hpl {
 		void AddResource(iResourceBase* apResource, bool abLog=true);
 		void RemoveResource(iResourceBase* apResource);
 
-		unsigned long GetHandle();
+		uint32_t GetHandle();
 
 		tString GetTabs();
 		static int mlTabCount;

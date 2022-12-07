@@ -19,6 +19,7 @@
 #ifndef HPL_RESOURCEBASE_H
 #define HPL_RESOURCEBASE_H
 
+#include <stdint.h>
 #include "system/SystemTypes.h"
 //
 namespace hpl {
@@ -37,12 +38,12 @@ namespace hpl {
 		virtual void Destroy()=0;
 
 		tString GetName(){return msName;}
-		unsigned long GetHandle(){return mlHandle;}
-		void SetHandle(unsigned long alHandle){mlHandle=alHandle;}
+		uint32_t GetHandle(){return mlHandle;}
+		void SetHandle(uint32_t alHandle){mlHandle=alHandle;}
 		tString GetFilePath(){return msFilePath;}
-		unsigned long GetTime(){return mlTime;}
-		unsigned long GetPrio(){return mlPrio;}
-		unsigned long GetSize(){return mlSize;}
+        uint32_t GetTime(){return mlTime;}
+        uint32_t GetPrio(){return mlPrio;}
+        uint32_t GetSize(){return mlSize;}
 
 		void SetLogDestruction(bool abX){ mbLogDestruction = abX;}
 
@@ -58,11 +59,11 @@ namespace hpl {
 		static bool mbLogCreateAndDelete;
 
 		unsigned int mlPrio; //dunno if this will be of any use.
-		unsigned long mlTime; //Time for creation.
-		unsigned long mlSize; //for completion. Not used yet.
+        uint32_t mlTime; //Time for creation.
+        uint32_t mlSize; //for completion. Not used yet.
 
 		unsigned int mlUserCount;
-		unsigned long mlHandle;
+        uint32_t mlHandle;
 		tString msName;
 		tString msFilePath;
 		bool mbLogDestruction;

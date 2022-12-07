@@ -61,6 +61,8 @@
 
 #include "math/Math.h"
 
+#include <stdint.h>
+
 namespace hpl {
 
 #define GetAdress(sStr) if(sStr[0]=='#') sStr = cString::Sub(sStr,1);
@@ -108,7 +110,7 @@ namespace hpl {
 
 		mFlags = aFlags;
 
-		unsigned long lStartTime = GetAppTimeMS();
+        uintptr_t lStartTime = GetAppTimeMS();
 
 		//Fill the structures with collada file data
 		bool bRet = FillStructures(asFile, &vColladaImages, &vColladaTextures,
@@ -117,7 +119,7 @@ namespace hpl {
 			NULL,NULL,
 			&ColladaScene,true);
 
-		unsigned long lTime = GetAppTimeMS() - lStartTime;
+        uintptr_t lTime = GetAppTimeMS() - lStartTime;
 		Log("Loading collada for '%s' took: %d ms\n",asFile.c_str(),lTime);
 
 		if(bRet==false) return NULL;

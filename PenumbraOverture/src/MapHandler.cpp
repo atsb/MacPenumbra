@@ -42,6 +42,8 @@
 #include "Inventory.h"
 #include "MapLoadText.h"
 
+#include <stdint.h>
+
 //////////////////////////////////////////////////////////////////////////
 // WORLD CACHE
 //////////////////////////////////////////////////////////////////////////
@@ -327,7 +329,7 @@ bool cMapHandler::Load(const tString &asFile,const tString& asStartPos)
 	bool bFirstTime = false;
 	double fTimeSinceVisit=0;
 	
-	unsigned long lStartTime = GetAppTimeMS();
+    uintptr_t lStartTime = GetAppTimeMS();
 
 	if(sMapName != msCurrentMap)
 	{
@@ -515,7 +517,7 @@ bool cMapHandler::Load(const tString &asFile,const tString& asStartPos)
 
 	//Log("After load and before preupdate:\n");
 
-	unsigned long lTime = GetAppTimeMS() - lStartTime;
+    uintptr_t lTime = GetAppTimeMS() - lStartTime;
 	Log("Loading map '%s' took: %d ms\n",pWorld->GetFileName().c_str(),lTime);
 	
 	PreUpdate(fTimeSinceVisit);
@@ -1777,7 +1779,7 @@ void cMapHandler::PreUpdate(double afTimeSinceVisit)
 
 	mbPreUpdating = true;
 
-	unsigned long lStart = GetAppTimeMS();
+	uintptr_t lStart = GetAppTimeMS();
 
 	//Enable all physic bodies
 	cPhysicsBodyIterator bodyIt = pPhysicsWorld->GetBodyIterator();
@@ -1820,7 +1822,7 @@ void cMapHandler::PreUpdate(double afTimeSinceVisit)
 		mpInit->mpGame->GetSound()->GetSoundHandler()->SetSilent(false);
 	}
 
-	unsigned long lTime = GetAppTimeMS() - lStart;
+	uintptr_t lTime = GetAppTimeMS() - lStart;
 
 	//Log("PREUPDATE time: %d\n",lTime);
 	
