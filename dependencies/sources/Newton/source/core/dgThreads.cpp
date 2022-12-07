@@ -43,7 +43,7 @@ static inline void dgSpinLock(dgInt32 *spin)
   }
 #elif defined (__APPLE__)
 #ifndef TARGET_OS_IPHONE
-  while( ! OSAtomicCompareAndSwap64(0, 1, (int64_t*) spin) )
+  while( ! OSAtomicCompareAndSwap32(0, 1, (int32_t*) spin) )
   {
     sched_yield();
   }
@@ -66,7 +66,7 @@ static inline void dgInterlockedIncrement(dgInt32* Addend)
 #ifdef _WIN32
   InterlockedIncrement((long*) Addend);
 #elif defined (__APPLE__)
-  OSAtomicAdd64 (1, (int64_t*)Addend);
+  OSAtomicAdd32 (1, (int32_t*)Addend);
 #else
   __sync_fetch_and_add ((int32_t*)Addend, 1 );
 #endif
@@ -77,7 +77,7 @@ static inline void dgInterlockedDecrement(dgInt32* Addend)
 #ifdef _WIN32
   InterlockedDecrement((long*) Addend);
 #elif defined (__APPLE__)
-  OSAtomicAdd64 (-1, (int64_t*)Addend);
+  OSAtomicAdd32 (-1, (int32_t*)Addend);
 #else
   __sync_fetch_and_sub ((int32_t*)Addend, 1 );
 #endif
@@ -482,7 +482,7 @@ void dgThreads::CalculateChunkSizes(dgInt32 elements,
 
 void dgThreads::dgGetLock() const
 {
-  _ASSERTE(sizeof (dgInt32) == sizeof (long long));
+  _ASSERTE(sizeof (dgInt32) == sizeof (long));
   dgSpinLock(&m_globalSpinLock);
 
   //spinLock( &m_globalSpinLock );
@@ -499,12 +499,12 @@ void dgThreads::dgReleaseLock() const
 
 void dgThreads::dgGetIndirectLock(dgInt32* lockVar)
 {
-  _ASSERTE(sizeof (dgInt32) == sizeof (long long));
+  _ASSERTE(sizeof (dgInt32) == sizeof (long));
   dgSpinLock(lockVar);
 }
 
 void dgThreads::dgReleaseIndirectLock(dgInt32* lockVar)
 {
-  _ASSERTE(sizeof (dgInt32) == sizeof (long long));
+  _ASSERTE(sizeof (dgInt32) == sizeof (long));
   dgSpinUnlock(lockVar);
 }

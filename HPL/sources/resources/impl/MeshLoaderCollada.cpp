@@ -117,7 +117,7 @@ namespace hpl {
 			NULL,NULL,
 			&ColladaScene,true);
 
-		unsigned long long lTime = GetAppTimeMS() - lStartTime;
+		unsigned long lTime = GetAppTimeMS() - lStartTime;
 		Log("Loading collada for '%s' took: %d ms\n",asFile.c_str(),lTime);
 
 		if(bRet==false) return NULL;

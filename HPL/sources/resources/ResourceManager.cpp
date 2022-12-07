@@ -63,7 +63,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	iResourceBase* iResourceManager::GetByHandle(unsigned long long alHandle)
+	iResourceBase* iResourceManager::GetByHandle(unsigned long alHandle)
 	{
 		tResourceHandleMapIt it = m_mapHandleResources.find(alHandle);
 		if(it == m_mapHandleResources.end())return NULL;
@@ -230,7 +230,7 @@ namespace hpl {
 
 		if(abLog && iResourceBase::GetLogCreateAndDelete())
 		{
-			unsigned long long lTime = GetAppTimeMS() - mlTimeStart;
+			unsigned long lTime = GetAppTimeMS() - mlTimeStart;
 			Log("%sLoaded resource %s in %d ms\n",GetTabs().c_str(), apResource->GetName().c_str(),lTime);
 			apResource->SetLogDestruction(true);
 		}
@@ -250,7 +250,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	unsigned long long iResourceManager::GetHandle()
+	unsigned long iResourceManager::GetHandle()
 	{
 		return mlHandleCount++;
 	}

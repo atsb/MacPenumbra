@@ -37,12 +37,12 @@ namespace hpl {
 		virtual void Destroy()=0;
 
 		tString GetName(){return msName;}
-		unsigned long long GetHandle(){return mlHandle;}
+		unsigned long GetHandle(){return mlHandle;}
 		void SetHandle(unsigned long alHandle){mlHandle=alHandle;}
 		tString GetFilePath(){return msFilePath;}
-		unsigned long long GetTime(){return mlTime;}
-		unsigned long long GetPrio(){return mlPrio;}
-		unsigned long long GetSize(){return mlSize;}
+		unsigned long GetTime(){return mlTime;}
+		unsigned long GetPrio(){return mlPrio;}
+		unsigned long GetSize(){return mlSize;}
 
 		void SetLogDestruction(bool abX){ mbLogDestruction = abX;}
 
@@ -58,11 +58,11 @@ namespace hpl {
 		static bool mbLogCreateAndDelete;
 
 		unsigned int mlPrio; //dunno if this will be of any use.
-		unsigned long long mlTime; //Time for creation.
-		unsigned long long mlSize; //for completion. Not used yet.
+		unsigned long mlTime; //Time for creation.
+		unsigned long mlSize; //for completion. Not used yet.
 
 		unsigned int mlUserCount;
-		unsigned long long mlHandle;
+		unsigned long mlHandle;
 		tString msName;
 		tString msFilePath;
 		bool mbLogDestruction;

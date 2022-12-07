@@ -22,7 +22,7 @@
 namespace hpl {
 	//----------------------------------------
 
-	typedef unsigned long long tCRCKey;
+	typedef unsigned long tCRCKey;
 
 	//----------------------------------------
 

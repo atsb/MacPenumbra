@@ -148,7 +148,7 @@ int asCReader::ReadInner()
 
 	engine->deferValidationOfTemplateTypes = true;
 
-	unsigned long long i, count;
+	unsigned long i, count;
 	asCScriptFunction* func;
 
 	// Read the flag as 1 byte even on platforms with 4byte booleans
@@ -3913,7 +3913,7 @@ int asCWriter::Write()
 {
 	TimeIt("asCWriter::Write");
 
-	unsigned long long i, count;
+	unsigned long i, count;
 
 	// Store everything in the same order that the builder parses scripts
 

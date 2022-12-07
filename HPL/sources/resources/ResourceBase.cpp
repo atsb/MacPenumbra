@@ -31,7 +31,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 	iResourceBase::iResourceBase(tString asName,unsigned int alPrio){
-		mlTime = (unsigned long long)time(NULL);
+		mlTime = (unsigned long)time(NULL);
 		mlPrio = alPrio;
 		mlHandle = 0;
 		mlUserCount =0;
@@ -49,7 +49,7 @@ namespace hpl {
 	void iResourceBase::IncUserCount()
 	{
 		mlUserCount++;
-		mlTime = (unsigned long long)time(NULL);
+		mlTime = (unsigned long)time(NULL);
 	}
 
 	//-----------------------------------------------------------------------

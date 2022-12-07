@@ -48,7 +48,7 @@ namespace hpl {
 		virtual iResourceBase* Create(const tString& asName)=0;
 
 		iResourceBase* GetByName(const tString& asName);
-		iResourceBase* GetByHandle(unsigned long long alHandle);
+		iResourceBase* GetByHandle(unsigned long alHandle);
 
 		cResourceBaseIterator GetResourceBaseIterator();
 
@@ -60,7 +60,7 @@ namespace hpl {
 		virtual void Update(float afTimeStep){}
 
 	protected:
-		unsigned long long mlHandleCount;
+		unsigned long mlHandleCount;
 		tResourceNameMap m_mapNameResources;
 		tResourceHandleMap m_mapHandleResources;
 
@@ -69,7 +69,7 @@ namespace hpl {
 		void BeginLoad(const tString& asFile);
 		void EndLoad();
 
-		unsigned long long mlTimeStart;
+		unsigned long mlTimeStart;
 
 		/**
 		 * Checks if a resource alllready is in the manager, else searches the resources.
@@ -81,7 +81,7 @@ namespace hpl {
 		void AddResource(iResourceBase* apResource, bool abLog=true);
 		void RemoveResource(iResourceBase* apResource);
 
-		unsigned long long GetHandle();
+		unsigned long GetHandle();
 
 		tString GetTabs();
 		static int mlTabCount;
