@@ -4,7 +4,7 @@ A project to create a modernised version of Frictional Games' HPL1 game engine a
 
 NOTE: Currently this is NOT ARM64 compatible for Macs due to a CG.Framework dependency.  Otherwise, for x86_64 Intel Mac users, this is playable.
 
-NOTE: This is currently under heavy development.  I've largely gone back to the original code and am porting it from scratch as rehatched broke a lot of things.  This won't take very long and we WILL have a proper macOS version soon!
+NOTE: This is currently under heavy development.  We WILL have a proper universal macOS version eventually!  Contributors are welcome.
 
 Building
 --------
