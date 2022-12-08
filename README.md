@@ -6,6 +6,8 @@ NOTE: Currently this is NOT ARM64 compatible for Macs due to a CG.Framework depe
 
 NOTE: This is currently under heavy development.  We WILL have a proper universal macOS version eventually!  Contributors are welcome.
 
+NOTE: I am willing to also support GNU/Linux systems too, which is why I kept the CMakefiles around, however the CG Toolkit code absolutely MUST be replaced by GLSL.
+
 Building
 --------
 All dependencies are included in the repository. This is mostly because many of them are (very) old versions.
