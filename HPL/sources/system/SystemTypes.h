@@ -24,7 +24,6 @@
 #include <list>
 #include <set>
 #include <vector>
-#include <optional>
 
 #include "system/Container.h"
 
@@ -34,36 +33,101 @@ namespace hpl {
 	///////// TYPES //////////////////////////////////
 	//////////////////////////////////////////////////
 
+	#define eFlagBit_None	(0x00000000)
+	#define eFlagBit_All	(0xFFFFFFFF)
+
+	#define eFlagBit_0		(0x00000001)
+	#define eFlagBit_1		(0x00000002)
+	#define eFlagBit_2		(0x00000004)
+	#define eFlagBit_3		(0x00000008)
+	#define eFlagBit_4		(0x00000010)
+	#define eFlagBit_5		(0x00000020)
+	#define eFlagBit_6		(0x00000040)
+	#define eFlagBit_7		(0x00000080)
+	#define eFlagBit_8		(0x00000100)
+	#define eFlagBit_9		(0x00000200)
+	#define eFlagBit_10		(0x00000400)
+	#define eFlagBit_11		(0x00000800)
+	#define eFlagBit_12		(0x00001000)
+	#define eFlagBit_13		(0x00002000)
+	#define eFlagBit_14		(0x00004000)
+	#define eFlagBit_15		(0x00008000)
+
 	#define _W(t) L ## t
 
 	//--------------------------------------------------------
 
+	enum eSystemPath
+	{
+		eSystemPath_Personal,
+		eSystemPath_LastEnum
+	};
+
+	//--------------------------------------------------------
+
+
 	typedef unsigned int tFlag;
 
 	typedef std::string tString;
+
 	typedef std::list<tString> tStringList;
+	typedef tStringList::iterator tStringListIt;
+
 	typedef std::vector<tString> tStringVec;
+	typedef tStringVec::iterator tStringVecIt;
+
 	typedef std::set<tString> tStringSet;
+	typedef tStringSet::iterator tStringSetIt;
+
 
 	//--------------------------------------------------------
 
 	typedef std::wstring tWString;
 	typedef std::list<tWString> tWStringList;
+	typedef tWStringList::iterator tWStringListIt;
+
 	typedef std::vector<tWString> tWStringVec;
+	typedef tWStringVec::iterator tWStringVecIt;
+
+	typedef std::set<tWString> tWStringSet;
+	typedef tWStringSet::iterator tWStringSetIt;
 
 	//--------------------------------------------------------
+
+
+	typedef std::vector<unsigned char> tByteVec;
+	typedef tByteVec::iterator tByteVecIt;
 
 	typedef std::vector<unsigned int> tUIntVec;
+	typedef tUIntVec::iterator tUIntVecIt;
+
 	typedef std::vector<int> tIntVec;
+	typedef tIntVec::iterator tIntVecIt;
+
+	typedef std::vector<int> tIntList;
+	typedef tIntVec::iterator tIntListIt;
+
 	typedef std::vector<float> tFloatVec;
+	typedef tFloatVec::iterator tFloatVecIt;
+
+	typedef std::vector<float*> tFloatPtrVec;
+	typedef tFloatPtrVec::iterator tFloatPtrVecIt;
+
+	typedef std::list<float*> tFloatPtrList;
+	typedef tFloatPtrList::iterator tFloatPtrListIt;
+
 	typedef std::list<unsigned int> tUIntList;
+	typedef tUIntList::iterator tUIntListIt;
 
-	//--------------------------------------------------------
 
-	template <typename T>
-	using Maybe = std::optional<T>;
+	typedef enum
+	{
+		eMsgBoxType_Info,
+		eMsgBoxType_Error,
+		eMsgBoxType_Warning,
+		eMsgBoxType_Default
+	} eMsgBoxType;
 
-	//--------------------------------------------------------
 
 	//////////////////////////////////////////////////
 	///////// DEFINES ///////////////////////////////
@@ -98,27 +162,11 @@ namespace hpl {
 		int week_day;
 		int year_day;
 
-		static cDate FromGMTIme(struct tm* apClock)
-		{
-			cDate date;
-
-			date.seconds = apClock->tm_sec;
-			date.minutes = apClock->tm_min;
-			date.hours = apClock->tm_hour;
-			date.month_day = apClock->tm_mday;
-			date.month = apClock->tm_mon;
-			date.year = 1900 + apClock->tm_year;
-			date.week_day = apClock->tm_wday;
-			date.year_day = apClock->tm_yday;
-
-			return date;
-		}
-
-		tString ToString() const
+		tString ToString()
 		{
 			char buff[256];
 
-			snprintf(buff, 256, "%d/%d-%d %d:%d:%d", month_day, month, 1900 + year, hours, minutes, seconds);
+			sprintf(buff,"%d/%d-%d %d:%d:%d",month_day,month,1900+year,hours, minutes, seconds);
 
 			return buff;
 		}
@@ -190,6 +238,94 @@ namespace hpl {
 		}
 	};
 
+	//--------------------------------------------------------
+
+	template <class T>
+	class cMemoryPool
+	{
+	public:
+		//---------------------------------
+
+		cMemoryPool(size_t alSize, T* (*apCreateFunc)())
+		{
+			mvData.resize(alSize,NULL);
+			mlCurrentData = 0;
+
+			mpCreateFunc = apCreateFunc;
+
+			for(size_t i=0; i< mvData.size(); ++i)
+			{
+				if(mpCreateFunc)	mvData[i] = mpCreateFunc();
+				else				mvData[i] = hplNew(T, () );
+			}
+		}
+
+		//---------------------------------
+
+		~cMemoryPool()
+		{
+			for(size_t i=0; i< mvData.size(); ++i) hplDelete(mvData[i]);
+		}
+
+		//---------------------------------
+
+		T* Create()
+		{
+			T*  pData = mvData[mlCurrentData];
+
+			if(mlCurrentData == mvData.size()-1)
+			{
+				size_t lNewSize = mvData.size() * 2;
+				size_t lStart = mvData.size();
+				mvData.resize(lNewSize);
+
+				for(size_t i=lStart; i< mvData.size(); ++i)
+				{
+					if(mpCreateFunc)	mvData[i] = mpCreateFunc();
+					else				mvData[i] = hplNew(T,());
+				}
+
+				++mlCurrentData;
+			}
+			else
+			{
+				++mlCurrentData;
+			}
+
+			return pData;
+		}
+
+		//---------------------------------
+
+		void Release(T *apData)
+		{
+			if(mlCurrentData==0) return;
+
+			--mlCurrentData;
+			mvData[mlCurrentData] = apData;
+		}
+
+		//---------------------------------
+
+		void ClearUnused()
+		{
+			for(size_t i=mlCurrentData+1; i< mvData.size(); ++i)
+			{
+				hplDelete(mvData[i]);
+			}
+			mvData.resize(mlCurrentData+1);
+		}
+
+		//---------------------------------
+
+	private:
+		std::vector<T*> mvData;
+
+		size_t mlCurrentData;
+
+		T* (*mpCreateFunc)();
+	};
+
 	//----------------------------------------------------------
 
 
@@ -224,7 +360,7 @@ namespace hpl {
 				break;
 			}
 		}
-		delete pObject;
+		hplDelete(pObject);
 	}
 
 	//--------------------------------------------------------
@@ -249,7 +385,7 @@ namespace hpl {
 		typename T::iterator it = aCont.begin();
 		for(;it != aCont.end();it++)
 		{
-			delete *it;
+			hplDelete(*it);
 		}
 		aCont.clear();
 	}
@@ -261,7 +397,7 @@ namespace hpl {
 		typename T::iterator it = aCont.begin();
 		for(;it != aCont.end();it++)
 		{
-			delete it->second;
+			hplDelete(it->second);
 		}
 		aCont.clear();
 	}

@@ -18,6 +18,7 @@
  */
 #include "graphics/Material.h"
 #include "graphics/Renderer3D.h"
+#include "system/LowLevelSystem.h"
 #include "resources/TextureManager.h"
 #include "resources/GpuProgramManager.h"
 #include "graphics/GPUProgram.h"
@@ -54,7 +55,8 @@ namespace hpl {
 		mbDepthTest = true;
 		mfValue = 1;
 
-		for(int j=0;j<kMaxProgramNum;j++) mpProgram[j]=NULL;
+		for(int i=0;i<2;i++)
+			for(int j=0;j<kMaxProgramNum;j++) mpProgram[i][j]=NULL;
 
 		mlPassCount=0;
 
@@ -70,10 +72,12 @@ namespace hpl {
 				mpTextureManager->Destroy(mvTexture[i]);
 		}
 
-		for(int j=0;j<kMaxProgramNum;j++)
-		{
-			if(mpProgram[j])
-				mpProgramManager->Destroy(mpProgram[j]);
+		for(i=0;i<2;i++){
+			for(int j=0;j<kMaxProgramNum;j++)
+			{
+				if(mpProgram[i][j])
+					mpProgramManager->Destroy(mpProgram[i][j]);
+			}
 		}
 	}
 

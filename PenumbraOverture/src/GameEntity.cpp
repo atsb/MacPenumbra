@@ -65,6 +65,9 @@ iGameEntity::iGameEntity(cInit *apInit, const tString &asName)
 
 	mfMaxExamineDist = 6.0f;
 	mfMaxInteractDist = 1.5f;
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics) mfMaxInteractDist = mpInit->mfHapticMaxInteractDist;
+#endif
 
 	mbHasInteraction = false;
 
@@ -81,6 +84,8 @@ iGameEntity::iGameEntity(cInit *apInit, const tString &asName)
 	mbSaveLights = true;
 
 	mbUpdatingCollisionCallbacks = false;
+
+	mbTransActive = false;
 
 	mvLastImpulse = 0;
 }
@@ -109,6 +114,18 @@ iGameEntity::~iGameEntity()
 			pEntity->RemoveCollideScriptWithChildEntity(this);
 		}
 	}
+
+#ifdef INCLUDE_HAPTIC
+	////////////////////////////////////////////
+	// Destroy haptic
+	for(size_t i=0; i< mvHapticShapes.size(); ++i)
+	{
+		if(mvHapticShapes[i])
+		{
+			mpInit->mpGame->GetHaptic()->GetLowLevel()->DestroyShape(mvHapticShapes[i]);
+		}
+	}
+#endif
 	
 	//////////////////////////////////////////////
 	// Destroy all graphics in the entity!
@@ -162,9 +179,11 @@ iGameEntity::~iGameEntity()
 	//Delete callbacks
 	for(int i=0; i< eGameEntityScriptType_LastEnum; ++i) 
 	{
-		if( mvCallbackScripts[i]) delete  mvCallbackScripts[i] ;
+		if( mvCallbackScripts[i]) hplDelete( mvCallbackScripts[i] );
 	}
 	STLMapDeleteAll(m_mapCollideCallbacks);
+
+	STLDeleteAll(mvTransMaterials);
 
 	for(size_t i=0; i<mvPreloadedBreakMeshes.size();++i)
 	{
@@ -321,7 +340,13 @@ void iGameEntity::PlayerInteract()
 	//////////////////////
 	// Script stuff
 
+#ifdef INCLUDE_HAPTIC
+	if(GetPickedDistance() <= mfMaxInteractDist &&
+		(mpInit->mbHasHaptics==false || mpInit->mpPlayer->mbProxyTouching || 
+		 mType == eGameEntityType_Area))
+#else
 	if(GetPickedDistance() <= mfMaxInteractDist)
+#endif
 	{
 		cWorld3D *pWorld = mpInit->mpGame->GetScene()->GetWorld3D();
 		if(mvCallbackScripts[eGameEntityScriptType_PlayerInteract])
@@ -381,6 +406,9 @@ void iGameEntity::Damage(float afDamage, int alStrength)
 		{
 			//if(mpInit->mDifficulty== eGameDifficulty_Easy) afDamage *= 2.0f;
 			if(mpInit->mDifficulty== eGameDifficulty_Hard) afDamage /= 2.0f;
+#ifdef INCLUDE_HAPTIC
+			if(mpInit->mbHasHaptics) afDamage *= 2.0f;
+#endif
 		}
 		
 		int lDiff = mlToughness - alStrength;
@@ -421,6 +449,72 @@ void iGameEntity::SetHealth(float afHealth)
 	{
 		mfHealth = afHealth;
 	}
+}
+
+//-----------------------------------------------------------------------
+
+void iGameEntity::SetUpTransMaterials()
+{
+	mvNormalMaterials.resize(mpMeshEntity->GetSubMeshEntityNum());
+	mvTransMaterials.resize(mpMeshEntity->GetSubMeshEntityNum());
+
+	mbTransShadow = mpMeshEntity->IsShadowCaster();
+
+	for(int i=0; i< mpMeshEntity->GetSubMeshEntityNum(); ++i)
+	{
+		cSubMeshEntity *pSubEntity = mpMeshEntity->GetSubMeshEntity(i);
+		cSubMesh *pSubMesh = mpMeshEntity->GetMesh()->GetSubMesh(i);
+		
+		iMaterial *pNormalMaterial = pSubEntity->GetMaterial();
+		
+		mvNormalMaterials[i]= pSubEntity->GetCustomMaterial();
+		
+		//create material for the transperancy
+		iMaterial *pTransMaterial = mpInit->mpGame->GetGraphics()->GetMaterialHandler()->Create(
+													"Trans","Modulative");
+		
+		//Set texture for the trans material
+		iTexture *pDiffTex = pNormalMaterial->GetTexture(eMaterialTexture_Diffuse);
+		if(pDiffTex)
+		{
+			pDiffTex->IncUserCount();
+			pTransMaterial->SetTexture(pDiffTex,eMaterialTexture_Diffuse);
+
+			mvTransMaterials[i] = pTransMaterial;
+		}
+		else
+		{
+			Log("Sub mesh '%s' material '%s' does not have diffuse!\n",pSubMesh->GetName().c_str(),
+																	pNormalMaterial->GetName().c_str());
+		}
+	}
+}
+
+void iGameEntity::SetTransActive(bool abX)
+{
+	if(mbTransActive == abX) return;
+
+	mbTransActive = abX;
+	
+	if(mbTransShadow)
+	{
+		//mpMeshEntity->SetForceShadow(mbTransActive);
+	}
+	
+	for(int i=0; i< mpMeshEntity->GetSubMeshEntityNum(); ++i)
+	{
+		cSubMeshEntity *pSubEntity = mpMeshEntity->GetSubMeshEntity(i);
+		
+		if(mbTransActive)
+		{
+			pSubEntity->SetCustomMaterial(mvTransMaterials[i],false);
+		}
+		else
+		{
+			pSubEntity->SetCustomMaterial(mvNormalMaterials[i],false);
+		}
+	}
+
 }
 
 //-----------------------------------------------------------------------
@@ -555,7 +649,7 @@ void iGameEntity::OnUpdate(float afTimeStep)
 
 		if(pCallback->mbDeleteMe)
 		{
-			delete  pCallback ;
+			hplDelete( pCallback );
 			m_mapCollideCallbacks.erase(currentIt);
 		}
 	}
@@ -587,14 +681,14 @@ void iGameEntity::AddCollideScript(eGameCollideScriptType aType,const tString &a
 	}
 	else
 	{
-		pCallback = new cGameCollideScript();
+		pCallback = hplNew(  cGameCollideScript, () );
 		
 		//Get the entity
 		iGameEntity *pEntity = mpInit->mpMapHandler->GetGameEntity(asEntity);
 		if(pEntity==NULL)
 		{
 			Warning("Couldn't find entity '%s'\n",asEntity.c_str());
-			delete  pCallback ;
+			hplDelete( pCallback );
 			return;
 		}
 		
@@ -627,7 +721,7 @@ void iGameEntity::RemoveCollideScriptWithChildEntity(iGameEntity *apEntity)
 			}
 			else
 			{
-				delete  pCallback ;
+				hplDelete( pCallback );
 				m_mapCollideCallbacks.erase(currentIt);
 			}
 		}
@@ -654,7 +748,7 @@ void iGameEntity::RemoveCollideScript(eGameCollideScriptType aType,const tString
 			}
 			else
 			{
-				delete  pCallback ;
+				hplDelete( pCallback );
 				m_mapCollideCallbacks.erase(it);
 			}
 		}
@@ -673,7 +767,7 @@ void iGameEntity::AddScript(eGameEntityScriptType aType,const tString &asFunc)
 	
 	if(pScript==NULL)
 	{
-		pScript = new cGameEntityScript();
+		pScript = hplNew( cGameEntityScript, () );
 		mvCallbackScripts[aType] = pScript;
 	}
 	
@@ -686,7 +780,7 @@ void iGameEntity::RemoveScript(eGameEntityScriptType aType)
 {
     if(mvCallbackScripts[aType])
 	{
-		delete  mvCallbackScripts[aType] ;
+		hplDelete( mvCallbackScripts[aType] );
 		mvCallbackScripts[aType] = NULL;
 	}
 }
@@ -756,7 +850,7 @@ void iGameEntity::PreloadModel(const tString &asFile)
 
 	if(sPath!="")
 	{
-		TiXmlDocument *pEntityDoc = new TiXmlDocument();
+		TiXmlDocument *pEntityDoc = hplNew( TiXmlDocument, () );
 		if(pEntityDoc->LoadFile(sPath.c_str())==false)
 		{
 			Error("Couldn't load '%s'!\n",sPath.c_str());
@@ -778,7 +872,7 @@ void iGameEntity::PreloadModel(const tString &asFile)
 				PreloadModel(pRef->msFile);
 			}
 		}
-		delete  pEntityDoc ;
+		hplDelete( pEntityDoc );
 	}
 	else
 	{
@@ -1007,7 +1101,7 @@ void iGameEntity::LoadFromSaveData(iGameEntity_SaveData* apSaveData)
 	{
 		cGameEntityScript &script = scriptIt.Next();
 
-		mvCallbackScripts[script.mlNum] = new cGameEntityScript();
+		mvCallbackScripts[script.mlNum] = hplNew( cGameEntityScript, () );
 		mvCallbackScripts[script.mlNum]->msScriptFunc = script.msScriptFunc;
 	}
 	
@@ -1126,13 +1220,13 @@ void iGameEntity::SetupSaveData(iGameEntity_SaveData *apSaveData)
 	while(colIt.HasNext())
 	{
 		cSaveGame_cGameCollideScript &savedScript = colIt.Next();
-		cGameCollideScript *pCallback = new cGameCollideScript();
+		cGameCollideScript *pCallback = hplNew( cGameCollideScript, () );
 
 		pCallback->mpEntity = mpInit->mpMapHandler->GetGameEntity(savedScript.msEntity);
 		if(pCallback->mpEntity==NULL)
 		{
 			Warning("Couldn't find entity '%s'\n",savedScript.msEntity.c_str());
-			delete  pCallback ;
+			hplDelete( pCallback );
 			continue;
 		}
 		savedScript.SaveTo(pCallback);

@@ -20,15 +20,16 @@
 #define HPL_RESOURCEMANAGER_H
 
 #include <map>
-#include <stdint.h>
 #include "system/SystemTypes.h"
 
 namespace hpl {
 
+	class iLowLevelResources;
+	class iLowLevelSystem;
 	class cFileSearcher;
 	class iResourceBase;
 
-	typedef std::map<uint32_t, iResourceBase*> tResourceHandleMap;
+	typedef std::map<unsigned long, iResourceBase*> tResourceHandleMap;
 	typedef tResourceHandleMap::iterator tResourceHandleMapIt;
 
 	typedef std::map<tString, iResourceBase*> tResourceNameMap;
@@ -43,13 +44,14 @@ namespace hpl {
 	class iResourceManager
 	{
 	public:
-		iResourceManager(cFileSearcher *apFileSearcher);
-		virtual ~iResourceManager() = default;
+		iResourceManager(cFileSearcher *apFileSearcher, iLowLevelResources *apLowLevelResources,
+						iLowLevelSystem *apLowLevelSystem);
+		virtual ~iResourceManager(){}
 
 		virtual iResourceBase* Create(const tString& asName)=0;
 
 		iResourceBase* GetByName(const tString& asName);
-		iResourceBase* GetByHandle(uint32_t alHandle);
+		iResourceBase* GetByHandle(unsigned long alHandle);
 
 		cResourceBaseIterator GetResourceBaseIterator();
 
@@ -61,16 +63,18 @@ namespace hpl {
 		virtual void Update(float afTimeStep){}
 
 	protected:
-		uintptr_t mlHandleCount;
+		unsigned long mlHandleCount;
 		tResourceNameMap m_mapNameResources;
 		tResourceHandleMap m_mapHandleResources;
 
 		cFileSearcher *mpFileSearcher;
+		iLowLevelResources *mpLowLevelResources;
+		iLowLevelSystem *mpLowLevelSystem;
 
 		void BeginLoad(const tString& asFile);
 		void EndLoad();
 
-		uintptr_t mlTimeStart;
+		unsigned long mlTimeStart;
 
 		/**
 		 * Checks if a resource alllready is in the manager, else searches the resources.
@@ -82,7 +86,7 @@ namespace hpl {
 		void AddResource(iResourceBase* apResource, bool abLog=true);
 		void RemoveResource(iResourceBase* apResource);
 
-		uint32_t GetHandle();
+		unsigned long GetHandle();
 
 		tString GetTabs();
 		static int mlTabCount;

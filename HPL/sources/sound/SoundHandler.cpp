@@ -18,8 +18,8 @@
  */
 #include "sound/SoundHandler.h"
 #include "resources/Resources.h"
+#include "system/LowLevelSystem.h"
 #include "system/String.h"
-#include "system/Log.h"
 #include "math/Math.h"
 #include "sound/LowLevelSound.h"
 #include "sound/SoundChannel.h"
@@ -69,14 +69,14 @@ namespace hpl {
 		it = mlstGuiSounds.begin();
 		while(it != mlstGuiSounds.end()){
 			it->mpSound->Stop();
-			delete it->mpSound;
+			hplDelete(it->mpSound);
 			it = mlstGuiSounds.erase(it);
 		}
 
 		it = mlstWorldSounds.begin();
 		while(it != mlstWorldSounds.end())	{
 			it->mpSound->Stop();
-			delete it->mpSound;
+			hplDelete(it->mpSound);
 			it = mlstWorldSounds.erase(it);
 		}
 	}
@@ -658,7 +658,7 @@ namespace hpl {
 			//									pSound->GetTotalTime());
 
 			pSound->Stop();
-			delete pSound;
+			hplDelete(pSound);
 
 			return false;
 		}

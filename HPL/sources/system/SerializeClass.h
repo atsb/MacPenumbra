@@ -21,6 +21,7 @@
 
 #include <map>
 #include "system/SystemTypes.h"
+#include "system/MemoryManager.h"
 
 class TiXmlElement;
 
@@ -113,7 +114,7 @@ namespace hpl {
 				{ \
 					extern cSerializeMemberField mvTempMemberFields[];\
 				} \
-				static iSerializable* _Create_##aClass(){ return new aClass();} \
+				static iSerializable* _Create_##aClass(){ return hplNew( aClass,() );} \
 				static cSerializeClass gSerializedClass_##aClass(#aClass, #aParent, SerializeNamespace_##aClass::mvTempMemberFields, sizeof(aClass), _Create_##aClass); \
 				const tString aClass::msSerialize_Name = #aClass; \
 				const tString aClass::msSerialize_ParentName = #aParent; \
@@ -128,7 +129,7 @@ namespace hpl {
 				{ \
 					extern cSerializeMemberField mvTempMemberFields[];\
 				} \
-				static iSerializable* _Create_##aClass(){ return new aClass();} \
+				static iSerializable* _Create_##aClass(){ return hplNew( aClass,() );} \
 				static cSerializeClass gSerializedClass_##aClass(#aClass, "", SerializeNamespace_##aClass::mvTempMemberFields, sizeof(aClass), _Create_##aClass); \
 				const tString aClass::msSerialize_Name = #aClass; \
 				const tString aClass::msSerialize_ParentName =""; \

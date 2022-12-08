@@ -17,13 +17,14 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "input/Input.h"
+#include "system/LowLevelSystem.h"
 #include "input/Mouse.h"
 #include "input/Keyboard.h"
 #include "input/LowLevelInput.h"
 #include "input/Action.h"
 #include "input/ActionKeyboard.h"
 #include "input/ActionMouseButton.h"
-#include "system/Log.h"
+
 
 namespace hpl
 {
@@ -53,8 +54,8 @@ namespace hpl
 
 		STLMapDeleteAll(m_mapActions);
 
-		if(mpKeyboard)delete mpKeyboard;
-		if(mpMouse)delete mpMouse;
+		if(mpKeyboard)hplDelete(mpKeyboard);
+		if(mpMouse)hplDelete(mpMouse);
 
 		Log("--------------------------------------------------------\n\n");
 	}
@@ -162,7 +163,7 @@ namespace hpl
 	void cInput::DestroyAction(tString asName)
 	{
 		iAction *pOldAction = GetAction(asName);
-		if(pOldAction) delete pOldAction;
+		if(pOldAction) hplDelete(pOldAction);
 		m_mapActions.erase(asName);
 	}
 
@@ -199,7 +200,7 @@ namespace hpl
 		{
 			if(mpKeyboard->KeyIsDown((eKey)i))
 			{
-				pAction = new cActionKeyboard(asName,this,(eKey)i);
+				pAction = hplNew( cActionKeyboard, (asName,this,(eKey)i));
 				break;
 			}
 		}
@@ -212,7 +213,7 @@ namespace hpl
 			{
 				if(mpMouse->ButtonIsDown((eMButton)i))
 				{
-					pAction = new cActionMouseButton(asName,this,(eMButton)i);
+					pAction = hplNew( cActionMouseButton, (asName,this,(eMButton)i));
 					break;
 				}
 			}
@@ -221,7 +222,7 @@ namespace hpl
 		if(pAction)
 		{
 			iAction *pOldAction = GetAction(asName);
-			if(pOldAction) delete pOldAction;
+			if(pOldAction) hplDelete(pOldAction);
 
 			m_mapActions.erase(asName);
 

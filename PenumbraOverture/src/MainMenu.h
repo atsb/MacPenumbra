@@ -48,6 +48,9 @@ enum eMainMenuState
 	eMainMenuState_OptionsKeySetupMove,
 	eMainMenuState_OptionsKeySetupAction,
 	eMainMenuState_OptionsKeySetupMisc,
+	
+	eMainMenuState_Tools,
+	eMainMenuState_ToolsExportModels,
 
 	eMainMenuState_GraphicsRestart,
 
@@ -129,7 +132,7 @@ public:
 protected:
 	tWString msText;
 	tWString msTip;
-	FontData *mpFont;
+	iFontData *mpFont;
 	bool mbOver;
 	cVector2f mvFontSize;
 	eMainMenuState mNextState;
@@ -161,7 +164,7 @@ public:
 
 	tWString msText;
 protected:
-	FontData *mpFont;
+	iFontData *mpFont;
 	
 	cVector2f mvFontSize;
 	eMainMenuState mNextState;
@@ -194,7 +197,7 @@ public:
 	tWString msText;
 protected:
 	
-	FontData *mpFont;
+	iFontData *mpFont;
 
 	eFontAlign mAlignment;
 
@@ -211,14 +214,14 @@ class cMainMenuWidget_Image : public cMainMenuWidget
 {
 public:
 	cMainMenuWidget_Image(cInit *apInit, const cVector3f &avPos,const cVector2f& avSize,
-							const tString& asImageFile, eGfxMaterialType matType,
+							const tString& asImageFile, const tString& asImageMat,
 							const cColor& aColor);
 	~cMainMenuWidget_Image();
 
 	void OnDraw();
 
 protected:
-	const cGfxObject *mpImage;
+	cGfxObject *mpImage;
 	cColor mColor;
 
 	cVector2f mvSize;
@@ -252,16 +255,16 @@ public:
 	
 protected:
 	cGraphicsDrawer *mpDrawer;
-	FontData *mpFont;
-	const cGfxObject *mpBackGfx;
+	iFontData *mpFont;
+	cGfxObject *mpBackGfx;
 
-	const cGfxObject *mpDownGfx;
-	const cGfxObject *mpUpGfx;
-	const cGfxObject *mpSlideGfx;
-	const cGfxObject *mpSlideButtonGfx;
-	const cGfxObject *mpBorderLeftGfx;
-	const cGfxObject *mpBorderTopGfx;
-	const cGfxObject *mpBorderBottomGfx;
+	cGfxObject *mpDownGfx;
+	cGfxObject *mpUpGfx;
+	cGfxObject *mpSlideGfx;
+	cGfxObject *mpSlideButtonGfx;
+	cGfxObject *mpBorderLeftGfx;
+	cGfxObject *mpBorderTopGfx;
+	cGfxObject *mpBorderBottomGfx;
 
 	float mfSlideButtonSize;
 	float mfSlideButtonPos;
@@ -323,6 +326,16 @@ public:
 
 //---------------------------------------------
 
+class cMainMenuWidget_ExportModels : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_ExportModels(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment);
+
+	virtual void OnMouseDown(eMButton aButton);
+};
+
+//---------------------------------------------
+
 class cMainMenuWidget_Resume : public cMainMenuWidget_MainButton
 {
 public:
@@ -346,7 +359,7 @@ public:
 	cVector2f mvSize;
 	cColor mCol;
 
-	const cGfxObject *mpGfx;
+	cGfxObject *mpGfx;
 };
 
 //---------------------------------------------
@@ -405,12 +418,12 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpGfxBlackQuad;
-	const cGfxObject *mpGfxMouse;
+	cGfxObject *mpGfxBlackQuad;
+	cGfxObject *mpGfxMouse;
 
-	const cGfxObject *mpGfxRainDrop;
-	const cGfxObject *mpGfxRainSplash;
-	const cGfxObject *mpGfxSnowFlake;
+	cGfxObject *mpGfxRainDrop;
+	cGfxObject *mpGfxRainSplash;
+	cGfxObject *mpGfxSnowFlake;
 
 	iTexture *mpLogo;
 	iTexture *mpBackground;
@@ -419,7 +432,7 @@ private:
 	cMainMenuWidget_Text *mpCurrentActionText;
 
 	tWString msButtonTip;
-	FontData *mpTipFont;
+	iFontData *mpTipFont;
 
     std::vector<cMainMenuParticle> mvRainDrops;
 	float mfRainDropCount;
@@ -440,7 +453,7 @@ private:
 
 	eMainMenuState mLastState;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 	
 	cVector2f mvMousePos;
 

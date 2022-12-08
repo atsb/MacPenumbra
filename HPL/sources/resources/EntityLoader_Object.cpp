@@ -19,9 +19,9 @@
 #include "resources/EntityLoader_Object.h"
 
 #include "system/String.h"
-#include "system/Log.h"
 #include "scene/World3D.h"
-#include "tinyXML/tinyxml.h"
+#include "system/LowLevelSystem.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
@@ -50,6 +50,10 @@
 
 #include "scene/Light3DSpot.h"
 
+#include "haptic/Haptic.h"
+#include "haptic/LowLevelHaptic.h"
+#include "haptic/HapticShape.h"
+
 namespace hpl {
 
 	//////////////////////////////////////////////////////////////////////////
@@ -75,6 +79,8 @@ namespace hpl {
 		// Init
 		mvBodies.clear();
 		mvJoints.clear();
+
+		mvHapticShapes.clear();
 
 		mvParticleSystems.clear();
 		mvBillboards.clear();
@@ -469,6 +475,44 @@ namespace hpl {
 		}
 
 		////////////////////////////////////////
+		//Create Haptic
+		if(cHaptic::GetIsUsed())
+		{
+			iLowLevelHaptic *pLowLevelHaptic = apWorld->GetHaptic()->GetLowLevel();
+
+			for(size_t i=0; i<mvBodies.size(); ++i)
+			{
+				iPhysicsBody* pBody = mvBodies[i];
+
+				//Not Mesh
+				if(pBody->GetShape()->GetType() != eCollideShapeType_Mesh)
+				{
+					iHapticShape *pHShape = pLowLevelHaptic->CreateShapeFromPhysicsBody(
+															pBody->GetName(),pBody);
+					mvHapticShapes.push_back(pHShape);
+				}
+				//Mesh
+				else {
+					cSubMeshEntity *pSubEnt = mpEntity->GetSubMeshEntityName(pBody->GetName());
+
+					if(pSubEnt)
+					{
+						iHapticShape *pHShape = pLowLevelHaptic->CreateMeshShape(pBody->GetName(),
+															pSubEnt->GetSubMesh()->GetVertexBuffer());
+						pHShape->SetSubMeshEntity(pSubEnt);
+						mvHapticShapes.push_back(pHShape);
+					}
+					else
+					{
+						Error("Could not find sub mesh '%s' in '%s'\n",pBody->GetName().c_str(),
+																asFileName.c_str());
+					}
+				}
+
+			}
+		}
+
+		////////////////////////////////////////
 		// Create lights
 		for(int i=0; i< mpMesh->GetLightNum(); i++)
 		{
@@ -746,7 +790,7 @@ namespace hpl {
 			case ePhysicsJointType_Ball:
 				{
 					iPhysicsJointBall *pBallJoint = static_cast<iPhysicsJointBall*>(pJoint);
-					pBallJoint->SetConeLimits(cMath::ToRad(fMinValue),cMath::ToRad(fMaxValue));
+					pBallJoint->SetConeLimits(pBallJoint->GetPinDir(),cMath::ToRad(fMinValue),cMath::ToRad(fMaxValue));
 					break;
 				}
 			case ePhysicsJointType_Hinge:

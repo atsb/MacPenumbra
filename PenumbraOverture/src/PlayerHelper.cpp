@@ -215,9 +215,9 @@ void cPlayerPickRayCallback::OnWorldExit()
 
 //-----------------------------------------------------------------------
 
-bool cPlayerPickRayCallback::OnIntersect(iPhysicsBody *apBody, cPhysicsRayParams *apParams)
+bool cPlayerPickRayCallback::OnIntersect(iPhysicsBody *apBody,cPhysicsRayParams *apParams)
 {
-	float fDist = apParams->mfDist;
+	float &fDist = apParams->mfDist;
 	
 	//Must be positive
 	if(fDist < 0) return true;
@@ -548,7 +548,7 @@ cPlayerHealth::cPlayerHealth(cInit *apInit)
 
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
 	
-	mpDamageGfx = mpDrawer->CreateGfxObject("player_hurt.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpDamageGfx = mpDrawer->CreateGfxObject("player_hurt.bmp","diffalpha2d");
 
 	mfGfxAlpha =0;
 	mfGfxAlphaAdd =0;
@@ -949,7 +949,7 @@ void cPlayerLean::Update(float afTimeStep)
 
 		////////////////////
 		//Check collision
-		auto pCam = mpInit->mpPlayer->GetCamera();
+		cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 		iPhysicsWorld *pPhysicsWorld = mpInit->mpGame->GetScene()->GetWorld3D()->GetPhysicsWorld();
 		
 		float fReverseMov = fPrevMovement - mfMovement;
@@ -1033,14 +1033,14 @@ cPlayerDamage::cPlayerDamage(cInit *apInit)
 {
 	mpInit = apInit;
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
-//	mpPostEffects = mpInit->mpGame->GetGraphics()->GetRendererPostEffects();
+	mpPostEffects = mpInit->mpGame->GetGraphics()->GetRendererPostEffects();
 
 	mbActive = false;
 
 	mType = ePlayerDamageType_BloodSplash;
 
-	mvHitGfx[ePlayerDamageType_BloodSplash] = mpDrawer->CreateGfxObject("player_hit_blood_splash.bmp",eGfxMaterialType::DiffuseAlpha);
-	mvHitGfx[ePlayerDamageType_Ice] = mpDrawer->CreateGfxObject("player_hit_ice.bmp",eGfxMaterialType::DiffuseAlpha);
+	mvHitGfx[ePlayerDamageType_BloodSplash] = mpDrawer->CreateGfxObject("player_hit_blood_splash.bmp","diffalpha2d");
+	mvHitGfx[ePlayerDamageType_Ice] = mpDrawer->CreateGfxObject("player_hit_ice.bmp","diffalpha2d");
 
 	mvHeadSwingAcc = cVector2f(17.0f, 17.0f);
 }
@@ -1068,8 +1068,8 @@ void cPlayerDamage::Start(float afSize, ePlayerDamageType aType)
 	
 	if(!mpInit->mpPlayer->GetFearFilter()->IsActive())
 	{
-//		mpPostEffects->SetImageTrailActive(true);
-//		mpPostEffects->SetImageTrailAmount(0);
+		mpPostEffects->SetImageTrailActive(true);
+		mpPostEffects->SetImageTrailAmount(0);
 	}
 
 	mvHeadSwingSpeed = cVector2f(cMath::RandRectf(-1,1), cMath::RandRectf(0,0.5f));
@@ -1130,7 +1130,7 @@ void cPlayerDamage::Update(float afTimeStep)
 	{
 		if(!mpInit->mpPlayer->GetFearFilter()->IsActive())
 		{
-//			mpPostEffects->SetImageTrailAmount(mfAlpha *0.92f);
+			mpPostEffects->SetImageTrailAmount(mfAlpha *0.92f);
 		}
 	}
 
@@ -1142,8 +1142,8 @@ void cPlayerDamage::Update(float afTimeStep)
 		{
 			if(!mpInit->mpPlayer->GetFearFilter()->IsActive())
 			{
-//				mpPostEffects->SetImageTrailActive(false);
-//				mpPostEffects->SetImageTrailAmount(0);
+				mpPostEffects->SetImageTrailActive(false);
+				mpPostEffects->SetImageTrailAmount(0);
 			}
 		}
 	}
@@ -1170,10 +1170,10 @@ cPlayerDeath::cPlayerDeath(cInit *apInit)
 {
 	mpInit = apInit;
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
-//	mpPostEffects = mpInit->mpGame->GetGraphics()->GetRendererPostEffects();
+	mpPostEffects = mpInit->mpGame->GetGraphics()->GetRendererPostEffects();
 
-	mpFadeGfx = mpDrawer->CreateGfxObject("player_death_fade.bmp",eGfxMaterialType::Smoke);
-	mpBlackGfx = mpDrawer->CreateGfxObject("player_death_black.bmp",eGfxMaterialType::Smoke);
+	mpFadeGfx = mpDrawer->CreateGfxObject("player_death_fade.bmp","smoke2d");
+	mpBlackGfx = mpDrawer->CreateGfxObject("player_death_black.bmp","smoke2d");
 }
 
 cPlayerDeath::~cPlayerDeath()
@@ -1190,7 +1190,7 @@ void cPlayerDeath::Reset()
 	mfHeightAdd =0;
 	mfRoll =0;
 
-//	mpPostEffects->SetImageTrailActive(false);
+	mpPostEffects->SetImageTrailActive(false);
 }
 
 //-----------------------------------------------------------------------
@@ -1223,8 +1223,8 @@ void cPlayerDeath::Start()
 	mfFadeAlpha =0;
 	mfBlackAlpha = 0;
 
-//	mpPostEffects->SetImageTrailActive(true);
-//	mpPostEffects->SetImageTrailAmount(0.7f);
+	mpPostEffects->SetImageTrailActive(true);
+	mpPostEffects->SetImageTrailAmount(0.7f);
 
 	mpInit->mpPlayer->GetEarRing()->Stop(false);
 
@@ -1355,7 +1355,7 @@ void cPlayerFlashLight::Update(float afTimeStep)
 		{
 			mfRayCastTime =0;
 			
-			auto pCam = mpInit->mpPlayer->GetCamera();
+			cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 			iPhysicsWorld *pPhysicsWorld = mpInit->mpGame->GetScene()->GetWorld3D()->GetPhysicsWorld();
 			
 			iHudModel *pHudModel = mpInit->mpPlayerHands->GetModel("Flashlight");
@@ -1802,7 +1802,7 @@ void cPlayerFlare::SetActive(bool abX)
 
 		///////////////////////////////
 		//Create entity
-		auto pCam = mpInit->mpPlayer->GetCamera();
+		cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 
 		cVector3f vRot = cVector3f(pCam->GetPitch(),pCam->GetYaw(), pCam->GetRoll());
 		cMatrixf mtxStart = cMath::MatrixRotate(vRot, eEulerRotationOrder_XYZ);
@@ -1858,7 +1858,7 @@ cPlayerNoiseFilter::cPlayerNoiseFilter(cInit *apInit)
     for(int i=0; i<mlAmount; ++i)
 	{
 		tString sFileName = "effect_noise0"+cString::ToString(i);
-		const cGfxObject *pObject = mpDrawer->CreateGfxObject(sFileName,eGfxMaterialType::Smoke);
+		cGfxObject *pObject = mpDrawer->CreateGfxObject(sFileName,"smoke2d");
 		if(pObject==NULL)
 		{
 			FatalError("Error loading noise filter!\n");
@@ -1979,7 +1979,7 @@ void cPlayerFearFilter::Update(float afTimeStep)
 	{
 		mfAlpha += afTimeStep * 0.5f;
 		if(mfAlpha > mfMaxAlpha) mfAlpha = mfMaxAlpha;
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(mfAlpha);
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(mfAlpha);
 	}
 	else if(mfAlpha >0)
 	{
@@ -1987,11 +1987,11 @@ void cPlayerFearFilter::Update(float afTimeStep)
 		if(mfAlpha < 0)
 		{
 			mfAlpha =0;
-//			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
+			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
 		}
 		else
 		{
-//			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(mfAlpha);
+			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(mfAlpha);
 		}
 	}
 }
@@ -2014,8 +2014,8 @@ void cPlayerFearFilter::SetActive(bool abX)
 	mbActive = abX;
 	mfAlpha =0;
 
-//	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
-//	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0);
+	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
+	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0);
 }
 
 //-----------------------------------------------------------------------
@@ -2047,7 +2047,7 @@ void cPlayerLookAt::Update(float afTimeStep)
 {
 	if(mbActive==false) return;
 	
-	auto pCam = mpPlayer->GetCamera();
+	cCamera3D *pCam = mpPlayer->GetCamera();
 	cVector3f vGoalAngle = cMath::GetAngleFromPoints3D(pCam->GetPosition(),mvTargetPos);
 	
 	//Get distance to goal
@@ -2128,7 +2128,7 @@ cPlayerHidden::cPlayerHidden(cInit *apInit)
 	Reset();
 	
 	//Get images
-	mpInShadowGfx =  mpDrawer->CreateGfxObject("player_in_shadow.jpg",eGfxMaterialType::DiffuseAdditive);
+	mpInShadowGfx =  mpDrawer->CreateGfxObject("player_in_shadow.jpg","diffadditive2d");
 
 	//Get font
 	mpFont = mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt");
@@ -2224,7 +2224,7 @@ void cPlayerHidden::UnHide()
 
 	if(mbEnemyTooClose)
 	{
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
 	}
 
 	mfEnemyTooCloseCount =0;
@@ -2560,7 +2560,7 @@ bool cPlayerHidden::HasLineOfSight(iLight3D *pLight,iPhysicsWorld *pPhysicsWorld
 
 void cPlayerHidden::UpdateEnemyTooClose(float afTimeStep)
 {
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 	cWorld3D *pWorld = mpInit->mpGame->GetScene()->GetWorld3D();
 	if(pWorld==NULL) return;
 
@@ -2612,12 +2612,12 @@ void cPlayerHidden::UpdateEnemyTooClose(float afTimeStep)
 
         pCam->SetFOV(mfFov + fAdd);
 
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0.8f);
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0.8f);
 	}
 	else if(mfCloseEffectFov !=0)
 	{
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
 
 		if(mfCloseEffectFov < 0)
 		{
@@ -2742,7 +2742,7 @@ void cPlayerHidden::UpdateEnemyTooClose(float afTimeStep)
 		else if(mfEnemyTooCloseCount >0)
 		{
 			mfEnemyTooCloseCount-= afTimeStep;
-//			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
+			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
 		}
 	}
 

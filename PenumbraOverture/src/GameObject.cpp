@@ -213,7 +213,7 @@ void cEntityLoader_GameObject::BeforeLoad(TiXmlElement *apRootElem, const cMatri
 void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrixf &a_mtxTransform,
 										cWorld3D *apWorld)
 {
-	cGameObject *pObject = new cGameObject(mpInit,mpEntity->GetName());
+	cGameObject *pObject = hplNew( cGameObject, (mpInit,mpEntity->GetName()) );
 
 	pObject->msFileName = msFileName;
 	pObject->m_mtxOnLoadTransform = a_mtxTransform;
@@ -225,6 +225,9 @@ void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrix
 	pObject->SetParticleSystems(mvParticleSystems);
 	pObject->SetSoundEntities(mvSoundEntities);
 	pObject->SetLights(mvLights);
+#ifdef INCLUDE_HAPTIC
+	pObject->SetHapticShapes(mvHapticShapes);
+#endif
 
 	///////////////////////////////////
 	// Load game properties
@@ -261,6 +264,10 @@ void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrix
 
 		pObject->mbForceLightOffset = cString::ToBool(pGameElem->Attribute("ForceLightOffset"),false);
 		pObject->mvLightOffset = cString::ToVector3f(pGameElem->Attribute("LightOffset"),0);
+
+#ifdef INCLUDE_HAPTIC
+		pObject->mfHapticTorqueMul = cString::ToFloat(pGameElem->Attribute("HapticTorqueMul"),1.0f);
+#endif
 
 		////////////////////////////////////////////
 		//Disappear
@@ -335,7 +342,11 @@ void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrix
 		////////////////////////////////////////////
 		//Mode specific
 		
+#ifdef INCLUDE_HAPTIC
+		bool bPickModeVR = mpInit->mbHasHaptics;
+#else
 		bool bPickModeVR = false;
+#endif
 
 		//Push mode
 		if(pObject->mInteractMode == eObjectInteractMode_Push)
@@ -386,7 +397,7 @@ void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrix
 		}
 
 		//Add callback for all bodies
-		pObject->mpBodyCallback = new cGameObjectBodyCallback(mpInit,pObject);
+		pObject->mpBodyCallback = hplNew( cGameObjectBodyCallback, (mpInit,pObject) );
 		for(size_t i=0; i<mvBodies.size(); ++i)
 			mvBodies[i]->AddBodyCallback(pObject->mpBodyCallback);
 	}
@@ -410,6 +421,7 @@ void cEntityLoader_GameObject::AfterLoad(TiXmlElement *apRootElem, const cMatrix
 	// Add to map handler
 	mpInit->mpMapHandler->AddGameEntity(pObject);
 
+	pObject->SetUpTransMaterials();
 	pObject->SetupBreakObject();
 	pObject->SetupForceOffset();
 
@@ -463,7 +475,7 @@ cGameObject::cGameObject(cInit *apInit,const tString& asName) : iGameEntity(apIn
 
 cGameObject::~cGameObject(void)
 {
-	if(mpBodyCallback) delete  mpBodyCallback ;
+	if(mpBodyCallback) hplDelete( mpBodyCallback );
 }
 
 //-----------------------------------------------------------------------
@@ -477,7 +489,11 @@ cGameObject::~cGameObject(void)
 void cGameObject::OnPlayerPick()
 {
 	if(	mvCallbackScripts[eGameEntityScriptType_PlayerInteract] && 
-		mpInit->mpPlayer->GetPickedDist() < mfMaxInteractDist)
+		mpInit->mpPlayer->GetPickedDist() < mfMaxInteractDist
+#ifdef INCLUDE_HAPTIC
+	    && (mpInit->mbHasHaptics==false || mpInit->mpPlayer->mbProxyTouching)
+#endif
+	   )
 	{
 		mpInit->mpPlayer->SetCrossHairState(eCrossHairState_Active);
 	}
@@ -506,6 +522,10 @@ void cGameObject::OnPlayerInteract()
 	{
 		return;
 	}
+
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics && mpInit->mpPlayer->mbProxyTouching==false) return;
+#endif
 
 	switch(mInteractMode)
 	{
@@ -811,7 +831,7 @@ void cGameObject::SetupBreakObject()
 	{
 		cParticleSystem3D *pPS  = mpInit->mpGame->GetResources()->GetParticleManager()->CreatePS3D(
 															"",mBreakProps.msPS,1,cMatrixf::Identity);
-		delete  pPS ;
+		hplDelete( pPS );
 	}
 	if(mBreakProps.msSound!="")
 	{
@@ -856,6 +876,11 @@ void cGameObject::GrabObject()
 	}
 	
 	//Set some properties
+#ifdef INCLUDE_HAPTIC
+	mpInit->mpPlayer->mbGrabbingMoveBody = mbIsMover;
+	mpInit->mpPlayer->mfHapticTorqueMul = mfHapticTorqueMul;
+#endif
+	
 	mpInit->mpPlayer->mbPickAtPoint = mbPickAtPoint;
 	mpInit->mpPlayer->mbRotateWithPlayer = mbRotateWithPlayer;
 	mpInit->mpPlayer->mbUseNormalMass = mbUseNormalMass;
@@ -1071,7 +1096,7 @@ iGameEntity* cGameObject_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameObject::CreateSaveData()
 {
-	return new cGameObject_SaveData();
+	return hplNew( cGameObject_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

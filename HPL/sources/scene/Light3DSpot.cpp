@@ -18,14 +18,14 @@
  */
 #include "scene/Light3DSpot.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 #include "math/Math.h"
 #include "math/Frustum.h"
 #include "resources/TextureManager.h"
 #include "resources/Resources.h"
 #include "graphics/LowLevelGraphics.h"
 #include "graphics/Renderer3D.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 
 #include "scene/World3D.h"
 #include "scene/Scene.h"
@@ -56,7 +56,7 @@ namespace hpl {
 
 		mLightType = eLight3DType_Spot;
 
-		mpFrustum = new cFrustum();
+		mpFrustum = hplNew( cFrustum, () );
 
 		mlViewProjMatrixCount =-1;
 		mlViewMatrixCount =-1;
@@ -79,7 +79,7 @@ namespace hpl {
 	cLight3DSpot::~cLight3DSpot()
 	{
 		if(mpTexture) mpTextureManager->Destroy(mpTexture);
-		delete mpFrustum;
+		hplDelete(mpFrustum);
 	}
 
 	//-----------------------------------------------------------------------
@@ -339,7 +339,7 @@ namespace hpl {
 
 	iSaveData* cLight3DSpot::CreateSaveData()
 	{
-		return new cSaveData_cLight3DSpot();
+		return hplNew( cSaveData_cLight3DSpot, () );
 	}
 
 	//-----------------------------------------------------------------------

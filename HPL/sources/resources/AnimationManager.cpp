@@ -18,10 +18,11 @@
  */
 #include "resources/AnimationManager.h"
 #include "system/String.h"
-#include "system/Log.h"
+#include "system/System.h"
 #include "resources/Resources.h"
 #include "graphics/Mesh.h"
 #include "graphics/Animation.h"
+#include "system/LowLevelSystem.h"
 #include "resources/MeshLoaderHandler.h"
 #include "resources/FileSearcher.h"
 
@@ -35,7 +36,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cAnimationManager::cAnimationManager(cGraphics* apGraphic,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphic;
 		mpResources = apResources;
@@ -106,7 +108,7 @@ namespace hpl {
 			if(pTempMesh->GetAnimationNum()<=0)
 			{
 				Error("No animations found in '%s'\n",sPath.c_str());
-				delete pTempMesh;
+				hplDelete(pTempMesh);
 				EndLoad();
 				return NULL;
 			}
@@ -114,7 +116,7 @@ namespace hpl {
 			pAnimation = pTempMesh->GetAnimation(0);
 			pTempMesh->ClearAnimations(false);
 
-			delete pTempMesh;
+			hplDelete(pTempMesh);
 
 			AddResource(pAnimation);
 		}
@@ -141,7 +143,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

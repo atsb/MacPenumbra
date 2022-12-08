@@ -23,6 +23,9 @@
 #include "Inventory.h"
 #include "SaveHandler.h"
 #include "EffectHandler.h"
+#ifdef INCLUDE_HAPTIC
+#include "HapticGameCamera.h"
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // FRONT STATE
@@ -33,7 +36,7 @@
 cNotebookState_Front::cNotebookState_Front(cInit *apInit, cNotebook *apNotebook) : iNotebookState(apInit, apNotebook)
 {
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
-	mpTextBack = mpDrawer->CreateGfxObject("notebook_textback.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpTextBack = mpDrawer->CreateGfxObject("notebook_textback.bmp","diffalpha2d");
 	
 	mpFrontFont =  mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt");
 
@@ -171,8 +174,8 @@ cNotebookState_TaskList::cNotebookState_TaskList(cInit *apInit, cNotebook *apNot
 	//////////////////
 	//Options
 	mlSelected = -1;
-	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp","diffalpha2d");
+	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp","diffalpha2d");
 
 	mvOptions.resize(2);
 
@@ -390,8 +393,8 @@ void cNotebookState_TaskList::OnExit()
 cNotebookState_NoteList::cNotebookState_NoteList(cInit *apInit, cNotebook *apNotebook) : iNotebookState(apInit, apNotebook)
 {
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
-	mpTextBack = mpDrawer->CreateGfxObject("notebook_listtextback.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpTab = mpDrawer->CreateGfxObject("notebook_tab.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpTextBack = mpDrawer->CreateGfxObject("notebook_listtextback.bmp","diffalpha2d");
+	mpTab = mpDrawer->CreateGfxObject("notebook_tab.bmp","diffalpha2d");
 
 	mpTextFont =  mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt",14);
 
@@ -403,8 +406,8 @@ cNotebookState_NoteList::cNotebookState_NoteList(cInit *apInit, cNotebook *apNot
 	mlFirstNote =0;
 	mlSelected = -1;
 
-	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp","diffalpha2d");
+	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp","diffalpha2d");
 
 	mvOptions.resize(2);
 
@@ -663,8 +666,8 @@ void cNotebookState_NoteList::OnExit()
 cNotebookState_Note::cNotebookState_Note(cInit *apInit, cNotebook *apNotebook) : iNotebookState(apInit, apNotebook)
 {
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
-	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpOptionsImage[0] = mpDrawer->CreateGfxObject("notebook_nextpage.bmp","diffalpha2d");
+	mpOptionsImage[1] = mpDrawer->CreateGfxObject("notebook_prevpage.bmp","diffalpha2d");
 
 	mpTextFont =  mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("cour.fnt",14);
 	mpNavigateFont = mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt");
@@ -893,24 +896,24 @@ cNotebook::cNotebook(cInit *apInit)  : iUpdateable("Notebook")
 
 	Reset();
 
-	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp","diffalpha2d");
 	
-    mStateMachine.AddState(new cNotebookState_Front(mpInit,this),"Front",eNotebookState_Front,mpInit->mpGame->GetStepSize());
-	mStateMachine.AddState(new cNotebookState_TaskList(mpInit,this),"TaskList",eNotebookState_TaskList,mpInit->mpGame->GetStepSize());
-	mStateMachine.AddState(new cNotebookState_NoteList(mpInit,this),"NoteList",eNotebookState_NoteList,mpInit->mpGame->GetStepSize());
-	mStateMachine.AddState(new cNotebookState_Note(mpInit,this),"Note",eNotebookState_Note,mpInit->mpGame->GetStepSize());
+    mStateMachine.AddState(hplNew( cNotebookState_Front,(mpInit,this) ),"Front",eNotebookState_Front,mpInit->mpGame->GetStepSize());
+	mStateMachine.AddState(hplNew( cNotebookState_TaskList,(mpInit,this) ),"TaskList",eNotebookState_TaskList,mpInit->mpGame->GetStepSize());
+	mStateMachine.AddState(hplNew( cNotebookState_NoteList,(mpInit,this) ),"NoteList",eNotebookState_NoteList,mpInit->mpGame->GetStepSize());
+	mStateMachine.AddState(hplNew( cNotebookState_Note,(mpInit,this) ),"Note",eNotebookState_Note,mpInit->mpGame->GetStepSize());
 
 	///////////////////////
 	//Book types
 	mvBookTypes.resize(2);
 	
 	//front
-	mvBookTypes[0].mpGfxImage = mpDrawer->CreateGfxObject("notebook_front.bmp",eGfxMaterialType::DiffuseAlpha);
+	mvBookTypes[0].mpGfxImage = mpDrawer->CreateGfxObject("notebook_front.bmp","diffalpha2d");
 	mvBookTypes[0].mfAlpha = 1;
 	mvBookTypes[0].mType = eNotebookType_Front;
 
 	//open
-	mvBookTypes[1].mpGfxImage = mpDrawer->CreateGfxObject("notebook_open.bmp",eGfxMaterialType::DiffuseAlpha);
+	mvBookTypes[1].mpGfxImage = mpDrawer->CreateGfxObject("notebook_open.bmp","diffalpha2d");
 	mvBookTypes[1].mfAlpha = 0;
 	mvBookTypes[1].mType = eNotebookType_Open;
 }
@@ -1074,7 +1077,7 @@ tNotebook_NoteList_Iterator cNotebook::GetNoteIterator()
 
 cNotebook_Note* cNotebook::AddNote(const tWString &asName, const tString &asTextCat, const tString &asTextEntry)
 {
-	cNotebook_Note *pNote = new cNotebook_Note();
+	cNotebook_Note *pNote = hplNew( cNotebook_Note,() );
 	pNote->msName =asName;
 	
 	pNote->msTextCat = asTextCat;
@@ -1094,7 +1097,7 @@ void cNotebook::RemoveNote(const tString &asName)
 		cNotebook_Note *pNote = *it;
 		if(pNote->msName == asName)	{
 			it = mlstNotes.erase(it);
-			delete  pNote ;
+			hplDelete( pNote );
 		}
 		else{
 			++it;
@@ -1122,7 +1125,7 @@ void cNotebook::AddTask(const tString &asName, const tWString &asText)
 		}
 	}
 	
-	cNotebook_BookTask *pTask = new cNotebook_BookTask();
+	cNotebook_BookTask *pTask = hplNew( cNotebook_BookTask, () );
 	pTask->msName =asName;
 	pTask->msText =asText;
 
@@ -1141,7 +1144,7 @@ void cNotebook::RemoveTask(const tString &asName)
 		if(pTask->msName == asName)
 		{
 			it = mlstTasks.erase(it);
-			delete  pTask ;
+			hplDelete( pTask );
 		}
 		else
 		{
@@ -1166,6 +1169,11 @@ void cNotebook::SetActive(bool abX)
 	mbActive = abX;
 	if(mbActive)
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(false);
+#endif
+
 		mLastCrossHairState = mpInit->mpPlayer->GetCrossHairState();
 
 		if(mpInit->mpInventory->IsActive())
@@ -1187,6 +1195,11 @@ void cNotebook::SetActive(bool abX)
 	}
 	else
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(true);
+#endif
+
 		if(mbInventoryWasActive)
 		{
 			mpInit->mpInventory->SetActive(true);
@@ -1249,7 +1262,7 @@ void cNotebook::LoadFromGlobal(cNotebook_GlobalSave *apSave)
 		cContainerListIterator<cNotebookTask_GlobalSave> it = apSave->mlstTasks.GetIterator();
 		while(it.HasNext())
 		{
-			cNotebook_BookTask *pTask = new cNotebook_BookTask();
+			cNotebook_BookTask *pTask = hplNew( cNotebook_BookTask, () );
 			cNotebookTask_GlobalSave& saveTask = it.Next();
 
 			pTask->msName = saveTask.msName;
@@ -1265,7 +1278,7 @@ void cNotebook::LoadFromGlobal(cNotebook_GlobalSave *apSave)
 		cContainerListIterator<cNotebookNote_GlobalSave> it = apSave->mlstNotes.GetIterator();
 		while(it.HasNext())
 		{
-			cNotebook_Note *pNote = new cNotebook_Note();
+			cNotebook_Note *pNote = hplNew( cNotebook_Note, () );
 			cNotebookNote_GlobalSave &saveNote = it.Next();
 
 			pNote->mbRead = saveNote.mbRead;

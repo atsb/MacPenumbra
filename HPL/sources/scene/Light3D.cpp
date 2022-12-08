@@ -18,12 +18,13 @@
  */
 #include "scene/Light3D.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
+#include "system/LowLevelSystem.h"
 #include "graphics/LowLevelGraphics.h"
 #include "graphics/Renderer3D.h"
 #include "graphics/Mesh.h"
 #include "graphics/RenderList.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "math/Math.h"
 #include "scene/MeshEntity.h"
 #include "graphics/SubMesh.h"
@@ -35,7 +36,7 @@
 #include "graphics/BillBoard.h"
 #include "scene/SectorVisibility.h"
 #include "scene/PortalContainer.h"
-#include "system/Log.h"
+
 
 
 namespace hpl {
@@ -73,7 +74,7 @@ namespace hpl {
 	{
 		mpTextureManager->Destroy(mpFalloffMap);
 
-		if(mpVisSectorCont) delete mpVisSectorCont;
+		if(mpVisSectorCont) hplDelete(mpVisSectorCont);
 	}
 
 	//-----------------------------------------------------------------------
@@ -231,7 +232,7 @@ namespace hpl {
 			if(mlSectorVisibilityCount != GetMatrixUpdateCount())
 			{
 				mlSectorVisibilityCount = GetMatrixUpdateCount();
-				if(mpVisSectorCont) delete mpVisSectorCont;
+				if(mpVisSectorCont) hplDelete(mpVisSectorCont);
 
 				mpVisSectorCont = CreateSectorVisibility();
 				//Log("Creating Visibility container!\n");
@@ -325,7 +326,7 @@ namespace hpl {
 		//////////////////////////////////////////////////////////
 		// Cast shadows
 		if(mbCastShadows && apRenderSettings->mShowShadows != eRendererShowShadows_None
-			&& apRenderSettings->mpExtrudeProgram != NULL)
+			&& apRenderSettings->mpVtxExtrudeProgram != NULL)
 		{
 			//Get temp index array. (Remove this when the index pool
 			// is implemented.).
@@ -364,11 +365,22 @@ namespace hpl {
 			//Reset this variable so it can be used when rendering shadows.
 			apRenderSettings->mbMatrixWasNULL = false;
 
-			//Set the program.
-			if(apRenderSettings->mbLog)Log("Setting program: '%s'\n",
-											apRenderSettings->mpExtrudeProgram->GetName().c_str());
-			apRenderSettings->mpExtrudeProgram->Bind();
-			apRenderSettings->mpProgram = apRenderSettings->mpExtrudeProgram;
+			//Set the fragment program.
+			if(apRenderSettings->mpFragExtrudeProgram)
+			{
+				if(apRenderSettings->mbLog)Log("Setting fragment program: '%s'\n",
+													apRenderSettings->mpFragExtrudeProgram->GetName().c_str());
+				apRenderSettings->mpFragExtrudeProgram->Bind();
+				apRenderSettings->mpFragmentProgram = apRenderSettings->mpFragExtrudeProgram;
+
+			}
+
+
+			//Set the vertex program.
+			if(apRenderSettings->mbLog)Log("Setting vertex program: '%s'\n",
+											apRenderSettings->mpVtxExtrudeProgram->GetName().c_str());
+			apRenderSettings->mpVtxExtrudeProgram->Bind();
+			apRenderSettings->mpVertexProgram = apRenderSettings->mpVtxExtrudeProgram;
 
 			//Render shadows
 			tCasterCacheSetIt it = m_setDynamicCasters.begin();
@@ -467,7 +479,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cMatrixf* iLight3D::GetModelMatrix(cCamera *apCamera)
+	cMatrixf* iLight3D::GetModelMatrix(cCamera3D* apCamera)
 	{
 		mtxTemp = GetWorldMatrix();
 		return &mtxTemp;
@@ -510,7 +522,7 @@ namespace hpl {
 		tString sPath = mpFileSearcher->GetFilePath(asFile);
 		if(sPath != "")
 		{
-			TiXmlDocument *pDoc = new TiXmlDocument(sPath.c_str());
+			TiXmlDocument *pDoc = hplNew( TiXmlDocument,(sPath.c_str()) );
 			if(pDoc->LoadFile())
 			{
 				TiXmlElement *pRootElem = pDoc->RootElement();
@@ -537,7 +549,7 @@ namespace hpl {
 			{
 				Error("Couldn't load file '%s'\n",asFile.c_str());
 			}
-			delete pDoc;
+			hplDelete(pDoc);
 		}
 		else
 		{
@@ -758,7 +770,7 @@ namespace hpl {
 				//DEBUG:
 				/*if(!(bDoubleSided && Edge.invert_tri2==false))
 				{
-					//apRenderSettings->mpExtrudeProgram->UnBind();
+					//apRenderSettings->mpVtxExtrudeProgram->UnBind();
 					apLowLevelGraphics->SetDepthTestActive(false);
 					apLowLevelGraphics->SetStencilActive(false);
 					apLowLevelGraphics->DrawLine(
@@ -814,8 +826,8 @@ namespace hpl {
 		//object was static.
 		if(pModelMtx || apRenderSettings->mbMatrixWasNULL==false)
 		{
-			apRenderSettings->mpExtrudeProgram->SetVec3f("lightPosition", vLocalLight);
-			apRenderSettings->mpExtrudeProgram->SetMatrixIdentityf("worldViewProj", eGpuProgramMatrix_ViewProjection);
+			apRenderSettings->mpVtxExtrudeProgram->SetVec3f("lightPosition", vLocalLight);
+			apRenderSettings->mpVtxExtrudeProgram->SetMatrixIdentityf("worldViewProj", eGpuProgramMatrix_ViewProjection);
 
 			//If a null matrix has been set, let other passes know.
 			if(pModelMtx)

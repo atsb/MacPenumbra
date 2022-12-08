@@ -35,6 +35,8 @@ namespace hpl {
 		bool Run(const tString& asFuncLine);
 
 	private:
+		char* LoadCharBuffer(const tString& asFileName, int& alLength);
+
 		asIScriptEngine *mpEngine;
 		cScriptOutput *mpOutput;
 		asIScriptModule *mpModule;
@@ -72,8 +74,6 @@ namespace hpl {
 		 * \return
 		 */
 		bool AddScriptVar(const tString& asVarDecl, void *pVar);
-
-		asIScriptEngine* GetEngine() const { return mpEngine; };
 
 	private:
 		cResources* mpResources;

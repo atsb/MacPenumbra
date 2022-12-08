@@ -32,6 +32,7 @@ namespace hpl {
 	class iPhysicsWorld;
 	class iPhysicsBody;
 	class cResources;
+	class iHapticSurface;
 
 	//----------------------------------------
 
@@ -148,6 +149,9 @@ namespace hpl {
 		 */
 		cSurfaceImpactData* GetHitDataFromSpeed(float afSpeed);
 
+		iHapticSurface* GetHapticSurface(){return mpHapticSurface;}
+		void SetHapticSurface(iHapticSurface* apSurface){mpHapticSurface  = apSurface;}
+
 	protected:
 		cResources *mpResources;
 		cPhysics *mpPhysics;
@@ -189,6 +193,8 @@ namespace hpl {
 		tSurfaceImpactDataVec mvImpactData;
 
 		tSurfaceImpactDataVec mvHitData;
+
+		iHapticSurface* mpHapticSurface;
 	};
 };
 #endif // HPL_SURFACE_DATA_H

@@ -18,6 +18,8 @@
  */
 #include "scene/MeshEntity.h"
 
+#include "system/LowLevelSystem.h"
+
 #include "resources/Resources.h"
 #include "resources/MaterialManager.h"
 #include "resources/MeshManager.h"
@@ -47,7 +49,6 @@
 #include "physics/PhysicsWorld.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
 
 #include "game/Game.h"
 
@@ -101,7 +102,7 @@ namespace hpl {
 		for(int i=0;i<mpMesh->GetSubMeshNum();i++)
 		{
 			cSubMesh *pSubMesh = mpMesh->GetSubMesh(i);
-			cSubMeshEntity* pSub = new cSubMeshEntity(pSubMesh->GetName(),this,pSubMesh,mpMaterialManager);
+			cSubMeshEntity* pSub = hplNew( cSubMeshEntity, (pSubMesh->GetName(),this,pSubMesh,mpMaterialManager) );
 
 			//Log("Creating sub entity %s\n",pSub->GetName().c_str());
 
@@ -138,7 +139,7 @@ namespace hpl {
 		{
 			cAnimation* pAnimation = mpMesh->GetAnimation(i);
 
-			cAnimationState* pAnimState = new cAnimationState(pAnimation,pAnimation->GetName(),NULL);
+			cAnimationState* pAnimState = hplNew( cAnimationState, (pAnimation,pAnimation->GetName(),NULL) );
 
 			mvAnimationStates.push_back(pAnimState);
 
@@ -157,10 +158,10 @@ namespace hpl {
 			mvNodeStates.reserve(mpMesh->GetNodeNum());
 
 			//Create the root node and attach all node without parents to this.
-			mpRootNode = new cNode3D("NodeRoot",false);
+			mpRootNode = hplNew( cNode3D, ("NodeRoot",false) );
 
 			//Create the root callback
-			mpRootCallback = new cMeshEntityRootNodeUpdate();
+			mpRootCallback = hplNew( cMeshEntityRootNodeUpdate, () );
 			this->AddCallback(mpRootCallback);
 
 			//Fill the node array.
@@ -168,7 +169,7 @@ namespace hpl {
 			{
 				cNode3D* pMeshNode = mpMesh->GetNode(i);
 
-				cBoneState *pNode = new cBoneState(pMeshNode->GetName(), false);
+				cBoneState *pNode = hplNew( cBoneState, (pMeshNode->GetName(), false) );
 				pNode->SetMatrix(pMeshNode->GetLocalMatrix());
 
 				/*Log("Node: %s has local translate: %s world translate: %s\n",
@@ -271,10 +272,10 @@ namespace hpl {
 			if(mpRootNode==NULL)
 			{
 				//Create the root node and attach all node without parents to this.
-				mpRootNode = new cNode3D("NodeRoot",false);
+				mpRootNode = hplNew( cNode3D, ("NodeRoot",false) );
 
 				//Create the root callback
-				mpRootCallback = new cMeshEntityRootNodeUpdate();
+				mpRootCallback = hplNew( cMeshEntityRootNodeUpdate, () );
 				this->AddCallback(mpRootCallback);
 			}
 
@@ -286,7 +287,7 @@ namespace hpl {
 			{
 				cBone* pBone = pSkeleton->GetBoneByIndex(i);
 
-				cBoneState *pState = new cBoneState(pBone->GetName(), false);
+				cBoneState *pState = hplNew( cBoneState,(pBone->GetName(), false) );
 				pState->SetMatrix(pBone->GetLocalTransform());
 
 				//Log("Created bone state: '%s'\n",pState->GetName());
@@ -353,7 +354,7 @@ namespace hpl {
 			mvTempBoneStates.resize(mvBoneStates.size());
 			for(size_t i=0;i < mvTempBoneStates.size(); i++)
 			{
-				mvTempBoneStates[i] = new cBoneState(mvBoneStates[i]->GetName(),false);
+				mvTempBoneStates[i] = hplNew( cBoneState,(mvBoneStates[i]->GetName(),false));
 			}
 		}
 
@@ -381,11 +382,11 @@ namespace hpl {
 
 		for(int i=0;i<(int)mvSubMeshes.size();i++)
 		{
-			delete mvSubMeshes[i];
+			hplDelete(mvSubMeshes[i]);
 		}
 
-		if(mpRootNode) delete mpRootNode;
-		if(mpRootCallback) delete mpRootCallback;
+		if(mpRootNode) hplDelete(mpRootNode);
+		if(mpRootCallback) hplDelete(mpRootCallback);
 
 		mpMeshManager->Destroy(mpMesh);
 
@@ -854,7 +855,7 @@ namespace hpl {
 
 	cAnimationState* cMeshEntity::AddAnimation(cAnimation *apAnimation,const tString &asName, float afBaseSpeed)
 	{
-		cAnimationState* pAnimState = new cAnimationState(apAnimation,asName,mpAnimationManager);
+		cAnimationState* pAnimState = hplNew( cAnimationState, (apAnimation,asName,mpAnimationManager) );
 
 		pAnimState->SetBaseSpeed(afBaseSpeed);
 
@@ -1139,7 +1140,7 @@ namespace hpl {
 
 	bool cMeshEntity::CheckColliderShapeCollision(iPhysicsWorld *apWorld,
 						iCollideShape *apShape, const cMatrixf &a_mtxShape,
-						tVector3fList *apPosList, tIntVec *apNumVec)
+						tVector3fList *apPosList, tIntList *apNumList)
 	{
 		bool bCollision = false;
 		cCollideData collideData;
@@ -1162,10 +1163,10 @@ namespace hpl {
 			if(bRet)
 			{
 				bCollision = true;
-				if(!apPosList && !apNumVec) break;
+				if(!apPosList && !apNumList) break;
 
-				if (apPosList) apPosList->push_back(collideData.mvContactPoints[0].mvPoint);
-				if (apNumVec) apNumVec->push_back((int)i);
+				if(apPosList) apPosList->push_back(collideData.mvContactPoints[0].mvPoint);
+				if(apNumList) apNumList->push_back((int)i);
 			}
 		}
 
@@ -1258,7 +1259,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void cMeshEntity::UpdateGraphics(cCamera *apCamera,float afFrameTime, cRenderList *apRenderList)
+	void cMeshEntity::UpdateGraphics(cCamera3D *apCamera,float afFrameTime, cRenderList *apRenderList)
 	{
 		//Update the bone matrices
 		cSkeleton *pSkeleton = mpMesh->GetSkeleton();
@@ -1390,7 +1391,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cMatrixf*  cMeshEntity::GetModelMatrix(cCamera *apCamera)
+	cMatrixf*  cMeshEntity::GetModelMatrix(cCamera3D *apCamera)
 	{
 		mtxTemp = GetWorldMatrix();
 		return &mtxTemp;
@@ -1623,7 +1624,7 @@ namespace hpl {
 
 	iSaveData* cMeshEntity::CreateSaveData()
 	{
-		return new cSaveData_cMeshEntity();
+		return hplNew( cSaveData_cMeshEntity, () );
 	}
 
 	//-----------------------------------------------------------------------

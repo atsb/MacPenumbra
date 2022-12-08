@@ -182,6 +182,12 @@ public:
 	void SetBeams(std::vector<cBeam*> &avBeams){mvBeams = avBeams;}
 	void SetSoundEntities(std::vector<cSoundEntity*> &avSoundEntities){mvSoundEntities = avSoundEntities;}
 
+#ifdef INCLUDE_HAPTIC
+	size_t GetHapticShapeNum(){ return mvHapticShapes.size();}
+	iHapticShape* GetHapticShape(size_t alNum){ return mvHapticShapes[alNum];}
+	void SetHapticShapes(std::vector<iHapticShape*> &avShapes){mvHapticShapes = avShapes;}
+#endif
+
 	void DestroyLight(iLight3D *apLight);
 	void DestroyParticleSystem(cParticleSystem3D* apPS);
 	void DestroyBillboard(cBillboard* apBillboard);
@@ -243,6 +249,9 @@ public:
 
     void SetCharBody(iCharacterBody *apCharBody){ mpCharBody = apCharBody;}
 	iCharacterBody* SetCharBody(){ return mpCharBody;}
+
+	void SetUpTransMaterials();
+	void SetTransActive(bool abX);
 
 	void SetPauseControllers(bool abX){ mbPauseControllers = abX;}
 	bool GetPauseControllers(){ return mbPauseControllers;}
@@ -316,6 +325,8 @@ protected:
 	std::vector<iPhysicsBody*> mvBodies;
 	std::vector<iPhysicsJoint*> mvJoints;
 
+	std::vector<iHapticShape*> mvHapticShapes;
+	
 	std::vector<iLight3D*> mvLights;
 	std::vector<cParticleSystem3D*> mvParticleSystems;
 	std::vector<cBillboard*> mvBillboards;
@@ -325,6 +336,11 @@ protected:
 	bool mbSaveLights;
 	
 	cMeshEntity *mpMeshEntity;
+
+	std::vector<iMaterial*> mvNormalMaterials;
+	std::vector<iMaterial*> mvTransMaterials;
+	bool mbTransActive;
+	bool mbTransShadow;
 
 	cVector3f mvLastImpulse; 
 

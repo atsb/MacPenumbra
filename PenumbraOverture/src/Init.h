@@ -44,7 +44,6 @@ class cRadioHandler;
 class cMapLoadText;
 class cPreMenu;
 class cCredits;
-class cDebugMenu;
 
 class cIntroStory;
 
@@ -106,7 +105,7 @@ public:
 	cGame *mpGame;
 	cScriptModule *mpGlobalScript;
 
-	FontData *mpDefaultFont;
+	iFontData *mpDefaultFont;
 	
 	//Main properties
 	cVector2l mvScreenSize;
@@ -121,6 +120,27 @@ public:
 	int mlFSAA;
 	eGameDifficulty mDifficulty;
 
+#ifdef INCLUDE_HAPTIC
+	bool mbHasHaptics;
+	bool mbHasHapticsOnRestart;
+	bool mbHapticsAvailable;
+	float mfHapticForceMul;
+	float mfHapticMoveScreenSpeedMul;
+	float mfHapticScale;
+	float mfHapticProxyRadius;
+	float mfHapticOffsetZ;
+	float mfHapticMaxInteractDist;
+
+	bool mbSimpleWeaponSwing;
+	bool mbSimpleSwingInOptions;
+#endif
+
+	int mlMaxSoundChannels;
+    int mlStreamUpdateFreq;
+	bool mbUseSoundHardware;
+	bool mbUseSoundThreading;
+	int mlMaxMonoChannelsHint;
+	int mlMaxStereoChannelsHint;
 	tString msDeviceName;
 
 	ePhysicsAccuracy mPhysicsAccuracy;
@@ -171,7 +191,6 @@ public:
 	cMapLoadText *mpMapLoadText;
 	cPreMenu *mpPreMenu;
 	cCredits *mpCredits;
-	cDebugMenu *mpDebugMenu;
 	
 	cMainMenu *mpMainMenu;
 

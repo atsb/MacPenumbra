@@ -155,7 +155,7 @@ private:
 	float mfTerrorCheckCount;
 	int mlTerrorLevel;
 
-	const cGfxObject *mpDamageGfx;
+	cGfxObject *mpDamageGfx;
 };
 
 //---------------------------------------------
@@ -246,13 +246,13 @@ private:
 
 	float mfSize;
 
-	const cGfxObject *mvHitGfx[ePlayerDamageType_LastEnum];
+	cGfxObject *mvHitGfx[ePlayerDamageType_LastEnum];
 
 	ePlayerDamageType mType;
 
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
-//	cRendererPostEffects *mpPostEffects;
+	cRendererPostEffects *mpPostEffects;
 };
 
 //---------------------------------------------
@@ -283,8 +283,8 @@ private:
 
 	float mfMinHeightAdd;
 
-	const cGfxObject *mpFadeGfx;
-	const cGfxObject *mpBlackGfx;
+	cGfxObject *mpFadeGfx;
+	cGfxObject *mpBlackGfx;
 
 	bool mbStartFade;
 	float mfFadeAlpha;
@@ -292,7 +292,7 @@ private:
 
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
-//	cRendererPostEffects *mpPostEffects;
+	cRendererPostEffects *mpPostEffects;
 };
 
 //---------------------------------------------
@@ -430,7 +430,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	std::vector<const cGfxObject*> mvGfxNoise;
+	std::vector<cGfxObject*> mvGfxNoise;
 	tIntVec mvCurrentGfx;
 };
 
@@ -521,7 +521,7 @@ private:
 	cGraphicsDrawer *mpDrawer;
 	cSoundHandler *mpSoundHandler;
 
-	const cGfxObject *mpInShadowGfx;
+	cGfxObject *mpInShadowGfx;
 
 	iLight3D *mpLight;
 
@@ -571,7 +571,7 @@ private:
 
 	bool mbIntersected;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 };
 
 

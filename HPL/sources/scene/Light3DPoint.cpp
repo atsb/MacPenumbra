@@ -20,7 +20,7 @@
 
 #include "graphics/LowLevelGraphics.h"
 #include "graphics/Renderer3D.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "math/Math.h"
 
 #include "scene/World3D.h"
@@ -110,7 +110,7 @@ namespace hpl {
 
 	iSaveData* cLight3DPoint::CreateSaveData()
 	{
-		return new cSaveData_cLight3DPoint();
+		return hplNew( cSaveData_cLight3DPoint, () );
 	}
 
 	//-----------------------------------------------------------------------

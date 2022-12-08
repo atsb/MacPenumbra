@@ -22,11 +22,10 @@
 #include "math/MathTypes.h"
 #include "system/SystemTypes.h"
 #include "graphics/GraphicsTypes.h"
-#include "graphics/Bitmap.h"
+#include "graphics/Bitmap2D.h"
 #include "graphics/Texture.h"
 #include "graphics/GPUProgram.h"
 #include "graphics/VertexBuffer.h"
-#include "graphics/GfxBatch.h"
 
 namespace hpl {
 
@@ -59,6 +58,11 @@ namespace hpl {
 		eTextureParam_ColorOp0,
 		eTextureParam_ColorOp1,
 		eTextureParam_ColorOp2,
+		eTextureParam_AlphaOp0,
+		eTextureParam_AlphaOp1,
+		eTextureParam_AlphaOp2,
+		eTextureParam_ColorScale,
+		eTextureParam_AlphaScale,
 		eTextureParam_LastEnum
 	};
 
@@ -180,24 +184,36 @@ namespace hpl {
 		eGraphicCaps_LastEnum
 	};
 
+	typedef tFlag tVtxBatchFlag;
+
+	#define eVtxBatchFlag_Normal		(0x00000001)
+	#define eVtxBatchFlag_Position		(0x00000002)
+	#define eVtxBatchFlag_Color0		(0x00000004)
+	#define eVtxBatchFlag_Texture0		(0x00000008)
+	#define eVtxBatchFlag_Texture1		(0x00000010)
+	#define eVtxBatchFlag_Texture2		(0x00000020)
+
 	#define kMaxClipPlanes (6)
 
+	class iFontData;
 	class iOcclusionQuery;
 
 	class iLowLevelGraphics
 	{
 	public:
-		virtual ~iLowLevelGraphics() = default;
+		virtual ~iLowLevelGraphics(){}
 		/**
 		 * Sets the video mode. Must only be called ONCE!
 		 * \param alWidth
 		 * \param alHeight
+		 * \param alBpp
 		 * \param abFullscreen
 		 * \param alMultiSampling The amount of multisamplimg, 0 = off.
 		 * \return
 		 */
-		virtual bool Init(int alWidth, int alHeight, bool abFullscreen, int alMultisampling,
-							const tString& asWindowCaption) = 0;
+		virtual bool Init(int alWidth, int alHeight, int alBpp, int abFullscreen, int alMultisampling,
+							const tString& asWindowCaption)=0;
+
 
 		/**
 		 * Get the capabilities of the graphics. Th return value depends on the capability
@@ -239,14 +255,18 @@ namespace hpl {
 		virtual cPlanef GetClipPlane(int alIdx, const cPlanef& aPlane)=0;
 		virtual void SetClipPlaneActive(int alIdx, bool abX)=0;
 
+		virtual iBitmap2D* CreateBitmap2D(const cVector2l &avSize, unsigned int alBpp)=0;
+		virtual iFontData* CreateFontData(const tString &asName)=0;
+
 		virtual iTexture* CreateTexture(bool abUseMipMaps, eTextureType aType, eTextureTarget aTarget)=0;
 		virtual iTexture* CreateTexture(const tString &asName,bool abUseMipMaps, eTextureType aType, eTextureTarget aTarget)=0;
-		virtual iTexture* CreateTexture(const Bitmap& source, bool abUseMipMaps, eTextureType aType, eTextureTarget aTarget)=0;
+		virtual iTexture* CreateTexture(iBitmap2D* apBmp,bool abUseMipMaps, eTextureType aType,
+										eTextureTarget aTarget)=0;
 		virtual iTexture* CreateTexture(const cVector2l& avSize,int alBpp,cColor aFillCol,
 									bool abUseMipMaps, eTextureType aType, eTextureTarget aTarget)=0;
 
 
-		virtual iGpuProgram* CreateGpuProgram(const tString& asName)=0;
+		virtual iGpuProgram* CreateGpuProgram(const tString& asName, eGpuProgramType aType)=0;
 
 		//TODO: Kinda quick and diry, better to have a screen to Bitmap.
 		// and then a save as in the Bitmap.
@@ -316,6 +336,9 @@ namespace hpl {
 		virtual void SetTextureEnv(eTextureParam aParam, int alVal)=0;
 		virtual void SetTextureConstantColor(const cColor &aColor)=0;
 
+		//COLOR
+		virtual void SetColor(const cColor &aColor)=0;
+
 		//BLENDING
 		virtual void SetBlendActive(bool abX)=0;
 		virtual void SetBlendFunc(eBlendFunc aSrcFactor, eBlendFunc aDestFactor)=0;
@@ -327,19 +350,69 @@ namespace hpl {
 								eVertexBufferUsageType aUsageType,
 								int alReserveVtxSize=0,int alReserveIdxSize=0)=0;
 
+		virtual void DrawRect(const cVector2f &avPos,const cVector2f &avSize,float afZ)=0;
+
+		virtual void DrawTri(const tVertexVec &avVtx)=0;
+		virtual void DrawTri(const cVertex* avVtx)=0;
+
 		virtual void DrawQuad(const tVertexVec &avVtx)=0;
 		virtual void DrawQuad(const tVertexVec &avVtx, const cColor aCol)=0;
+		virtual void DrawQuad(const tVertexVec &avVtx,const float afZ)=0;
+		virtual void DrawQuad(const tVertexVec &avVtx,const float afZ,const cColor &aCol)=0;
 		virtual void DrawQuadMultiTex(const tVertexVec &avVtx,const tVector3fVec &avExtraUvs)=0;
 
 		//VERTEX BATCHER
-		virtual void DrawBatch(const cGfxBatch &batch, tGfxBatchAttrs attrs, eBatchDrawMode drawMode)=0;
+		virtual void AddVertexToBatch(const cVertex *apVtx)=0;
+		virtual void AddVertexToBatch(const cVertex *apVtx, const cVector3f* avTransform)=0;
+		virtual void AddVertexToBatch(const cVertex *apVtx, const cMatrixf* aMtx)=0;
+
+		virtual void AddVertexToBatch_Size2D(const cVertex *apVtx, const cVector3f* avTransform,
+									const cColor* apCol,const float& mfW, const float& mfH)=0;
+
+		virtual void AddVertexToBatch_Raw(	const cVector3f& avPos, const cColor &aColor,
+											const cVector3f& avTex)=0;
+
+
+		virtual void AddIndexToBatch(int alIndex)=0;
+
+		virtual void AddTexCoordToBatch(unsigned int alUnit,const cVector3f *apCoord)=0;
+		virtual void SetBatchTextureUnitActive(unsigned int alUnit,bool abActive)=0;
+
+		//Add more ways to add Vertex to the batch?
+		//Index array, vtxArray, etc perhaps?
+
+		virtual void FlushTriBatch(tVtxBatchFlag aTypeFlags, bool abAutoClear=true)=0;
+		virtual void FlushQuadBatch(tVtxBatchFlag aTypeFlags, bool abAutoClear=true)=0;
+		virtual void ClearBatch()=0;
 
 		//some primitive:
 		virtual void DrawLine(const cVector3f& avBegin, const cVector3f& avEnd, cColor aCol)=0;
 		virtual void DrawBoxMaxMin(const cVector3f& avMax, const cVector3f& avMin, cColor aCol)=0;
 		virtual void DrawSphere(const cVector3f& avPos, float afRadius, cColor aCol)=0;
 
+
+		virtual void DrawLine2D(const cVector2f& avBegin, const cVector2f& avEnd, float afZ, cColor aCol)=0;
+		virtual void DrawLineRect2D(const cRect2f& aRect, float afZ, cColor aCol)=0;
+		virtual void DrawLineCircle2D(const cVector2f& avCenter, float afRadius, float afZ, cColor aCol)=0;
+
+		virtual void DrawFilledRect2D(const cRect2f& aRect, float afZ, cColor aCol)=0;
 		// GENERAL
+		/**
+		 * All further drawing operations are rendered to this texture.
+		 * \param pTex Texture to render to. NULL = screen (frame buffer)
+		 */
+		virtual void SetRenderTarget(iTexture* pTex)=0;
+		/**
+		 * Check if the render target uses a z buffer when drawing.
+		 * \return
+		 */
+		virtual bool RenderTargetHasZBuffer()=0;
+		/**
+		 * Makes sure the render target is drawn to the target.
+		 * Not useful for all implementations.
+		 */
+		virtual void FlushRenderTarget()=0;
+
 		/**
 		 * Copies the current frame buffer to a texture.
 		 * \param apTex The texture the framebuffer is copied to.
@@ -349,11 +422,8 @@ namespace hpl {
 		 */
 		virtual void CopyContextToTexure(iTexture* apTex, const cVector2l &avPos,
 										const cVector2l &avSize, const cVector2l &avTexOffset=0)=0;
-
-		virtual void StartFrame()=0;
 		virtual void FlushRendering()=0;
 		virtual void SwapBuffers()=0;
-		virtual void EndFrame()=0;
 	};
 };
 #endif // HPL_LOWLEVELGRAPHICS_H

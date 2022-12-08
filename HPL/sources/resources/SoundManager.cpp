@@ -17,12 +17,12 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "resources/SoundManager.h"
+#include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "sound/Sound.h"
 #include "sound/SoundData.h"
 #include "sound/LowLevelSound.h"
-#include "system/String.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -33,7 +33,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cSoundManager::cSoundManager(cSound* apSound,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpSound = apSound;
 		mpResources = apResources;
@@ -107,7 +108,7 @@ namespace hpl {
 			if(pData->IsStream() && pData->HasUsers()==false)
 			{
 				RemoveResource(pData);
-				delete pData;
+				hplDelete(pData);
 			}
 		}
 	}
@@ -123,7 +124,7 @@ namespace hpl {
 		{
 			iResourceBase* pData = it->second;
 			RemoveResource(pData);
-			delete pData;
+			hplDelete(pData);
 
 			it= m_mapHandleResources.begin();
 		}
@@ -143,9 +144,9 @@ namespace hpl {
 
 		if(cString::GetFileExt(asName)=="")
 		{
-			for(const tString& sExt : mlstFileFormats)
+			for(tStringListIt it = mlstFileFormats.begin();it!=mlstFileFormats.end();++it)
 			{
-				tString sNewName = cString::SetFileExt(asName, sExt);
+				tString sNewName = cString::SetFileExt(asName,*it);
 				pData = static_cast<iSoundData*> (FindLoadedResource(sNewName, asFilePath));
 
 				if((pData==NULL && asFilePath!="") || pData!=NULL)break;

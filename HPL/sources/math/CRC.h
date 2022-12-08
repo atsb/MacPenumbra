@@ -19,12 +19,10 @@
 #ifndef HPL_CRC_H
 #define HPL_CRC_H
 
-#include <stdint.h>
-
 namespace hpl {
 	//----------------------------------------
 
-	typedef uintptr_t tCRCKey;
+	typedef unsigned long tCRCKey;
 
 	//----------------------------------------
 

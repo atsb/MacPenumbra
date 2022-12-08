@@ -17,6 +17,7 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "script/ScriptVar.h"
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 

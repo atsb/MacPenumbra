@@ -19,7 +19,6 @@
 #include "game/Game.h"
 
 #include "system/System.h"
-#include "system/Log.h"
 #include "system/LogicTimer.h"
 #include "system/String.h"
 #include "input/Input.h"
@@ -31,6 +30,7 @@
 #include "script/ScriptFuncs.h"
 #include "graphics/Renderer3D.h"
 
+#include "system/LowLevelSystem.h"
 #include "game/LowLevelGameSetup.h"
 
 namespace hpl {
@@ -39,7 +39,7 @@ namespace hpl {
 	// FPS COUNTER
 	//////////////////////////////////////////////////////////////////////////
 
-	cFPSCounter::cFPSCounter()
+	cFPSCounter::cFPSCounter(iLowLevelSystem* apLowLevelSystem)
 	{
 		mfFPS = 60;
 
@@ -49,22 +49,92 @@ namespace hpl {
 
 		mfUpdateRate = 1;
 
-		mfFrametimestart = GetAppTimeFloat();
+		mpLowLevelSystem = apLowLevelSystem;
+
+		mfFrametimestart = ((float)GetApplicationTime()) / 1000.0f;
 	}
 
 	void cFPSCounter::AddFrame()
 	{
 		mlFramecounter++;
 
-		mfFrametime = GetAppTimeFloat() - mfFrametimestart;
+		mfFrametime = (((float)GetApplicationTime()) / 1000.0f) - mfFrametimestart;
 
 		// update the timer
 		if (mfFrametime >= mfUpdateRate)
 		{
 			mfFPS = ((float)mlFramecounter)/mfFrametime;
 			mlFramecounter = 0;
-			mfFrametimestart = GetAppTimeFloat();
+			mfFrametimestart = ((float)GetApplicationTime()) / 1000.0f;
 		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// SETUP VAR CONTAINER
+	//////////////////////////////////////////////////////////////////////////
+
+	//-----------------------------------------------------------------------
+
+	cSetupVarContainer::cSetupVarContainer()
+	{
+		msBlank = "";
+	}
+
+	//-----------------------------------------------------------------------
+
+
+	void cSetupVarContainer::AddString(const tString& asName, const tString& asValue)
+	{
+		std::map<tString, tString>::value_type val(asName,asValue);
+		m_mapVars.insert(val);
+	}
+
+	void cSetupVarContainer::AddInt(const tString& asName, int alValue)
+	{
+		AddString(asName, cString::ToString(alValue));
+	}
+	void cSetupVarContainer::AddFloat(const tString& asName, float afValue)
+	{
+		AddString(asName, cString::ToString(afValue));
+	}
+	void cSetupVarContainer::AddBool(const tString& asName, bool abValue)
+	{
+		AddString(asName, abValue ? "true" : "false");
+	}
+
+	//-----------------------------------------------------------------------
+
+
+	const tString& cSetupVarContainer::GetString(const tString& asName)
+	{
+		std::map<tString, tString>::iterator it = m_mapVars.find(asName);
+		if(it == m_mapVars.end()) return msBlank;
+		else return it->second;
+	}
+
+	float cSetupVarContainer::GetFloat(const tString& asName, float afDefault)
+	{
+		const tString& sVal = GetString(asName);
+		if(sVal == "")
+			return afDefault;
+		else
+			return cString::ToFloat(sVal.c_str(),afDefault);
+	}
+	int cSetupVarContainer::GetInt(const tString& asName, int alDefault)
+	{
+		const tString& sVal = GetString(asName);
+		if(sVal == "")
+			return alDefault;
+		else
+			return cString::ToInt(sVal.c_str(),alDefault);
+	}
+	bool cSetupVarContainer::GetBool(const tString& asName, bool abDefault)
+	{
+		const tString& sVal = GetString(asName);
+		if(sVal == "")
+			return abDefault;
+		else
+			return cString::ToBool(sVal.c_str(),abDefault);
 	}
 
 	//-----------------------------------------------------------------------
@@ -75,27 +145,30 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cGame::cGame(iLowLevelGameSetup *apGameSetup, GameSetupOptions &options)
+	cGame::cGame(iLowLevelGameSetup *apGameSetup, cSetupVarContainer &aVars)
 	{
-		GameInit(apGameSetup, options);
+		GameInit(apGameSetup,aVars);
 	}
 
 
 	//-----------------------------------------------------------------------
 
-	cGame::cGame(iLowLevelGameSetup *apGameSetup, int alWidth, int alHeight, bool abFullscreen, int alMultisampling)
+	cGame::cGame(iLowLevelGameSetup *apGameSetup,int alWidth, int alHeight, int alBpp, bool abFullscreen,
+					unsigned int alUpdateRate,int alMultisampling)
 	{
-		GameSetupOptions options{};
-		options.ScreenWidth = alWidth;
-		options.ScreenHeight = alHeight;
-		options.Fullscreen = abFullscreen;
-		options.Multisampling = alMultisampling;
-		GameInit(apGameSetup, options);
+		cSetupVarContainer Vars;
+		Vars.AddInt("ScreenWidth",alWidth);
+		Vars.AddInt("ScreenHeight",alHeight);
+		Vars.AddInt("ScreenBpp",alBpp);
+		Vars.AddBool("Fullscreen",abFullscreen);
+		Vars.AddInt("Multisampling",alMultisampling);
+		Vars.AddInt("LogicUpdateRate",alUpdateRate);
+		GameInit(apGameSetup,Vars);
 	}
 
 	//-----------------------------------------------------------------------
 
-	void cGame::GameInit(iLowLevelGameSetup *apGameSetup, GameSetupOptions &options)
+	void cGame::GameInit(iLowLevelGameSetup *apGameSetup, cSetupVarContainer &aVars)
 	{
 		mpGameSetup = apGameSetup;
 
@@ -106,11 +179,14 @@ namespace hpl {
 		Log(" Creating graphics module\n");
 		mpGraphics = mpGameSetup->CreateGraphics();
 
+		Log(" Creating system module\n");
+		mpSystem = mpGameSetup->CreateSystem();
+
 		Log(" Creating resource module\n");
-		mpResources = mpGameSetup->CreateResources();
+		mpResources = mpGameSetup->CreateResources(mpGraphics);
 
 		Log(" Creating input module\n");
-		mpInput = mpGameSetup->CreateInput();
+		mpInput = mpGameSetup->CreateInput(mpGraphics);
 
 		Log(" Creating sound module\n");
 		mpSound = mpGameSetup->CreateSound();
@@ -121,28 +197,48 @@ namespace hpl {
 		Log(" Creating ai module\n");
 		mpAI = mpGameSetup->CreateAI();
 
+#ifdef INCLUDE_HAPTIC
+		Log(" Creating haptic module\n");
+		mpHaptic = mpGameSetup->CreateHaptic();
+#else
+		mpHaptic = NULL;
+#endif
+
 		Log(" Creating script module\n");
 		mpScript = mpGameSetup->CreateScript(mpResources);
 
 		Log(" Creating scene module\n");
-		mpScene = new cScene(mpGraphics, mpResources, mpSound,mpPhysics, mpAI);
+		mpScene = mpGameSetup->CreateScene(mpGraphics, mpResources, mpSound,mpPhysics,mpSystem,mpAI,mpHaptic);
 
 		Log("--------------------------------------------------------\n\n");
 
 
 		//Init the resources
-		mpResources->Init(mpGraphics, mpSound, mpScript, mpScene);
+		mpResources->Init(mpGraphics, mpSystem, mpSound, mpScript, mpScene);
 
 		//Init the graphics
-		mpGraphics->Init(options.ScreenWidth,
-			options.ScreenHeight,
-			options.Fullscreen,
-			options.Multisampling,
-			options.WindowCaption,
+		mpGraphics->Init(aVars.GetInt("ScreenWidth",800),
+			aVars.GetInt("ScreenHeight",600),
+			aVars.GetInt("ScreenBpp",32),
+			aVars.GetBool("Fullscreen",false),
+			aVars.GetInt("Multisampling",0),
+			aVars.GetString("WindowCaption"),
 			mpResources);
 
 		//Init Sound
-		mpSound->Init(mpResources, options.AudioDeviceName);
+		mpSound->Init(mpResources, aVars.GetBool("UseSoundHardware",true),
+						aVars.GetBool("ForceGeneric",false),
+						aVars.GetBool("UseEnvironmentalAudio", false),
+						aVars.GetInt("MaxSoundChannels",32),
+						aVars.GetInt("StreamUpdateFreq",10),
+						aVars.GetBool("UseSoundThreading",true),
+						aVars.GetBool("UseVoiceManagement",true),
+						aVars.GetInt("MaxMonoChannelsHint",0),
+						aVars.GetInt("MaxStereoChannelsHint",0),
+						aVars.GetInt("StreamBufferSize",4096),
+						aVars.GetInt("StreamBufferCount",8),
+						aVars.GetBool("LowLevelSoundLogging", false),
+						aVars.GetString("DeviceName"));
 
 		//Init physics
 		mpPhysics->Init(mpResources);
@@ -150,11 +246,14 @@ namespace hpl {
 		//Init AI
 		mpAI->Init();
 
+		//Init haptic
+		if(mpHaptic) mpHaptic->Init(mpResources);
+
 		Log("Initializing Game Module\n");
 		Log("--------------------------------------------------------\n");
 		//Create the updatehandler
 		Log(" Adding engine updates\n");
-		mpUpdater = new cUpdater();
+		mpUpdater = hplNew( cUpdater,(mpSystem->GetLowLevel()));
 
 		//Add some loaded modules to the updater
 		mpUpdater->AddGlobalUpdate(mpInput);
@@ -163,6 +262,7 @@ namespace hpl {
 		mpUpdater->AddGlobalUpdate(mpSound);
 		mpUpdater->AddGlobalUpdate(mpAI);
 		mpUpdater->AddGlobalUpdate(mpResources);
+		if(mpHaptic) mpUpdater->AddGlobalUpdate(mpHaptic);
 		mpUpdater->AddGlobalUpdate(mpScript);
 
 		//Setup the "default" updater container
@@ -170,14 +270,14 @@ namespace hpl {
 		mpUpdater->SetContainer("Default");
 
 		//Create the logic timer.
-		mpLogicTimer = new cLogicTimer(60);
+		mpLogicTimer = mpSystem->CreateLogicTimer(aVars.GetInt("LogicUpdateRate",800));
 
 		//Init some standard script funcs
 		Log(" Initializing script functions\n");
-		RegisterCoreFunctions(mpScript,mpGraphics,mpResources,mpInput,mpScene,mpSound,this);
+		RegisterCoreFunctions(mpScript,mpGraphics,mpResources,mpSystem,mpInput,mpScene,mpSound,this);
 
 		//Since game is not done:
-		mbGameIsDone = false;
+		mbGameIsDone=false;
 
 		mbRenderOnce = false;
 
@@ -186,7 +286,7 @@ namespace hpl {
 
 		mbLimitFPS = true;
 
-		mpFPSCounter = new cFPSCounter();
+		mpFPSCounter = hplNew( cFPSCounter,(mpSystem->GetLowLevel()) );
 		Log("--------------------------------------------------------\n\n");
 
 		Log("User Initialization\n");
@@ -199,21 +299,23 @@ namespace hpl {
 	{
 		Log("--------------------------------------------------------\n\n");
 
-		delete mpLogicTimer;
-		delete mpFPSCounter;
+		hplDelete(mpLogicTimer);
+		hplDelete(mpFPSCounter);
 
-		delete mpUpdater;
+		hplDelete(mpUpdater);
 
-		delete mpScene;
-		delete mpInput;
-		delete mpSound;
-		delete mpGraphics;
-		delete mpResources;
-		delete mpPhysics;
-		delete mpAI;
+		hplDelete(mpScene);
+		if(mpHaptic) hplDelete(mpHaptic);
+		hplDelete(mpInput);
+		hplDelete(mpSound);
+		hplDelete(mpGraphics);
+		hplDelete(mpResources);
+		hplDelete(mpPhysics);
+		hplDelete(mpAI);
+		hplDelete(mpSystem);
 
 		Log(" Deleting game setup provided by user\n");
-		delete mpGameSetup;
+		hplDelete(mpGameSetup);
 
 		Log("HPL Exit was successful!\n");
 	}
@@ -240,6 +342,9 @@ namespace hpl {
 
 		mpLogicTimer->Reset();
 
+		//Loop the game... fix the var...
+		unsigned long lTempTime = GetApplicationTime();
+
 		//reset the mouse, really reset the damn thing :P
 		for(int i=0;i<10;i++) mpInput->GetMouse()->Reset();
 
@@ -248,9 +353,11 @@ namespace hpl {
 		Log("--------------------------------------------------------\n");
 
 		mfFrameTime = 0;
-		float tempFrameTime = GetAppTimeFloat();
+		unsigned long lTempFrameTime = GetApplicationTime();
 
 		bool mbIsUpdated = true;
+
+		//cMemoryManager::SetLogCreation(true);
 
 		while(!mbGameIsDone)
 		{
@@ -259,9 +366,12 @@ namespace hpl {
 			//Update logic.
 			while(mpLogicTimer->WantUpdate() && !mbGameIsDone)
 			{
-				float updateTime = GetAppTimeFloat();
+				unsigned long lUpdateTime = GetApplicationTime();
+
 				mpUpdater->Update(GetStepSize());
-				mfUpdateTime = GetAppTimeFloat() - updateTime;
+
+				unsigned long lDeltaTime = GetApplicationTime() - lUpdateTime;
+				mfUpdateTime = (float)(lDeltaTime) / 1000.0f;
 
 				mbIsUpdated = true;
 
@@ -302,19 +412,21 @@ namespace hpl {
 				mbIsUpdated = false;
 
 				//Get the the from the last frame.
-				mfFrameTime = GetAppTimeFloat() - tempFrameTime;
-				tempFrameTime = GetAppTimeFloat();
+				mfFrameTime = ((float)(GetApplicationTime() - lTempFrameTime))/1000;
+				lTempFrameTime = GetApplicationTime();
 
 				//Draw this frame
-				mpGraphics->GetLowLevel()->StartFrame();
+				//unsigned long lFTime = GetApplicationTime();
 				mpUpdater->OnDraw();
 				mpScene->Render(mpUpdater,mfFrameTime);
+				//if(mpScene->GetDrawScene()) LogUpdate("FrameTime: %d ms\n", GetApplicationTime() - lFTime);
 
 				//Update fps counter.
 				mpFPSCounter->AddFrame();
 
 				//Update the screen.
-				mpGraphics->GetLowLevel()->EndFrame();
+				mpGraphics->GetLowLevel()->SwapBuffers();
+				//Log("Swap done: %d\n", GetApplicationTime());
 				//if(mbRenderOnce)
 				{
 					mpGraphics->GetRenderer3D()->FetchOcclusionQueries();
@@ -323,7 +435,22 @@ namespace hpl {
 
 				fNumOfTimes++;
 			}
+
+			//if(cMemoryManager::GetLogCreation())
+			//{
+				//cMemoryManager::SetLogCreation(false);
+				//Log("----\nCreations made: %d\n------\n",cMemoryManager::GetCreationCount());
+			//}
 		}
+		Log("--------------------------------------------------------\n\n");
+
+		Log("Statistics\n");
+		Log("--------------------------------------------------------\n");
+
+		unsigned long lTime = GetApplicationTime() - lTempTime;
+		fMediumTime = fNumOfTimes/(((double)lTime)/1000);
+
+		Log(" Medium framerate: %f\n", fMediumTime);
 		Log("--------------------------------------------------------\n\n");
 
 		Log("User Exit\n");
@@ -382,6 +509,13 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
+	cSystem* cGame::GetSystem()
+	{
+		return mpSystem;
+	}
+
+	//-----------------------------------------------------------------------
+
 	cInput* cGame::GetInput()
 	{
 		return mpInput;
@@ -410,12 +544,20 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
+	cHaptic* cGame::GetHaptic()
+	{
+		return mpHaptic;
+	}
+
+	//-----------------------------------------------------------------------
+
 	cScript* cGame::GetScript()
 	{
 		return mpScript;
 	}
 
 	//-----------------------------------------------------------------------
+
 
 	cUpdater* cGame::GetUpdater()
 	{

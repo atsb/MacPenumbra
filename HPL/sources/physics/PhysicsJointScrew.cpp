@@ -78,7 +78,7 @@ namespace hpl {
 
 	iSaveData* iPhysicsJointScrew::CreateSaveData()
 	{
-		return new cSaveData_iPhysicsJointScrew();
+		return hplNew( cSaveData_iPhysicsJointScrew, () );
 	}
 
 	//-----------------------------------------------------------------------

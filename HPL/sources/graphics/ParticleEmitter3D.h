@@ -26,6 +26,7 @@
 
 namespace hpl {
 
+	class cResourceImage;
 	class cGraphics;
 	class cWorld3D;
 	class cParticleSystem3D;
@@ -113,7 +114,7 @@ namespace hpl {
 		void SetVisible(bool abVisible){ SetRendered(abVisible); }
 
 		//Renderable implementation
-		void UpdateGraphics(cCamera *apCamera,float afFrameTime, cRenderList *apRenderList);
+		void UpdateGraphics(cCamera3D *apCamera,float afFrameTime, cRenderList *apRenderList);
 
 		iMaterial *GetMaterial();
 		iVertexBuffer* GetVertexBuffer();
@@ -122,7 +123,7 @@ namespace hpl {
 
 		cBoundingVolume* GetBoundingVolume();
 
-		cMatrixf* GetModelMatrix(cCamera *apCamera);
+		cMatrixf* GetModelMatrix(cCamera3D *apCamera);
 
 		int GetMatrixUpdateCount(){return GetTransformUpdateCount();}
 		eRenderableType GetRenderType(){ return eRenderableType_Normal;}

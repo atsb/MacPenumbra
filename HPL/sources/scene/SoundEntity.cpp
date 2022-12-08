@@ -29,7 +29,6 @@
 #include "game/Game.h"
 #include "scene/Scene.h"
 #include "scene/World3D.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -85,7 +84,7 @@ namespace hpl {
 
 		mfSleepCount = 0;
 
-		mpSoundCallback = new cSoundEntityChannelCallback();
+		mpSoundCallback = hplNew( cSoundEntityChannelCallback, () );
 		mpSoundCallback->mpEntity = this;
 
 		if(mpSoundHandler->GetSilent())
@@ -109,7 +108,7 @@ namespace hpl {
 			}
 		}
 
-		delete mpSoundCallback;
+		hplDelete(mpSoundCallback);
 
 		if(mbLog)Log("end\n");
 
@@ -605,7 +604,7 @@ namespace hpl {
 
 	iSaveData* cSoundEntity::CreateSaveData()
 	{
-		return new cSaveData_cSoundEntity();
+		return hplNew( cSaveData_cSoundEntity, () );
 	}
 
 	//-----------------------------------------------------------------------

@@ -24,6 +24,9 @@
 #include "GraphicsHelper.h"
 #include "SaveHandler.h"
 #include "MainMenu.h"
+#ifdef INCLUDE_HAPTIC
+#include "HapticGameCamera.h"
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // BUTTON
@@ -171,7 +174,7 @@ cDeathMenu::cDeathMenu(cInit *apInit)  : iUpdateable("NumericalPanel")
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
 
 	//Load graphics (use notebook background for now).
-	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp","diffalpha2d");
 
 	mpFont = mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt");
 
@@ -333,6 +336,11 @@ void cDeathMenu::SetActive(bool abX)
 
 	if(mbActive)
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(false);
+#endif
+
 		mLastCrossHairState = mpInit->mpPlayer->GetCrossHairState();
 
 		mpInit->mpPlayer->SetCrossHairPos(mvMousePos);
@@ -345,14 +353,19 @@ void cDeathMenu::SetActive(bool abX)
 		tWString sSpot = mpInit->mpSaveHandler->GetLatest(_W("save/spot/"),_W("*.sav"));
 		if(sAuto != _W("") || sSpot != _W(""))
 		{
-			mlstButtons.push_back(new cDeathMenuButton_Continue(mpInit,cVector2f(400,290),kTranslate("DeathMenu","Continue")));
+			mlstButtons.push_back(hplNew( cDeathMenuButton_Continue, (mpInit,cVector2f(400,290),kTranslate("DeathMenu","Continue"))) );
 		}
 		
 		//Back to Main
-		mlstButtons.push_back(new cDeathMenuButton_BackToMain(mpInit,cVector2f(400,350),kTranslate("DeathMenu","BackToMainMenu")) );
+		mlstButtons.push_back(hplNew( cDeathMenuButton_BackToMain, (mpInit,cVector2f(400,350),kTranslate("DeathMenu","BackToMainMenu")) ) );
 	}
 	else
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(true);
+#endif
+
 		mpInit->mpPlayer->SetCrossHairState(mLastCrossHairState);
 		mpInit->mpPlayer->SetCrossHairPos(cVector2f(400,300));
 	}

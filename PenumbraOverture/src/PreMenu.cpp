@@ -69,10 +69,10 @@ void cPreMenu::LoadConfig()
 {
 	////////////////////////////////////////////////
 	//Load the document
-	TiXmlDocument *pXmlDoc = new TiXmlDocument("config/startup.cfg");
+	TiXmlDocument *pXmlDoc = hplNew( TiXmlDocument, ("config/startup.cfg") );
 	if(pXmlDoc->LoadFile()==false){
 		Error("Couldn't load XML document 'config/startup.cfg'\n");
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 	}
 
 	////////////////////////////////////////////////
@@ -80,7 +80,7 @@ void cPreMenu::LoadConfig()
 	TiXmlElement *pRootElem = pXmlDoc->FirstChildElement();
 	if(pRootElem==NULL){
 		Error("Couldn't load root from XML document 'config/startup.cfg'\n");
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 	}
 
 	////////////////////////////////////////////////
@@ -88,7 +88,7 @@ void cPreMenu::LoadConfig()
 	TiXmlElement *pMainElem = pRootElem->FirstChildElement("Main");
 	if(pMainElem==NULL){
 		Error("Couldn't load Main element from XML document 'config/startup.cfg'\n");
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 	}
 
 	mbShowText = cString::ToBool(pMainElem->Attribute("ShowText"),false);
@@ -98,7 +98,7 @@ void cPreMenu::LoadConfig()
 	TiXmlElement *pLogosParentElem = pRootElem->FirstChildElement("Logos");
 	if(pLogosParentElem==NULL){
 		Error("Couldn't load Logs element from XML document 'config/startup.cfg'\n");
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 	}
 
 
@@ -114,7 +114,7 @@ void cPreMenu::LoadConfig()
 	}
 
 
-	delete  pXmlDoc ;
+	hplDelete( pXmlDoc );
 }
 
 //-----------------------------------------------------------------------
@@ -160,8 +160,8 @@ void cPreMenu::Reset()
 
 	mvRaindropVector.resize(100);
 
-	mpRaindropGfx = mpInit->mpGame->GetGraphics()->GetDrawer()->CreateGfxObject("menu_rain_drop.jpg",eGfxMaterialType::DiffuseAdditive);
-	mpFlashGfx = mpInit->mpGame->GetGraphics()->GetDrawer()->CreateGfxObject("effect_white.jpg",eGfxMaterialType::DiffuseAdditive);
+	mpRaindropGfx = mpInit->mpGame->GetGraphics()->GetDrawer()->CreateGfxObject("menu_rain_drop.jpg","diffadditive2d");
+	mpFlashGfx = mpInit->mpGame->GetGraphics()->GetDrawer()->CreateGfxObject("effect_white.jpg","diffadditive2d");
 
 	
 	for ( int i =0; i< (int)mvRaindropVector.size(); ++i )
@@ -672,7 +672,10 @@ void cPreMenu::SetActive(bool abX)
 		mpInit->mpGame->GetUpdater()->SetContainer("PreMenu");
 		mpInit->mpGame->GetScene()->SetDrawScene(false);
 		mpInit->mpGame->GetScene()->SetUpdateMap(false);
-
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpGame->GetHaptic()->GetLowLevel()->SetUpdateShapes(false);
+#endif
 		mpInit->mpButtonHandler->ChangeState(eButtonHandlerState_PreMenu);
 
 		for(size_t i=0; i< mvTexNames.size(); ++i)
@@ -737,7 +740,10 @@ void cPreMenu::SetActive(bool abX)
 			mpInit->mpGame->GetUpdater()->SetContainer("Default");
 			mpInit->mpGame->GetScene()->SetDrawScene(true);
 			mpInit->mpGame->GetScene()->SetUpdateMap(true);
-
+#ifdef INCLUDE_HAPTIC
+			if(mpInit->mbHasHaptics)
+				mpInit->mpGame->GetHaptic()->GetLowLevel()->SetUpdateShapes(true);
+#endif
 			mpInit->mpButtonHandler->ChangeState(eButtonHandlerState_Game);
 
 			mpInit->mpMapHandler->Load(	mpInit->msStartMap,mpInit->msStartLink);

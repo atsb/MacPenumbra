@@ -25,6 +25,7 @@
 #include "physics/PhysicsJoint.h"
 #include "physics/PhysicsController.h"
 #include "physics/SurfaceData.h"
+#include "system/LowLevelSystem.h"
 #include "system/System.h"
 #include "math/Math.h"
 #include "graphics/LowLevelGraphics.h"
@@ -77,7 +78,7 @@ namespace hpl {
 
 		////////////////////////////////////
 		//Update character bodies
-		//unsigned long lTime = GetAppTimeMS();
+		unsigned long lTime = GetApplicationTime();
 		tCharacterBodyListIt CharIt = mlstCharBodies.begin();
 		for(; CharIt != mlstCharBodies.end(); ++CharIt)
 		{
@@ -88,7 +89,7 @@ namespace hpl {
 				pBody->Update(afTimeStep);//20.0f);
 			}
 		}
-		//LogUpdate(" Updating chars took %d ms\n", GetAppTimeMS() - lTime);
+		//LogUpdate(" Updating chars took %d ms\n",mpWorld3D->GetSystem()->GetLowLevel()->GetTime() - lTime);
 
 
 		////////////////////////////////////
@@ -104,9 +105,9 @@ namespace hpl {
 
 		////////////////////////////////////
 		//Simulate the physics
-		//lTime = GetAppTimeMS();
+		lTime = GetApplicationTime();
 		Simulate(afTimeStep);
-		//LogUpdate(" Updating lowlevel physics took %d ms\n", GetAppTimeMS() - lTime);
+		//LogUpdate(" Updating lowlevel physics took %d ms\n",mpWorld3D->GetSystem()->GetLowLevel()->GetTime() - lTime);
 
 		////////////////////////////////////
 		//Update the joints after simulation.
@@ -115,16 +116,12 @@ namespace hpl {
 		{
 			iPhysicsJoint *pJoint = *JointIt;
 
-			if(pJoint->OnPhysicsUpdate()==false)
-			{
-				++JointIt;
-				continue;
-			}
+			pJoint->OnPhysicsUpdate();
 
 			if(pJoint->CheckBreakage())
 			{
 				JointIt = mlstJoints.erase(JointIt);
-				delete pJoint;
+				hplDelete(pJoint);
 			}
 			else
 			{
@@ -166,7 +163,7 @@ namespace hpl {
 			{
 				if(mpWorld3D) mpWorld3D->GetPortalContainer()->RemoveEntity(pBody);
 				pBody->Destroy();
-				delete pBody;
+				hplDelete(pBody);
 				mlstBodies.erase(it);
 				return;
 			}
@@ -283,7 +280,7 @@ namespace hpl {
 		{
 			iPhysicsBody *pBody = *it;
 			pBody->Destroy();
-			delete pBody;
+			hplDelete(pBody);
 		}
 		mlstBodies.clear();
 

@@ -37,7 +37,7 @@ typedef tGameItemTypeVec::iterator tGameItemTypeVecIt;
 class iInventoryWidget
 {
 public:
-	iInventoryWidget(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject, float afZ);
+	iInventoryWidget(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, float afZ);
 	virtual ~iInventoryWidget()
 	{
 		if(mpGfxObject)
@@ -55,12 +55,12 @@ public:
 	virtual void OnShortcutDown(int alNum){}
 
 	cRect2f& GetRect(){ return mRect;}
-	const cGfxObject* GetGfxObject(){ return mpGfxObject;}
+	cGfxObject* GetGfxObject(){ return mpGfxObject;}
 
 protected:
     cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
-	const cGfxObject* mpGfxObject;
+	cGfxObject* mpGfxObject;
 	cRect2f mRect;
 	float mfZ;
 };
@@ -102,9 +102,9 @@ private:
 
 	int mlEquipIndex;
 
-	const cGfxObject *mpGfxBack;
+	cGfxObject *mpGfxBack;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 };
 
 typedef std::list<cInventorySlot*> tInventorySlotList;
@@ -139,8 +139,8 @@ public:
 
 	const tString& GetEntityFile(){ return msEntityFile;}
 
-	const cGfxObject* GetGfxObject(){ return mpGfxObject;}
-	const cGfxObject* GetGfxObjectAdditive(){ return mpGfxObjectAdditive;}
+	cGfxObject* GetGfxObject(){ return mpGfxObject;}
+	cGfxObject* GetGfxObjectAdditive(){ return mpGfxObjectAdditive;}
 
 	eGameItemType GetItemType(){ return mItemType;}
 	
@@ -165,8 +165,8 @@ private:
 	tString msHudModelFile;
 	tString msHudModelName;
 
-	const cGfxObject* mpGfxObject;
-	const cGfxObject* mpGfxObjectAdditive;
+	cGfxObject* mpGfxObject;
+	cGfxObject* mpGfxObjectAdditive;
 	cGraphicsDrawer *mpDrawer;
 
 	cInventoryItem *mpItem;
@@ -184,7 +184,7 @@ typedef tInventoryItemMap::iterator tInventoryItemMapIt;
 class cInventoryBattery : public iInventoryWidget
 {
 public:
-	cInventoryBattery(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject, float afZ);
+	cInventoryBattery(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, float afZ);
 	~cInventoryBattery();
 	
 	void OnDraw();
@@ -192,8 +192,8 @@ public:
 	void OnUpdate(float afTimeStep);
 
 private:
-	const cGfxObject* mpGfxBatteryMeter;
-	const cGfxObject* mpGfxBatteryMeterBar;
+	cGfxObject* mpGfxBatteryMeter;
+	cGfxObject* mpGfxBatteryMeterBar;
 };
 
 //-----------------------------------------
@@ -201,7 +201,7 @@ private:
 class cInventoryHealth : public iInventoryWidget
 {
 public:
-	cInventoryHealth(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject, float afZ);
+	cInventoryHealth(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, float afZ);
 	~cInventoryHealth();
 
 	void OnDraw();
@@ -209,9 +209,9 @@ public:
 	void OnUpdate(float afTimeStep);
 
 private:
-	const cGfxObject* mpGfxFine;
-	const cGfxObject* mpGfxCaution;
-	const cGfxObject* mpGfxDanger;
+	cGfxObject* mpGfxFine;
+	cGfxObject* mpGfxCaution;
+	cGfxObject* mpGfxDanger;
 };
 
 //-----------------------------------------
@@ -237,17 +237,17 @@ public:
 private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
-	FontData *mpFont;
+	iFontData *mpFont;
     	
-	const cGfxObject* mpGfxBack;
-	const cGfxObject* mpGfxCorner11;
-	const cGfxObject* mpGfxCorner12;
-	const cGfxObject* mpGfxCorner21;
-	const cGfxObject* mpGfxCorner22;
-	const cGfxObject* mpGfxRight;
-	const cGfxObject* mpGfxLeft;
-	const cGfxObject* mpGfxTop;
-	const cGfxObject* mpGfxBottom;
+	cGfxObject* mpGfxBack;
+	cGfxObject* mpGfxCorner11;
+	cGfxObject* mpGfxCorner12;
+	cGfxObject* mpGfxCorner21;
+	cGfxObject* mpGfxCorner22;
+	cGfxObject* mpGfxRight;
+	cGfxObject* mpGfxLeft;
+	cGfxObject* mpGfxTop;
+	cGfxObject* mpGfxBottom;
 
 	bool mbActive;
 
@@ -376,17 +376,17 @@ private:
 	cGraphicsDrawer *mpDrawer;
 	cInventoryContext *mpContext;
 
-	const cGfxObject *mpGfxBackground;
+	cGfxObject *mpGfxBackground;
 
-	const cGfxObject *mpBatteryMeter;
-	const cGfxObject *mpBatteryMeterBar;
+	cGfxObject *mpBatteryMeter;
+	cGfxObject *mpBatteryMeterBar;
 
-	const cGfxObject *mpHealthMan_Fine;
-	const cGfxObject *mpHealthMan_Caution;
-	const cGfxObject *mpHealthMan_Danger;
-	const cGfxObject *mpHealthTextFrame;
+	cGfxObject *mpHealthMan_Fine;
+	cGfxObject *mpHealthMan_Caution;
+	cGfxObject *mpHealthMan_Danger;
+	cGfxObject *mpHealthTextFrame;
 
-	const cGfxObject *mpBagpack;
+	cGfxObject *mpBagpack;
 
 	tGameItemTypeVec mvItemTypes;
 
@@ -405,14 +405,14 @@ private:
 
 	bool mbNoteBookIsActive;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 
 	cVector2f mvMousePos;
 
 	bool mbMessageActive;
 	tWString msMessage;
 	float mfMessageAlpha;
-	const cGfxObject *mpMessageBackground;
+	cGfxObject *mpMessageBackground;
 	
 	cInventoryItem *mpCurrentItem;
 	cVector2f mvCurrentItemOffset;

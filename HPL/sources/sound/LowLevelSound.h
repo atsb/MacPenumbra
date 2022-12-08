@@ -22,6 +22,7 @@
 #include "system/SystemTypes.h"
 #include "math/MathTypes.h"
 
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -71,7 +72,11 @@ namespace hpl {
 
 		float GetVolume(){ return mfVolume;}
 
-		virtual void Init (const tString &asDeviceName)=0;
+		//virtual void LogSoundStatus() {}
+		virtual void Init ( bool abUseHardware, bool abForceGeneric, bool abUseEnvAudio, int alMaxChannels,
+							int alStreamUpdateFreq, bool abUseThreading, bool abUseVoiceManagement,
+							int alMaxMonoSourceHint, int alMaxStereoSourceHint,
+							int alStreamingBufferSize, int alStreamingBufferCount, bool abEnableLowLevelLog, tString asDeviceName)=0;
 
 		bool IsHardwareAccelerated ()	{ return mbHardwareAcc; }
 		bool IsEnvAudioAvailable ()		{ return mbEnvAudioEnabled; }

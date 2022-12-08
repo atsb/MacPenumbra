@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "aswrapcall.h"
 #include "script/ScriptFuncs.h"
 
 #include <stdlib.h>
@@ -35,7 +34,8 @@
 #include "scene/SoundEntity.h"
 #include "scene/PortalContainer.h"
 #include "input/Input.h"
-#include "system/Log.h"
+#include "system/System.h"
+#include "system/LowLevelSystem.h"
 #include "sound/MusicHandler.h"
 #include "resources/SoundManager.h"
 #include "resources/SoundEntityManager.h"
@@ -104,6 +104,7 @@ namespace hpl {
 	//////////////////////////////////////////////////////////////////////////
 
 	static cResources *gpResources=NULL;
+	static cSystem *gpSystem=NULL;
 	static cInput *gpInput=NULL;
 	static cGraphics *gpGraphics=NULL;
 	static cScene *gpScene=NULL;
@@ -120,14 +121,14 @@ namespace hpl {
 	static std::string FloatToString(float afX)
 	{
 		char sTemp[30];
-		snprintf(sTemp,sizeof(sTemp),"%f",afX);
+		sprintf(sTemp,"%f",afX);
 		return sTemp;
 	}
 
 	static std::string IntToString(int alX)
 	{
 		char sTemp[30];
-		snprintf(sTemp,sizeof(sTemp),"%d",alX);
+		sprintf(sTemp,"%d",alX);
 		return sTemp;
 	}
 
@@ -217,7 +218,7 @@ namespace hpl {
 																			1,cMatrixf::Identity);
 		if(pPS)
 		{
-			auto pCam = gpScene->GetCamera();
+			cCamera3D *pCam = static_cast<cCamera3D*>(gpScene->GetCamera());
 			pCam->AttachEntity(pPS);
 		}
 	}
@@ -327,15 +328,15 @@ namespace hpl {
 
 			if(pData->GetMainSoundName() != ""){
 				iSoundChannel *pChannel = gpSound->GetSoundHandler()->CreateChannel(pData->GetMainSoundName(),0);
-				delete pChannel;
+				hplDelete(pChannel);
 			}
 			if(pData->GetStartSoundName() != ""){
 				iSoundChannel *pChannel = gpSound->GetSoundHandler()->CreateChannel(pData->GetStartSoundName(),0);
-				delete pChannel;
+				hplDelete(pChannel);
 			}
 			if(pData->GetStopSoundName() != ""){
 				iSoundChannel *pChannel = gpSound->GetSoundHandler()->CreateChannel(pData->GetStopSoundName(),0);
-				delete pChannel;
+				hplDelete(pChannel);
 			}
 		}
 		else
@@ -839,7 +840,7 @@ namespace hpl {
 		cScriptJointCallback *pCallback = static_cast<cScriptJointCallback*>(pJoint->GetCallback());
 		if(pCallback==NULL)
 		{
-			pCallback = new cScriptJointCallback(gpScene);
+			pCallback = hplNew( cScriptJointCallback, (gpScene) );
 			pJoint->SetCallback(pCallback,true);
 		}
 
@@ -977,7 +978,7 @@ namespace hpl {
 		}
 		else if(sLowProp == "force")
 		{
-			return pJoint->GetForceSize();
+			return pJoint->GetForce().Length();
 		}
 		/////////////////////////////
 		// Min Limit
@@ -1399,6 +1400,7 @@ namespace hpl {
 		cScript* apScript,
 		cGraphics* apGraphics,
 		cResources *apResources,
+		cSystem *apSystem,
 		cInput *apInput,
 		cScene *apScene,
 		cSound *apSound,
@@ -1407,13 +1409,16 @@ namespace hpl {
 	{
 		gpGraphics = apGraphics;
 		gpResources = apResources;
+		gpSystem = apSystem;
 		gpInput = apInput;
 		gpScene = apScene;
 		gpSound = apSound;
 		gpGame = apGame;
 		
-#define AddFunc(nm, fn) apScript->GetEngine()->RegisterGlobalFunction(nm, WRAP_FN(fn), asCALL_GENERIC);
-
+		const auto AddFunc = [apScript](const tString& sig, auto fn) {
+			apScript->AddScriptFunc(sig, reinterpret_cast<void*>(fn));
+		};
+		
 		//General
 		AddFunc("void Print(const string &in asText)", Print);
 		AddFunc("string FloatToString(float afX)", FloatToString);

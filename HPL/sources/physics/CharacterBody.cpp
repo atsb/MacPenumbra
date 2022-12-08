@@ -21,14 +21,14 @@
 #include "physics/CollideShape.h"
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
-#include "scene/Camera.h"
+#include "system/LowLevelSystem.h"
+#include "scene/Camera3D.h"
 #include "math/Math.h"
 
 #include "game/Game.h"
 #include "scene/Scene.h"
 #include "scene/World3D.h"
 #include "scene/PortalContainer.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -119,9 +119,9 @@ namespace hpl {
 		mfGroundFriction =0.1f;
 		mfAirFriction = 0.01f;
 
-		mpRayCallback = new cCharacterBodyRay();
-		mpCollideCallbackGravity = new cCharacterBodyCollideGravity();
-		mpCollideCallbackPush = new cCharacterBodyCollidePush();
+		mpRayCallback = hplNew( cCharacterBodyRay, () );
+		mpCollideCallbackGravity = hplNew( cCharacterBodyCollideGravity,());
+		mpCollideCallbackPush = hplNew( cCharacterBodyCollidePush,());
 
 		mpCollideCallbackGravity->mpCharBody = this;
 		mpCollideCallbackPush->mpCharBody = this;
@@ -149,9 +149,9 @@ namespace hpl {
 		for(size_t i=0; i< mvExtraBodies.size(); i++)
 			mpWorld->DestroyBody(mvExtraBodies[i]);
 
-		delete mpRayCallback;
-		delete mpCollideCallbackGravity;
-		delete mpCollideCallbackPush;
+		hplDelete(mpRayCallback);
+		hplDelete(mpCollideCallbackGravity);
+		hplDelete(mpCollideCallbackPush);
 	}
 
 	//-----------------------------------------------------------------------
@@ -1046,12 +1046,12 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void iCharacterBody::SetCamera(cCamera *apCam)
+	void iCharacterBody::SetCamera(cCamera3D *apCam)
 	{
 		mpCamera = apCam;
 	}
 
-	cCamera *iCharacterBody::GetCamera()
+	cCamera3D* iCharacterBody::GetCamera()
 	{
 		return mpCamera;
 	}
@@ -1340,7 +1340,7 @@ namespace hpl {
 
 	iSaveData* iCharacterBody::CreateSaveData()
 	{
-		return new cSaveData_iCharacterBody();
+		return hplNew( cSaveData_iCharacterBody, () );
 	}
 
 	//-----------------------------------------------------------------------

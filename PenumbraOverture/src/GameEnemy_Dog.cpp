@@ -389,6 +389,9 @@ void cGameEnemyState_Dog_Attention::OnEnterState(iGameEnemyState *apPrevState)
 	mfTime = mpEnemyDog->mfAttentionTime;
 	
 	if(mpInit->mDifficulty == eGameDifficulty_Easy) mfTime *=1.7f;
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics) mfTime *= 1.3f;
+#endif
 }
 
 //-----------------------------------------------------------------------
@@ -752,6 +755,9 @@ void cGameEnemyState_Dog_Hunt::OnEnterState(iGameEnemyState *apPrevState)
 	mpEnemy->SetupBody();
 
 	float fMul = 1.0f;
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics) fMul = 0.6f;
+#endif
 
 	if(mpInit->mDifficulty == eGameDifficulty_Easy)
 		mpMover->GetCharBody()->SetMaxPositiveMoveSpeed(eCharDir_Forward,mpEnemyDog->mfHuntSpeed*0.7f*fMul);
@@ -1170,7 +1176,7 @@ void cGameEnemyState_Dog_Attack::OnAnimationOver(const tString &asName)
 
 void cGameEnemyState_Dog_Attack::OnPostSceneDraw()
 {
-	auto pCamera = mpInit->mpGame->GetScene()->GetCamera();
+	cCamera3D *pCamera = static_cast<cCamera3D*>(mpInit->mpGame->GetScene()->GetCamera());
 	
 	cVector3f vPos =	mpMover->GetCharBody()->GetPosition() +
 						mpMover->GetCharBody()->GetForward() * 
@@ -1577,7 +1583,7 @@ void cGameEnemyState_Dog_BreakDoor::OnAnimationOver(const tString &asName)
 
 void cGameEnemyState_Dog_BreakDoor::OnPostSceneDraw()
 {
-	auto pCamera = mpInit->mpGame->GetScene()->GetCamera();
+	cCamera3D *pCamera = static_cast<cCamera3D*>(mpInit->mpGame->GetScene()->GetCamera());
 
 	cVector3f vPos =	mpMover->GetCharBody()->GetPosition() +
 						mpMover->GetCharBody()->GetForward() * 
@@ -1947,19 +1953,19 @@ cGameEnemy_Dog::cGameEnemy_Dog(cInit *apInit,const tString& asName,TiXmlElement 
 
 	//////////////////////////////
 	//Set up states
-	AddState(new cGameEnemyState_Dog_Idle(STATE_IDLE,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Hunt(STATE_HUNT,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Attack(STATE_ATTACK,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Flee(STATE_FLEE,mpInit,this));
-	AddState(new cGameEnemyState_Dog_KnockDown(STATE_KNOCKDOWN,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Dead(STATE_DEAD,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Patrol(STATE_PATROL,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Investigate(STATE_INVESTIGATE,mpInit,this));
-	AddState(new cGameEnemyState_Dog_BreakDoor(STATE_BREAKDOOR,mpInit,this));
-	AddState(new cGameEnemyState_Dog_CallBackup(STATE_CALLBACKUP,mpInit,this));
-	AddState(new cGameEnemyState_Dog_MoveTo(STATE_MOVETO,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Eat(STATE_EAT,mpInit,this));
-	AddState(new cGameEnemyState_Dog_Attention(STATE_ATTENTION,mpInit,this));
+	AddState(hplNew( cGameEnemyState_Dog_Idle,(STATE_IDLE,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Hunt,(STATE_HUNT,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Attack,(STATE_ATTACK,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Flee,(STATE_FLEE,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_KnockDown,(STATE_KNOCKDOWN,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Dead,(STATE_DEAD,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Patrol,(STATE_PATROL,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Investigate,(STATE_INVESTIGATE,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_BreakDoor,(STATE_BREAKDOOR,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_CallBackup,(STATE_CALLBACKUP,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_MoveTo,(STATE_MOVETO,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Eat,(STATE_EAT,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Dog_Attention,(STATE_ATTENTION,mpInit,this)) );
 }
 
 //-----------------------------------------------------------------------

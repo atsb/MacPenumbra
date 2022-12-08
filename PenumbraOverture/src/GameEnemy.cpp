@@ -247,7 +247,7 @@ iGameEnemy::iGameEnemy(cInit *apInit,const tString& asName,TiXmlElement *apGameE
 
 	mTriggerTypes = eGameTriggerType_Sound;
 
-	mpMover = new cCharacterMove(mpInit);
+	mpMover = hplNew( cCharacterMove, (mpInit) );
 
 	mlCurrentState = -1;
 
@@ -377,11 +377,11 @@ iGameEnemy::iGameEnemy(cInit *apInit,const tString& asName,TiXmlElement *apGameE
 
 iGameEnemy::~iGameEnemy(void)
 {
-	delete  mpMover ;
+	hplDelete( mpMover );
 
 	for(size_t i=0; i < mvStates.size(); ++i)
 	{
-		if(mvStates[i]) delete  mvStates[i] ;
+		if(mvStates[i]) hplDelete( mvStates[i] );
 	}
 
 	mvStates.clear();
@@ -607,7 +607,7 @@ float gfCurrentMaxViewDist=0;
 
 void iGameEnemy::OnDraw()
 {
-	/*
+	return;
 	if(mbActive==false) return;
 	if(mbCanSeePlayer){
 		mpInit->mpDefaultFont->Draw(cVector3f(5,15,100),14,cColor(1,1,1,1),eFontAlign_Left,
@@ -637,10 +637,12 @@ void iGameEnemy::OnDraw()
 
 	mvStates[mlCurrentState]->OnDraw();
 
-	// mpInit->mpDefaultFont->Draw(cVector3f(5,15,100),14,cColor(1,1,1,1),eFontAlign_Left, "Active: %d",mbActive);
-	// mpInit->mpDefaultFont->Draw(cVector3f(5,30,100),14,cColor(1,1,1,1),eFontAlign_Left, "Yaw: %f",cMath::ToDeg(mpMover->GetCharBody()->GetYaw()));
-	// mpInit->mpDefaultFont->Draw(cVector3f(5,45,100),14,cColor(1,1,1,1),eFontAlign_Left, "Pos: %s",mpMover->GetCharBody()->GetPosition().ToString().c_str());
-	*/
+	/*mpInit->mpDefaultFont->Draw(cVector3f(5,15,100),14,cColor(1,1,1,1),eFontAlign_Left,
+								"Active: %d",mbActive);
+	mpInit->mpDefaultFont->Draw(cVector3f(5,30,100),14,cColor(1,1,1,1),eFontAlign_Left,
+								"Yaw: %f",cMath::ToDeg(mpMover->GetCharBody()->GetYaw()));
+	mpInit->mpDefaultFont->Draw(cVector3f(5,45,100),14,cColor(1,1,1,1),eFontAlign_Left,
+								"Pos: %s",mpMover->GetCharBody()->GetPosition().ToString().c_str());*/
 }
 
 //-----------------------------------------------------------------------
@@ -856,7 +858,7 @@ void iGameEnemy::ChangeState(int alId)
 	tString sStateName2 = "NONE";
 	if(mlCurrentState >=0) sStateName2 = gvStateName[alId];
 
-	snprintf(sStr,sizeof(sStr),"%s State %s -> %s",msName.c_str(),sStateName1.c_str(),sStateName2.c_str());
+	sprintf(sStr,"%s State %s -> %s",msName.c_str(),sStateName1.c_str(),sStateName2.c_str());
 	//mpInit->mpEffectHandler->GetSubTitle()->Add(cString::To16Char(sStr),1.2f,false);
 	Log("%s\n",sStr);*/
 
@@ -1123,7 +1125,7 @@ bool iGameEnemy::CheckForDoor()
 	cVector3f vEnd = vStart + pBody->GetForward() * 0.4f;
 
 	bool bRet = mDoorCheck.CheckDoor(vStart,vEnd);
-	Log("CheckDoor: %d\n", bRet ? 1 : 0);
+	Log("CheckDoor: %d\n",bRet);
 
 	return bRet;
 }
@@ -1633,15 +1635,15 @@ void cEntityLoader_GameEnemy::AfterLoad(TiXmlElement *apRootElem, const cMatrixf
     
 	if(sSubtype == "Dog")
 	{
-		pEnemy = new cGameEnemy_Dog(mpInit,mpEntity->GetName(),pGameElem);
+		pEnemy = hplNew( cGameEnemy_Dog, (mpInit,mpEntity->GetName(),pGameElem) );
 	}
 	else if(sSubtype == "Spider")
 	{
-		pEnemy = new cGameEnemy_Spider(mpInit,mpEntity->GetName(),pGameElem);
+		pEnemy = hplNew( cGameEnemy_Spider, (mpInit,mpEntity->GetName(),pGameElem) );
 	}
 	else if(sSubtype == "Worm")
 	{
-		pEnemy = new cGameEnemy_Worm(mpInit,mpEntity->GetName(),pGameElem);
+		pEnemy = hplNew( cGameEnemy_Worm, (mpInit,mpEntity->GetName(),pGameElem) );
 	}
 	
 	pEnemy->msSubType = sSubtype;
@@ -1714,7 +1716,7 @@ iGameEntity* iGameEnemy_SaveData::CreateEntity()
 
 iGameEntity_SaveData* iGameEnemy::CreateSaveData()
 {
-	return new iGameEnemy_SaveData();
+	return hplNew( iGameEnemy_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

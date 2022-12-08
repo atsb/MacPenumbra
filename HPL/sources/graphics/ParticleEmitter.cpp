@@ -17,6 +17,7 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "graphics/ParticleEmitter.h"
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "graphics/Graphics.h"
 #include "graphics/MaterialHandler.h"
@@ -77,7 +78,7 @@ namespace hpl {
 		mvParticles.resize(alMaxParticles);
 		for(int i=0;i<(int)alMaxParticles;i++)
 		{
-			mvParticles[i] = new cParticle();
+			mvParticles[i] = hplNew( cParticle, () );
 		}
 		mlMaxParticles = alMaxParticles;
 		mlNumOfParticles =0;
@@ -98,7 +99,7 @@ namespace hpl {
 	iParticleEmitter::~iParticleEmitter()
 	{
 		for(int i=0;i<(int)mvParticles.size();i++){
-			delete mvParticles[i];
+			hplDelete(mvParticles[i]);
 		}
 	}
 

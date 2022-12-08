@@ -18,8 +18,9 @@
  */
 #include "graphics/BillBoard.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "resources/MaterialManager.h"
 #include "resources/FileSearcher.h"
@@ -28,13 +29,12 @@
 #include "graphics/Graphics.h"
 #include "graphics/MeshCreator.h"
 #include "graphics/LowLevelGraphics.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "scene/World3D.h"
 #include "scene/Scene.h"
 #include "math/Math.h"
 
 #include "game/Game.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -110,8 +110,8 @@ namespace hpl {
 	cBillboard::~cBillboard()
 	{
 		if(mpMaterial) mpMaterialManager->Destroy(mpMaterial);
-		if(mpVtxBuffer) delete mpVtxBuffer;
-		if(mpHaloSourceBuffer) delete mpHaloSourceBuffer;
+		if(mpVtxBuffer) hplDelete(mpVtxBuffer);
+		if(mpHaloSourceBuffer) hplDelete(mpHaloSourceBuffer);
 
 		if(mQueryObject.mpQuery)
 			mpLowLevelGraphics->DestroyOcclusionQuery(mQueryObject.mpQuery);
@@ -254,7 +254,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void cBillboard::UpdateGraphics(cCamera *apCamera,float afFrameTime, cRenderList *apRenderList)
+	void cBillboard::UpdateGraphics(cCamera3D *apCamera,float afFrameTime, cRenderList *apRenderList)
 	{
 		if(mbIsHalo==false) return;
 
@@ -317,7 +317,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cMatrixf* cBillboard::GetModelMatrix(cCamera *apCamera)
+	cMatrixf* cBillboard::GetModelMatrix(cCamera3D *apCamera)
 	{
 		if(apCamera==NULL)return &GetWorldMatrix();
 
@@ -394,7 +394,7 @@ namespace hpl {
 		tString sPath = mpFileSearcher->GetFilePath(sNewFile);
 		if(sPath != "")
 		{
-			TiXmlDocument *pDoc = new TiXmlDocument(sPath.c_str());
+			TiXmlDocument *pDoc = hplNew( TiXmlDocument, (sPath.c_str()) );
 			if(pDoc->LoadFile())
 			{
 				TiXmlElement *pRootElem = pDoc->RootElement();
@@ -448,7 +448,7 @@ namespace hpl {
 			{
 				Error("Couldn't load file '%s'\n",sNewFile.c_str());
 			}
-			delete pDoc;
+			hplDelete(pDoc);
 		}
 		else
 		{
@@ -602,7 +602,7 @@ namespace hpl {
 
 	iSaveData* cBillboard::CreateSaveData()
 	{
-		return new cSaveData_cBillboard();
+		return hplNew( cSaveData_cBillboard, () );
 	}
 
 	//-----------------------------------------------------------------------

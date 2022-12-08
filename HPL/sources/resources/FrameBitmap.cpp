@@ -16,13 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "resources/FrameBitmap.h"
-#include "system/Log.h"
 #include "math/Math.h"
+#include "system/LowLevelSystem.h"
 #include "resources/FrameTexture.h"
 #include "resources/ResourceImage.h"
-#include "graphics/Bitmap.h"
+#include "graphics/Bitmap2D.h"
 #include "graphics/Texture.h"
 
 
@@ -34,20 +33,24 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cFrameBitmap::cFrameBitmap(int width, int height, cFrameTexture *apFrmTex, int alHandle)
-	: iFrameBase(), mBitmap{width, height}, mpFrameTexture(apFrmTex)
+	cFrameBitmap::cFrameBitmap(iBitmap2D *apBitmap,  cFrameTexture *apFrmTex, int alHandle) : iFrameBase()
 	{
-		mBitmap.FillRect(cRect2l(0,0,0,0), cColor(1,1));
+		mpBitmap = apBitmap;
+		mpFrameTexture = apFrmTex;
+		mpBitmap->FillRect(cRect2l(0,0,0,0), cColor(1,1));
 		mlMinHole = 6;
 		mlHandle = alHandle;
 		mbIsFull = false;
+		mbIsLocked = false;
 
 		//Root node in rect tree
-		mRects.Insert(cFBitmapRect(0, 0, mBitmap.GetWidth(), mBitmap.GetHeight(), -1));
+		mRects.Insert(cFBitmapRect(0,0,mpBitmap->GetWidth(), mpBitmap->GetHeight(),-1));
 	}
 
 	cFrameBitmap::~cFrameBitmap()
 	{
+		hplDelete(mpBitmap);
+		mpBitmap = NULL;
 	}
 
 	//-----------------------------------------------------------------------
@@ -60,17 +63,17 @@ namespace hpl {
 
 	#define DEBUG_BTREE (false)
 
-	cResourceImage *cFrameBitmap::AddBitmap(const Bitmap &aSrc)
+	cResourceImage *cFrameBitmap::AddBitmap(iBitmap2D *apSrc)
 	{
 		cResourceImage *pImage=NULL;
 		//source size
 		//+2 because we are gonna have a border to get rid if some antialiasing problems
-		int lSW = aSrc.GetWidth()+2;
-		int lSH = aSrc.GetHeight()+2;
+		int lSW = apSrc->GetWidth()+2;
+		int lSH = apSrc->GetHeight()+2;
 
 		//destination size
-		int lDW = mBitmap.GetWidth();
-		int lDH = mBitmap.GetHeight();
+		int lDW = mpBitmap->GetWidth();
+		int lDH = mpBitmap->GetHeight();
 
 		cVector2l vPos;
 
@@ -147,15 +150,15 @@ namespace hpl {
 
 					//Draw 4 times so we get a nice extra border
 					for(int i=0;i<2;i++)for(int j=0;j<2;j++){
-						aSrc.DrawToBitmap(mBitmap, NewRect.x+i*2, NewRect.y+j*2);
+						apSrc->DrawToBitmap(mpBitmap,cVector2l(NewRect.x+i*2,NewRect.y+j*2));
 					}
 					//Fix the border a little more:
 					for(int i=-1;i<2;i++)for(int j=-1;j<2;j++)
 						if((i==0 || j==0) && (i!=j)){
-						aSrc.DrawToBitmap(mBitmap, NewRect.x+1+i, NewRect.y+1+j);
+						apSrc->DrawToBitmap(mpBitmap,cVector2l(NewRect.x+1+i,NewRect.y+1+j));
 					}
 					//Draw the final
-					aSrc.DrawToBitmap(mBitmap, NewRect.x+1,NewRect.y+1);
+					apSrc->DrawToBitmap(mpBitmap,cVector2l(NewRect.x+1,NewRect.y+1));
 
 
 					mlPicCount++;
@@ -168,10 +171,10 @@ namespace hpl {
 		if(bFoundNode)
 		{
 			//Create the image resource
-			pImage = new cResourceImage(aSrc.GetFileName(), mpFrameTexture, this,
+			pImage = hplNew( cResourceImage, (apSrc->GetFileName(),mpFrameTexture, this,
 				cRect2l(vPos,cVector2l(lSW-2,lSH-2)),//-2 to get the correct size.
-				cVector2l(mBitmap.GetWidth(),mBitmap.GetHeight()),
-				mlHandle);
+				cVector2l(mpBitmap->GetWidth(),mpBitmap->GetHeight()),
+				mlHandle) );
 
 			if(!bFoundEmptyNode)
 			{
@@ -247,10 +250,11 @@ namespace hpl {
 	{
 		if(mbIsUpdated)
 		{
-			mpFrameTexture->GetTexture()->CreateFromBitmap(mBitmap);
+			mpFrameTexture->GetTexture()->CreateFromBitmap(mpBitmap);
 			mpFrameTexture->GetTexture()->SetWrapS(eTextureWrap_ClampToEdge);
 			mpFrameTexture->GetTexture()->SetWrapT(eTextureWrap_ClampToEdge);
 
+			//mpFrameTexture->SetPicCount(mlPicCount);
 			mbIsUpdated = false;
 			return true;
 		}

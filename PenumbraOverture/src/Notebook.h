@@ -115,9 +115,9 @@ public:
 	void OnExit();
 
 	cGraphicsDrawer *mpDrawer;
-	const cGfxObject *mpTextBack;
+	cGfxObject *mpTextBack;
 
-	FontData *mpFrontFont;
+	iFontData *mpFrontFont;
 	std::vector<cNoteBook_Option> mvOptions;
 	int mlSelected;
 	cVector2f mvFontSize;
@@ -150,7 +150,7 @@ public:
 
 	void OnExit();
 
-	FontData *mpTextFont;
+	iFontData *mpTextFont;
 
 	float mfFontSize;
 
@@ -160,7 +160,7 @@ public:
 	int mlSelected;
 	std::vector<cNoteBook_Option> mvOptions;
 	cGraphicsDrawer *mpDrawer;
-	const cGfxObject *mpOptionsImage[2];
+	cGfxObject *mpOptionsImage[2];
 };
 
 //--------------------------------------------------------
@@ -179,21 +179,21 @@ public:
 	void OnExit();
 
 	cGraphicsDrawer *mpDrawer;
-	const cGfxObject *mpTextBack;
-	const cGfxObject *mpTab;
+	cGfxObject *mpTextBack;
+	cGfxObject *mpTab;
 
 	int mlMaxNotesPerPage;
 	int mlFirstNote;
 	
 	int mlSelected;
 
-	FontData *mpTextFont;
+	iFontData *mpTextFont;
 	tWString msUnread;
 	cVector2f mvSize;
 	cNotebook_Note *mpSelectedNote;
 
 	std::vector<cNoteBook_Option> mvOptions;
-	const cGfxObject *mpOptionsImage[2];
+	cGfxObject *mpOptionsImage[2];
 };
 
 //--------------------------------------------------------
@@ -218,8 +218,8 @@ public:
 	void OnMouseDown(eMButton aButton);
 	void OnExit();
 
-	FontData *mpTextFont;
-	FontData *mpNavigateFont;
+	iFontData *mpTextFont;
+	iFontData *mpNavigateFont;
 	tWStringVec mvRows;
 	
 	std::vector<cNotePage> mvPages;
@@ -231,7 +231,7 @@ public:
 	int mlSelected;
 	std::vector<cNoteBook_Option> mvOptions;
 	cGraphicsDrawer *mpDrawer;
-	const cGfxObject *mpOptionsImage[2];
+	cGfxObject *mpOptionsImage[2];
 
 };
 
@@ -240,7 +240,7 @@ public:
 class cNotebook_BookType
 {
 public:
-	const cGfxObject *mpGfxImage;
+	cGfxObject *mpGfxImage;
 	float mfAlpha;
 	eNotebookType mType;
 };
@@ -313,7 +313,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpGfxBackground;
+	cGfxObject *mpGfxBackground;
 		
 	cStateMachine mStateMachine;
 	

@@ -20,6 +20,7 @@
 
 #include "math/Math.h"
 #include "graphics/Animation.h"
+#include "system/LowLevelSystem.h"
 #include "scene/Node3D.h"
 
 namespace hpl {
@@ -66,7 +67,7 @@ namespace hpl {
 
 	cKeyFrame* cAnimationTrack::CreateKeyFrame(float afTime)
 	{
-		cKeyFrame* pFrame = new cKeyFrame();
+		cKeyFrame* pFrame = hplNew( cKeyFrame,());
 		pFrame->time = afTime;
 
 		//Check so that this is the first

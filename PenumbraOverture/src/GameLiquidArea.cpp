@@ -48,7 +48,7 @@ cAreaLoader_GameLiquidArea::~cAreaLoader_GameLiquidArea()
 iEntity3D* cAreaLoader_GameLiquidArea::Load(const tString &asName, const cVector3f &avSize, 
 									  const cMatrixf &a_mtxTransform,cWorld3D *apWorld)
 {
-	cGameLiquidArea *pArea = new cGameLiquidArea(mpInit,asName);
+	cGameLiquidArea *pArea = hplNew( cGameLiquidArea, (mpInit,asName) );
 
 	pArea->m_mtxOnLoadTransform = a_mtxTransform;
 
@@ -142,7 +142,7 @@ void cGameLiquidArea::Update(float afTimeStep)
 	iPhysicsBody *pAreaBody = mvBodies[0];
 	cWorld3D *pWorld = mpInit->mpGame->GetScene()->GetWorld3D();
 	iPhysicsWorld *pPhysicsWorld = pWorld->GetPhysicsWorld();
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 	float fSurfaceY =	mvBodies[0]->GetWorldPosition().y + 
 						mvBodies[0]->GetShape()->GetSize().y /2;
 	
@@ -358,7 +358,7 @@ iGameEntity* cGameLiquidArea_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameLiquidArea::CreateSaveData()
 {
-	return new cGameLiquidArea_SaveData();
+	return hplNew( cGameLiquidArea_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

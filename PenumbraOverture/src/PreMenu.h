@@ -33,7 +33,7 @@ public:
 	float		fLength;
 	float		fColor;
 	
-	const cGfxObject *mpGfx;
+	cGfxObject *mpGfx;
 };
 
 class cInit;
@@ -73,8 +73,8 @@ private:
 	iTexture* mpLogoTexture;
 	// iTexture* mpEpTexture;
 
-	FontData *mpFont;
-	FontData *mpTextFont;
+	iFontData *mpFont;
+	iFontData *mpTextFont;
 
 	bool mbShowText;
 	tWStringVec mvTextRows;
@@ -124,8 +124,8 @@ private:
 	iSoundChannel* mpWindSound;
 
 	std::vector<cRaindrop> mvRaindropVector;
-	const cGfxObject*		mpRaindropGfx;
-	const cGfxObject*		mpFlashGfx;
+	cGfxObject*		mpRaindropGfx;
+	cGfxObject*		mpFlashGfx;
 
 };
 

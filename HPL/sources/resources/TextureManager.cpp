@@ -22,10 +22,11 @@
 #include "resources/Resources.h"
 #include "graphics/Texture.h"
 #include "graphics/LowLevelGraphics.h"
-#include "resources/LoadImage.h"
+#include "resources/LowLevelResources.h"
+#include "system/LowLevelSystem.h"
 #include "resources/FileSearcher.h"
-#include "graphics/Bitmap.h"
-#include "system/Log.h"
+#include "graphics/Bitmap2D.h"
+
 
 namespace hpl {
 
@@ -36,12 +37,13 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cTextureManager::cTextureManager(cGraphics* apGraphics,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
 
-		GetSupportedImageFormats(mvFileFormats);
+		mpLowLevelResources->GetSupportedImageFormats(mlstFileFormats);
 
 		mvCubeSideSuffixes.push_back("_pos_x");
 		mvCubeSideSuffixes.push_back("_neg_x");
@@ -128,17 +130,20 @@ namespace hpl {
 				return NULL;
 			}
 
-			std::vector<Bitmap> vBitmaps;
+			tBitmap2DVec vBitmaps;
 			for(size_t i =0; i< vPaths.size(); ++i)
 			{
-				auto bmp = LoadBitmapFile(vPaths[i]);
-				if (! bmp){
+				iBitmap2D* pBmp = mpResources->GetLowLevel()->LoadBitmap2D(vPaths[i]);
+				if(pBmp==NULL){
 					Error("Couldn't load bitmap '%s'!\n",vPaths[i].c_str());
+
+					for(int j=0;j<(int)vBitmaps.size();j++) hplDelete(vBitmaps[j]);
+
 					EndLoad();
 					return NULL;
 				}
 
-				vBitmaps.push_back(std::move(*bmp));
+				vBitmaps.push_back(pBmp);
 			}
 
 			//Create the animated texture
@@ -147,13 +152,17 @@ namespace hpl {
 
 			pTexture->SetSizeLevel(alTextureSizeLevel);
 
-			if(pTexture->CreateAnimFromBitmapVec(vBitmaps)==false)
+			if(pTexture->CreateAnimFromBitmapVec(&vBitmaps)==false)
 			{
 				Error("Couldn't create animated texture '%s'!\n", asName.c_str());
-				delete pTexture;
+				hplDelete(pTexture);
+				for(int j=0;j<(int)vBitmaps.size();j++) hplDelete(vBitmaps[j]);
 				EndLoad();
 				return NULL;
 			}
+
+			//Bitmaps no longer needed.
+			for(int j=0;j<(int)vBitmaps.size();j++) hplDelete(vBitmaps[j]);
 
 			AddResource(pTexture);
 		}
@@ -184,9 +193,9 @@ namespace hpl {
 			tString sPath="";
 			for(int i=0;i <6 ;i++)
 			{
-				for(const tString& sExt : mvFileFormats)
+				for(tStringListIt it = mlstFileFormats.begin();it!=mlstFileFormats.end();++it)
 				{
-					tString sNewName = sName + mvCubeSideSuffixes[i] + "." + sExt;
+					tString sNewName = sName + mvCubeSideSuffixes[i] + "." + *it;
 					sPath = mpFileSearcher->GetFilePath(sNewName);
 
 					if(sPath!="")break;
@@ -203,30 +212,36 @@ namespace hpl {
 			}
 
 			//Load bitmaps for all faces
-			std::vector<Bitmap> vBitmaps;
+			tBitmap2DVec vBitmaps;
 			for(int i=0;i<6; i++)
 			{
-				auto bmp = LoadBitmapFile(vPaths[i]);
-				if (! bmp) {
+				iBitmap2D* pBmp = mpResources->GetLowLevel()->LoadBitmap2D(vPaths[i]);
+				if(pBmp==NULL){
 					Error("Couldn't load bitmap '%s'!\n",vPaths[i].c_str());
+					for(int j=0;j<(int)vBitmaps.size();j++) hplDelete(vBitmaps[j]);
 					EndLoad();
 					return NULL;
 				}
 
-				vBitmaps.push_back(std::move(*bmp));
+				vBitmaps.push_back(pBmp);
 			}
 
 			//Create the cubemap
-			pTexture = mpGraphics->GetLowLevel()->CreateTexture(sName, abUseMipMaps, aType, eTextureTarget_CubeMap);
+			pTexture = mpGraphics->GetLowLevel()->CreateTexture(sName,abUseMipMaps,aType,
+													eTextureTarget_CubeMap);
 			pTexture->SetSizeLevel(alTextureSizeLevel);
 
-			if (pTexture->CreateCubeFromBitmapVec(vBitmaps)==false)
+			if(pTexture->CreateCubeFromBitmapVec(&vBitmaps)==false)
 			{
 				Error("Couldn't create cubemap '%s'!\n", sName.c_str());
-				delete pTexture;
+				hplDelete(pTexture);
+				for(int j=0;j<(int)vBitmaps.size();j++) hplDelete(vBitmaps[j]);
 				EndLoad();
 				return NULL;
 			}
+
+			//Bitmaps no longer needed.
+			for(int j=0;j<(int)vBitmaps.size();j++)	hplDelete(vBitmaps[j]);
 
 			AddResource(pTexture);
 		}
@@ -258,7 +273,7 @@ namespace hpl {
 			//Log("Deleting2 '%s'-%d\n",apResource->GetName().c_str() ,(iTexture*)apResource);
 			//Log("Deleting1 %d\n",apResource);
 			//Log("Deleting2 %d\n",(iTexture*)apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 
@@ -292,11 +307,11 @@ namespace hpl {
 		}
 		else
 		{
-			for(const tString& sExt : mvFileFormats)
+			for(tStringListIt it =mlstFileFormats.begin(); it != mlstFileFormats.end(); ++it)
 			{
-				tString sFileName = cString::SetFileExt(asFallOffName, sExt);
+				tString sFileName = cString::SetFileExt(asFallOffName,*it);
 				sPath = mpFileSearcher->GetFilePath(sFileName);
-				if (sPath!="") break;
+				if(sPath!="")break;
 			}
 		}
 		if(sPath == "")
@@ -305,8 +320,8 @@ namespace hpl {
 			return NULL;
 		}
 
-		auto pBmp = LoadBitmapFile(sPath);
-		if (! pBmp)
+		iBitmap2D* pBmp = mpResources->GetLowLevel()->LoadBitmap2D(sPath);
+		if(pBmp == NULL)
 		{
 			Log("Couldn't load bitmap '%s'\n",asFallOffName.c_str());
 			return NULL;
@@ -354,6 +369,8 @@ namespace hpl {
 		pTexture->SetWrapT(eTextureWrap_ClampToBorder);
 		pTexture->SetWrapR(eTextureWrap_ClampToBorder);
 
+		hplDelete(pBmp);
+
 		m_mapAttenuationTextures.insert(tTextureAttenuationMap::value_type(sName,pTexture));
 
 		return pTexture;
@@ -381,8 +398,9 @@ namespace hpl {
 		if(pTexture==NULL && sPath!="")
 		{
 			//Load the bitmap
-			auto pBmp = LoadBitmapFile(sPath);
-			if (! pBmp)
+			iBitmap2D *pBmp;
+			pBmp = mpLowLevelResources->LoadBitmap2D(sPath);
+			if(pBmp==NULL)
 			{
 				Error("Texturemanager Couldn't load bitmap '%s'\n", sPath.c_str());
 				EndLoad();
@@ -393,12 +411,16 @@ namespace hpl {
 			pTexture = mpGraphics->GetLowLevel()->CreateTexture(asName,abUseMipMaps,aType,
 																aTarget);
 			pTexture->SetSizeLevel(alTextureSizeLevel);
-			if(pTexture->CreateFromBitmap(*pBmp)==false)
+			if(pTexture->CreateFromBitmap(pBmp)==false)
 			{
-				delete pTexture;
+				hplDelete(pTexture);
+				hplDelete(pBmp);
 				EndLoad();
 				return NULL;
 			}
+
+			//Bitmap is no longer needed so delete it.
+			hplDelete(pBmp);
 
 			AddResource(pTexture);
 		}
@@ -419,9 +441,9 @@ namespace hpl {
 
 		if(cString::GetFileExt(asName)=="")
 		{
-			for (const tString& sExt : mvFileFormats)
+			for(tStringListIt it = mlstFileFormats.begin();it!=mlstFileFormats.end();++it)
 			{
-				tString sNewName = cString::SetFileExt(asName, sExt);
+				tString sNewName = cString::SetFileExt(asName,*it);
 				pTexture = static_cast<iTexture*> (FindLoadedResource(sNewName, asFilePath));
 
 				if((pTexture==NULL && asFilePath!="") || pTexture!=NULL)break;

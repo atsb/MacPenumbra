@@ -23,6 +23,8 @@
 #include <list>
 #include <map>
 
+#include "system/MemoryManager.h"
+
 namespace hpl {
 
 	//---------------------------------
@@ -128,7 +130,7 @@ namespace hpl {
 		}
 		iContainerIterator* CreateIteratorPtr()
 		{
-			return new cContainerVecIterator<T>(&mvVector);
+			return hplNew( cContainerVecIterator<T>, (&mvVector) );
 		}
 
 	public:
@@ -241,7 +243,7 @@ namespace hpl {
 		}
 		iContainerIterator* CreateIteratorPtr()
 		{
-			return new cContainerListIterator<T>(&mvVector);
+			return hplNew( cContainerListIterator<T>, (&mvVector) );
 		}
 
 	public:

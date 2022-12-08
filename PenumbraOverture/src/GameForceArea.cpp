@@ -49,7 +49,7 @@ cAreaLoader_GameForceArea::~cAreaLoader_GameForceArea()
 iEntity3D* cAreaLoader_GameForceArea::Load(const tString &asName, const cVector3f &avSize, 
 									  const cMatrixf &a_mtxTransform,cWorld3D *apWorld)
 {
-	cGameForceArea *pArea = new cGameForceArea(mpInit,asName);
+	cGameForceArea *pArea = hplNew( cGameForceArea, (mpInit,asName) );
 
 	pArea->m_mtxOnLoadTransform = a_mtxTransform;
 
@@ -237,10 +237,10 @@ void cGameForceArea::Update(float afTimeStep)
 
 void cGameForceArea::OnPostSceneDraw()
 {
-	/*
+	return;
 	iLowLevelGraphics *pLowGfx = mpInit->mpGame->GetGraphics()->GetLowLevel();
+
 	mvBodies[0]->RenderDebugGeometry(pLowGfx,cColor(1,1,1,1));
-	*/
 }
 
 //-----------------------------------------------------------------------
@@ -285,7 +285,7 @@ iGameEntity* cGameForceArea_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameForceArea::CreateSaveData()
 {
-	return new cGameForceArea_SaveData();
+	return hplNew( cGameForceArea_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

@@ -17,10 +17,12 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "sound/SoundEntityData.h"
+
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "system/String.h"
-#include "system/Log.h"
-#include "tinyXML/tinyxml.h"
+
+#include "impl/tinyXML/tinyxml.h"
 
 
 namespace hpl {
@@ -69,11 +71,11 @@ namespace hpl {
 
 	bool cSoundEntityData::CreateFromFile(const tString &asFile)
 	{
-		TiXmlDocument *pDoc = new TiXmlDocument();
+		TiXmlDocument *pDoc = hplNew( TiXmlDocument, () );
 		if(pDoc->LoadFile(asFile.c_str())==false)
 		{
 			Error("Couldn't load '%s'!\n",asFile.c_str());
-			delete pDoc;
+			hplDelete(pDoc);
 			return false;
 		}
 
@@ -84,7 +86,7 @@ namespace hpl {
 		TiXmlElement *pMainElem = pRootElem->FirstChildElement("MAIN");
 		if(pMainElem==NULL){
 			Error("Couldn't find MAIN element in '%s'!\n",asFile.c_str());
-			delete pDoc;
+			hplDelete(pDoc);
 			return false;
 		}
 
@@ -97,7 +99,7 @@ namespace hpl {
 		TiXmlElement *pPropElem = pRootElem->FirstChildElement("PROPERTIES");
 		if(pPropElem==NULL){
 			Error("Couldn't find PROPERTIES element in '%s'!\n",asFile.c_str());
-			delete pDoc;
+			hplDelete(pDoc);
 			return false;
 		}
 
@@ -120,7 +122,7 @@ namespace hpl {
 
 		mlPriority = cString::ToInt(pPropElem->Attribute("Priority"),0);
 
-		delete pDoc;
+		hplDelete(pDoc);
 
 		return true;
 	}

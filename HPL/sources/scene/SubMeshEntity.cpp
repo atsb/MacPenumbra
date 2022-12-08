@@ -17,7 +17,10 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "scene/SubMeshEntity.h"
+
 #include "scene/MeshEntity.h"
+
+#include "system/LowLevelSystem.h"
 
 #include "resources/MaterialManager.h"
 #include "resources/MeshManager.h"
@@ -37,7 +40,6 @@
 #include "physics/PhysicsBody.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
 
 #include <string.h>
 
@@ -75,7 +77,7 @@ namespace hpl {
 
 		mpLocalNode = NULL;
 
-		mpEntityCallback = new cSubMeshEntityBodyUpdate();
+		mpEntityCallback = hplNew( cSubMeshEntityBodyUpdate, () );
 		mbUpdateBody = false;
 
 		mpMaterial = NULL;
@@ -83,9 +85,9 @@ namespace hpl {
 
 	cSubMeshEntity::~cSubMeshEntity()
 	{
-		delete mpEntityCallback;
+		hplDelete(mpEntityCallback);
 
-		if(mpDynVtxBuffer) delete mpDynVtxBuffer;
+		if(mpDynVtxBuffer) hplDelete(mpDynVtxBuffer);
 
 		/* Clear any custom textures here*/
 		if(mpMaterial) mpMaterialManager->Destroy(mpMaterial);
@@ -184,7 +186,7 @@ namespace hpl {
 
 	////////////////////////////////////////////////////////////
 
-	void cSubMeshEntity::UpdateGraphics(cCamera *apCamera, float afFrameTime, cRenderList *apRenderList)
+	void cSubMeshEntity::UpdateGraphics(cCamera3D *apCamera, float afFrameTime, cRenderList *apRenderList)
 	{
 		if(mpDynVtxBuffer)
 		{
@@ -383,7 +385,7 @@ namespace hpl {
 		}
 	}
 
-	cMatrixf* cSubMeshEntity::GetModelMatrix(cCamera *apCamera)
+	cMatrixf* cSubMeshEntity::GetModelMatrix(cCamera3D* apCamera)
 	{
 		if(mpMeshEntity->HasNodes())
 		{
@@ -509,7 +511,7 @@ namespace hpl {
 
 	iSaveData* cSubMeshEntity::CreateSaveData()
 	{
-		return new cSaveData_cSubMeshEntity();
+		return hplNew( cSaveData_cSubMeshEntity, () );
 	}
 
 	//-----------------------------------------------------------------------

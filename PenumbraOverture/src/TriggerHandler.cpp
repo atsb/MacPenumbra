@@ -153,7 +153,7 @@ void cTriggerHandler::Update(float afTimeStep)
 
 		if(pTrigger->mfTimeCount <= 0)
 		{
-			delete  pTrigger ;
+			hplDelete( pTrigger );
 			m_mapTriggers.erase(TriggerIt++);
 		} else {
 			++TriggerIt;

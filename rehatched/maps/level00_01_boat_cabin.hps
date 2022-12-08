@@ -282,7 +282,7 @@ void OnStart()
 	//For boat horn event
 	RunAfter(5.5, "HornEvent01");
 	
-	bool bIntro = false;
+	bool bIntro = true;
 		
 	//---- INTRO INIT ------------------
 	if(bIntro)

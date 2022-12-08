@@ -18,13 +18,13 @@
  */
 #include "resources/SoundEntityManager.h"
 
+#include "system/String.h"
 #include "sound/Sound.h"
 #include "resources/Resources.h"
 #include "sound/SoundEntityData.h"
+#include "system/LowLevelSystem.h"
 #include "sound/SoundHandler.h"
 #include "sound/SoundChannel.h"
-#include "system/String.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -35,7 +35,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cSoundEntityManager::cSoundEntityManager(cSound* apSound,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpSound = apSound;
 		mpResources = apResources;
@@ -66,15 +67,15 @@ namespace hpl {
 
 		if(pData->GetMainSoundName() != ""){
 			iSoundChannel *pChannel = mpSound->GetSoundHandler()->CreateChannel(pData->GetMainSoundName(),0);
-			if(pChannel) delete pChannel;
+			if(pChannel) hplDelete(pChannel);
 		}
 		if(pData->GetStartSoundName() != ""){
 			iSoundChannel *pChannel = mpSound->GetSoundHandler()->CreateChannel(pData->GetStartSoundName(),0);
-			if(pChannel) delete pChannel;
+			if(pChannel) hplDelete(pChannel);
 		}
 		if(pData->GetStopSoundName() != ""){
 			iSoundChannel *pChannel = mpSound->GetSoundHandler()->CreateChannel(pData->GetStopSoundName(),0);
-			if(pChannel) delete pChannel;
+			if(pChannel) hplDelete(pChannel);
 		}
 	}
 
@@ -94,7 +95,7 @@ namespace hpl {
 
 		if(pSoundEntity==NULL && sPath!="")
 		{
-			pSoundEntity = new cSoundEntityData(asNewName);
+			pSoundEntity = hplNew( cSoundEntityData, (asNewName) );
 
 			if(pSoundEntity->CreateFromFile(sPath))
 			{
@@ -102,7 +103,7 @@ namespace hpl {
 			}
 			else
 			{
-				delete pSoundEntity;
+				hplDelete(pSoundEntity);
 				pSoundEntity =NULL;
 			}
 		}
@@ -129,7 +130,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

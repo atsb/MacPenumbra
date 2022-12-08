@@ -21,6 +21,7 @@
 #include "graphics/Skeleton.h"
 #include "math/Math.h"
 
+#include "system/LowLevelSystem.h"
 
 
 namespace hpl {
@@ -59,7 +60,7 @@ namespace hpl {
 
 	cBone* cBone::CreateChildBone(const tString &asName)
 	{
-		cBone *pBone = new cBone(asName, mpSkeleton);
+		cBone *pBone = hplNew(cBone,(asName, mpSkeleton) );
 		pBone->mpParent = this;
 
 		mlstChildren.push_back(pBone);

@@ -30,17 +30,19 @@ namespace hpl {
 	class cGpuProgramManager : public iResourceManager
 	{
 	public:
-		cGpuProgramManager(cFileSearcher *apFileSearcher, iLowLevelGraphics *apLowLevelGraphics);
+		cGpuProgramManager(cFileSearcher *apFileSearcher, iLowLevelGraphics *apLowLevelGraphics,
+			iLowLevelResources *apLowLevelResources,iLowLevelSystem *apLowLevelSystem);
 		~cGpuProgramManager();
 
 		iResourceBase* Create(const tString& asName);
 		/**
 		 * Creates a new GPU program
-		 * \param asVertexName file name of the vertex shader
-		 * \param asFragmentName file name of the fragment shader
+		 * \param asName name of the program
+		 * \param asEntry the entry point of the program (usually "main")
+		 * \param aType type of the program
 		 * \return
 		 */
-		iGpuProgram* CreateProgram(const tString& asVertexName,const tString& asFragmentName);
+		iGpuProgram* CreateProgram(const tString& asName,const tString& asEntry,eGpuProgramType aType);
 
 		void Destroy(iResourceBase* apResource);
 

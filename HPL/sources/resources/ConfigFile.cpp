@@ -18,8 +18,9 @@
  */
 #include "resources/ConfigFile.h"
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "resources/FileSearcher.h"
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include <stdio.h>
 
@@ -34,13 +35,13 @@ namespace hpl {
 	cConfigFile::cConfigFile(tWString asFile)
 	{
 		msFile = asFile;
-		mpXmlDoc = new TiXmlDocument();
+		mpXmlDoc = hplNew( TiXmlDocument,() );
 		//mpFileSearcher = apFileSearcher;
 	}
 
 	cConfigFile::~cConfigFile()
 	{
-		delete mpXmlDoc;
+		hplDelete(mpXmlDoc);
 	}
 
 	//-----------------------------------------------------------------------
@@ -90,9 +91,9 @@ namespace hpl {
 		TiXmlElement *pLevelElem = mpXmlDoc->FirstChildElement(asLevel.c_str());
 
 		if(pLevelElem==NULL){
-			TiXmlElement *pNodeChild = new TiXmlElement(asLevel.c_str());
+			TiXmlElement *pNodeChild = hplNew( TiXmlElement, (asLevel.c_str()) );
 			pLevelElem = static_cast<TiXmlElement*>(mpXmlDoc->InsertEndChild(*pNodeChild));
-			delete pNodeChild;
+			hplDelete(pNodeChild);
 		}
 
 		pLevelElem->SetAttribute(asName.c_str(),asVal.c_str());
@@ -102,7 +103,7 @@ namespace hpl {
 	void cConfigFile::SetInt(tString asLevel, tString asName, int alVal)
 	{
 		char sBuffer[40];
-		snprintf(sBuffer,sizeof(sBuffer),"%d",alVal);
+		sprintf(sBuffer,"%d",alVal);
 
 		SetString(asLevel,asName,sBuffer);
 	}
@@ -112,7 +113,7 @@ namespace hpl {
 	void cConfigFile::SetFloat(tString asLevel, tString asName, float afVal)
 	{
 		char sBuffer[40];
-		snprintf(sBuffer,sizeof(sBuffer),"%f",afVal);
+		sprintf(sBuffer,"%f",afVal);
 
 		SetString(asLevel,asName,sBuffer);
 	}

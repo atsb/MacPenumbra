@@ -147,7 +147,7 @@ void cEngineJoint_SaveData::ToJoint(iPhysicsJoint *apJoint)
 	cScriptJointCallback *pCallback = static_cast<cScriptJointCallback*>(apJoint->GetCallback());
 	if(pCallback==NULL)
 	{
-		pCallback = new cScriptJointCallback(gpInit->mpGame->GetScene());
+		pCallback = hplNew( cScriptJointCallback, (gpInit->mpGame->GetScene()) );
 		apJoint->SetCallback(pCallback,true);
 
 		if(msOnMaxCallback!="" || msOnMinCallback!="")
@@ -180,7 +180,7 @@ void cEngineJoint_SaveData::ToJoint(iPhysicsJoint *apJoint)
 	case ePhysicsJointType_Ball:
 		{
 			iPhysicsJointBall *pBallJoint = static_cast<iPhysicsJointBall*>(apJoint);
-			pBallJoint->SetConeLimits(mfMaxLimit,mfMinLimit);
+			pBallJoint->SetConeLimits(pBallJoint->GetConePin(), mfMaxLimit,mfMinLimit);
 			break;
 		}
 	case ePhysicsJointType_Hinge:

@@ -28,7 +28,7 @@ namespace hpl {
 	class cFrameTexture;
 	class cFrameBitmap;
 	class iLowLevelGraphics;
-	class Bitmap;
+	class iBitmap2D;
 
 	typedef std::list<cFrameBitmap*> tFrameBitmapList;
 	typedef tFrameBitmapList::iterator tFrameBitmapListIt;
@@ -39,28 +39,41 @@ namespace hpl {
 	class cImageManager :public iResourceManager
 	{
 	public:
-		cImageManager(cFileSearcher *apFileSearcher, iLowLevelGraphics *apLowLevelGraphics);
+		cImageManager(cFileSearcher *apFileSearcher, iLowLevelGraphics *apLowLevelGraphics,
+						iLowLevelResources *apLowLevelResources,iLowLevelSystem *apLowLevelSystem);
 		~cImageManager();
 
 		iResourceBase* Create(const tString& asName);
+
 		void Destroy(iResourceBase* apResource);
 
 		//Image specifc
-		cResourceImage* CreateImage(const tString& asName);
-		cResourceImage* CreateFromBitmap(const Bitmap &bmp);
+		iResourceBase* CreateInFrame(const tString& asName, int alFrameHandle);
+		cResourceImage* CreateImage(const tString& asName, int alFrameHandle=-1);
+		/**
+		 * Draws all updated content to textures. THis must be done before a loaded image can be used.
+		 * Use this as unoften as possible.
+		 * \return Number of bitmaps flushes
+		 */
+		int FlushAll();
+		void DeleteAllBitmapFrames();
 
+		cResourceImage* CreateFromBitmap(const tString &asName,iBitmap2D* apBmp, int alFrameHandle=-1);
+
+		int CreateFrame(cVector2l avSize);
+		void SetFrameLocked(int alHandle, bool abLocked);
 	private:
 		iLowLevelGraphics *mpLowLevelGraphics;
 
 		tFrameBitmapList mlstBitmapFrames;
 		tFrameTextureMap m_mapTextureFrames;
 
-		tStringVec mvFileFormats;
+		tStringList mlstFileFormats;
 		cVector2l mvFrameSize;
 		int mlFrameHandle;
 
 		cResourceImage *FindImage(const tString &asName, tString &asFilePath);
-		cResourceImage *AddToFrame(const Bitmap &bmp);
+		cResourceImage *AddToFrame(iBitmap2D *apBmp,int alFrameHandle);
 		cFrameBitmap *CreateBitmapFrame(cVector2l avSize);
 
 	};

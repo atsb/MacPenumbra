@@ -18,6 +18,7 @@
  */
 #include "graphics/MeshCreator.h"
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "graphics/LowLevelGraphics.h"
 #include "graphics/VertexBuffer.h"
 #include "resources/Resources.h"
@@ -56,7 +57,8 @@ namespace hpl {
 
 	cMesh* cMeshCreator::CreateBox(const tString &asName,cVector3f avSize, const tString &asMaterial)
 	{
-		cMesh *pMesh = new cMesh(asName, mpResources->GetMaterialManager(), mpResources->GetAnimationManager());
+		cMesh *pMesh = hplNew( cMesh, (asName, mpResources->GetMaterialManager(),
+										mpResources->GetAnimationManager()) );
 
 		cSubMesh *pSubMesh = pMesh->CreateSubMesh("Main");
 
@@ -136,7 +138,7 @@ namespace hpl {
 
 		if(!pSkyBox->Compile(0))
 		{
-			delete pSkyBox;
+			hplDelete(pSkyBox);
 			return NULL;
 		}
 		return pSkyBox;
@@ -224,7 +226,7 @@ namespace hpl {
 
 		if(!pBox->Compile(eVertexCompileFlag_CreateTangents))
 		{
-			delete pBox;
+			hplDelete(pBox);
 			return NULL;
 		}
 		return pBox;

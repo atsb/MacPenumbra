@@ -17,11 +17,12 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "sound/Sound.h"
+#include "system/LowLevelSystem.h"
 #include "sound/LowLevelSound.h"
 #include "resources/Resources.h"
 #include "sound/SoundHandler.h"
 #include "sound/MusicHandler.h"
-#include "system/Log.h"
+
 
 namespace hpl {
 
@@ -43,8 +44,8 @@ namespace hpl {
 		Log("Exiting Sound Module\n");
 		Log("--------------------------------------------------------\n");
 
-		delete mpSoundHandler;
-		delete mpMusicHandler;
+		hplDelete(mpSoundHandler);
+		hplDelete(mpMusicHandler);
 
 		Log("--------------------------------------------------------\n\n");
 	}
@@ -67,17 +68,22 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void cSound::Init(cResources *apResources, const tString &asDeviceName)
+	void cSound::Init(	cResources *apResources, bool abUseHardware, bool abForceGeneric, bool abUseEnvAudio, int alMaxChannels,
+						int alStreamUpdateFreq, bool abUseThreading, bool abUseVoiceManagement,
+						int alMaxMonoSourceHint, int alMaxStereoSourceHint,
+						int alStreamingBufferSize, int alStreamingBufferCount, bool abEnableLowLevelLog, tString asDeviceName)
 	{
 		mpResources = apResources;
 
 		Log("Initializing Sound Module\n");
 		Log("--------------------------------------------------------\n");
 
-		mpLowLevelSound->Init(asDeviceName);
+		mpLowLevelSound->Init(	abUseHardware, abForceGeneric, abUseEnvAudio, alMaxChannels, alStreamUpdateFreq, abUseThreading,
+								abUseVoiceManagement, alMaxMonoSourceHint, alMaxStereoSourceHint,
+								alStreamingBufferSize, alStreamingBufferCount, abEnableLowLevelLog, asDeviceName);
 
-		mpSoundHandler = new cSoundHandler(mpLowLevelSound, mpResources);
-		mpMusicHandler = new cMusicHandler(mpLowLevelSound, mpResources);
+		mpSoundHandler = hplNew( cSoundHandler, (mpLowLevelSound, mpResources) );
+		mpMusicHandler = hplNew( cMusicHandler, (mpLowLevelSound, mpResources) );
 
 		Log("--------------------------------------------------------\n\n");
 	}

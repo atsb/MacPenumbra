@@ -16,9 +16,9 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "game/SaveGame.h"
-#include "system/Log.h"
+
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -214,7 +214,7 @@ namespace hpl {
 
 	iContainerIterator* cSaveDataHandler::CreateIteratorPtr()
 	{
-		return new cSaveDataIterator(&m_mapSaveData);
+		return hplNew( cSaveDataIterator, (&m_mapSaveData) );
 	}
 
 	//------------------------------------------------------------------------

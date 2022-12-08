@@ -17,10 +17,11 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "resources/GpuProgramManager.h"
+#include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "graphics/LowLevelGraphics.h"
 #include "graphics/GPUProgram.h"
-#include "system/String.h"
-#include "system/Log.h"
+
 
 namespace hpl {
 
@@ -30,8 +31,9 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cGpuProgramManager::cGpuProgramManager(cFileSearcher *apFileSearcher,iLowLevelGraphics *apLowLevelGraphics)
-		: iResourceManager(apFileSearcher)
+	cGpuProgramManager::cGpuProgramManager(cFileSearcher *apFileSearcher,iLowLevelGraphics *apLowLevelGraphics,
+		iLowLevelResources *apLowLevelResources,iLowLevelSystem *apLowLevelSystem)
+		: iResourceManager(apFileSearcher, apLowLevelResources,apLowLevelSystem)
 	{
 		mpLowLevelGraphics = apLowLevelGraphics;
 	}
@@ -64,25 +66,23 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	iGpuProgram* cGpuProgramManager::CreateProgram(const tString& asVertexName,
-												   const tString& asFragmentName)
+	iGpuProgram* cGpuProgramManager::CreateProgram(const tString& asName,const tString& asEntry,
+													eGpuProgramType aType)
 	{
-		auto combinedName = asVertexName + "__" + asFragmentName;
-		tString dummyPath, vertexPath, fragmentPath;
+		tString sPath;
 		iGpuProgram* pProgram;
-		pProgram = static_cast<iGpuProgram*>(FindLoadedResource(combinedName, dummyPath));
-		FindLoadedResource(asVertexName, vertexPath);
-		FindLoadedResource(asFragmentName, fragmentPath);
+		pProgram = static_cast<iGpuProgram*>(FindLoadedResource(asName,sPath));
 
-		BeginLoad(combinedName);
+		BeginLoad(asName);
 
-		if (pProgram == NULL && vertexPath.length() > 0 && fragmentPath.length() > 0) {
-			pProgram = mpLowLevelGraphics->CreateGpuProgram(combinedName);
+		if(pProgram==NULL && sPath!="")
+		{
+			pProgram = mpLowLevelGraphics->CreateGpuProgram(asName, aType);
 
-			if(pProgram->CreateFromFile(vertexPath, fragmentPath) == false)
+			if(pProgram->CreateFromFile(sPath,asEntry)==false)
 			{
-				Error("Couldn't create program '%s'\n",combinedName.c_str());
-				delete pProgram;
+				Error("Couldn't create program '%s'\n",asName.c_str());
+				hplDelete(pProgram);
 				EndLoad();
 				return NULL;
 			}
@@ -91,7 +91,7 @@ namespace hpl {
 		}
 
 		if(pProgram)pProgram->IncUserCount();
-		else Error("Couldn't load program '%s'\n",combinedName.c_str());
+		else Error("Couldn't load program '%s'\n",asName.c_str());
 
 		EndLoad();
 		return pProgram;
@@ -105,7 +105,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

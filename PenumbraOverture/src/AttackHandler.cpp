@@ -122,14 +122,14 @@ cAttackHandler::cAttackHandler(cInit *apInit) : iUpdateable("AttackHandler")
 {
 	mpInit = apInit;
 
-	mpSplashBlockCheck = new cSplashDamageBlockCheck(apInit); 
+	mpSplashBlockCheck = hplNew( cSplashDamageBlockCheck,(apInit) ); 
 }
 
 //-----------------------------------------------------------------------
 
 cAttackHandler::~cAttackHandler(void)
 {
-	delete  mpSplashBlockCheck ;
+	hplDelete( mpSplashBlockCheck );
 }
 
 //-----------------------------------------------------------------------

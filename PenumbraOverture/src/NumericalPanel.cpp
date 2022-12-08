@@ -20,6 +20,7 @@
 
 #include "Init.h"
 #include "Player.h"
+#include "HapticGameCamera.h"
 
 //////////////////////////////////////////////////////////////////////////
 // BUTTON
@@ -41,8 +42,8 @@ cNumericalButton::cNumericalButton(cInit *apInit, cNumericalPanel* apPanel, cVec
 	mRect.w = avSize.x;
 	mRect.h = avSize.y;
 
-	mpGfxUp = mpDrawer->CreateGfxObject("numpanel_button_up",eGfxMaterialType::DiffuseAlpha);
-	mpGfxDown = mpDrawer->CreateGfxObject("numpanel_button_down",eGfxMaterialType::DiffuseAlpha);
+	mpGfxUp = mpDrawer->CreateGfxObject("numpanel_button_up","diffalpha2d");
+	mpGfxDown = mpDrawer->CreateGfxObject("numpanel_button_down","diffalpha2d");
 
 	mlNum = alNum;
 
@@ -136,9 +137,9 @@ cNumericalPanel::cNumericalPanel(cInit *apInit)  : iUpdateable("NumericalPanel")
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
 
 	//Load graphics (use notebook background for now).
-	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBackground = mpDrawer->CreateGfxObject("notebook_background.bmp","diffalpha2d");
 
-	mpGfxPanel = mpDrawer->CreateGfxObject("numpanel_panel.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxPanel = mpDrawer->CreateGfxObject("numpanel_panel.bmp","diffalpha2d");
 	
 	cVector2f vPos(307, 205);
 
@@ -149,7 +150,7 @@ cNumericalPanel::cNumericalPanel(cInit *apInit)  : iUpdateable("NumericalPanel")
 		else if(i==11)lNum=0;
 		else if(i==12) lNum=-2;
 
-		mlstButtons.push_back(new cNumericalButton(mpInit,this,vPos,cVector2f(62,30),lNum));
+		mlstButtons.push_back(hplNew( cNumericalButton, (mpInit,this,vPos,cVector2f(62,30),lNum)) );
         
 		if(i%3 ==0)
 		{
@@ -319,6 +320,11 @@ void cNumericalPanel::SetActive(bool abX)
 
 	if(mbActive)
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(false);
+#endif
+
 		mpInit->mpGame->GetInput()->BecameTriggerd("RightClick");
 		mpInit->mpGame->GetInput()->BecameTriggerd("LeftClick");
 		
@@ -332,6 +338,11 @@ void cNumericalPanel::SetActive(bool abX)
 	}
 	else
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(true);
+#endif
+
 		mpInit->mpPlayer->SetCrossHairState(mLastCrossHairState);
 		mpInit->mpPlayer->SetCrossHairPos(cVector2f(400,300));
 	}

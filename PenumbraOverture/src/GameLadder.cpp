@@ -48,7 +48,7 @@ cAreaLoader_GameLadder::~cAreaLoader_GameLadder()
 iEntity3D* cAreaLoader_GameLadder::Load(const tString &asName, const cVector3f &avSize, 
 									  const cMatrixf &a_mtxTransform,cWorld3D *apWorld)
 {
-	cGameLadder *pLadder = new cGameLadder(mpInit,asName);
+	cGameLadder *pLadder = hplNew( cGameLadder, (mpInit,asName) );
 
 	pLadder->m_mtxOnLoadTransform = a_mtxTransform;
 
@@ -264,7 +264,7 @@ iGameEntity* cGameLadder_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameLadder::CreateSaveData()
 {
-	return new cGameLadder_SaveData();
+	return hplNew( cGameLadder_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

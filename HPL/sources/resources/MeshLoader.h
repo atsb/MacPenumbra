@@ -46,6 +46,7 @@ namespace hpl {
 	class cWorld3D;
 	class cScene;
 	class cAnimation;
+	class cSystem;
 
 	class iMeshLoader
 	{
@@ -75,6 +76,7 @@ namespace hpl {
 		cMeshManager *mpMeshManager;
 		cAnimationManager *mpAnimationManager;
 		iLowLevelGraphics *mpLowLevelGraphics;
+		cSystem *mpSystem;
 
 		static bool mbRestricStaticLightToSector;
 		static bool mbUseFastMaterial;

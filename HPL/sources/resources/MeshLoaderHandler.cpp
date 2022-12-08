@@ -20,9 +20,9 @@
 
 #include "resources/MeshLoader.h"
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "scene/Scene.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -50,7 +50,7 @@ namespace hpl {
 		tMeshLoaderListIt it = mlstLoaders.begin();
 		for(;it != mlstLoaders.end();it++)
 		{
-			delete *it;
+			hplDelete(*it);
 		}
 
 		mlstLoaders.clear();
@@ -156,6 +156,7 @@ namespace hpl {
 		apLoader->mpMaterialManager = mpResources->GetMaterialManager();
 		apLoader->mpMeshManager = mpResources->GetMeshManager();
 		apLoader->mpAnimationManager = mpResources->GetAnimationManager();
+		apLoader->mpSystem = mpScene->GetSystem();
 
 		apLoader->AddSupportedTypes(&mvSupportedTypes);
 	}

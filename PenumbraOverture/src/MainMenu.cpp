@@ -27,6 +27,10 @@
 #include "Player.h"
 #include "PlayerHelper.h"
 #include "EffectHandler.h"
+#include "ModelExport.h"
+#ifdef INCLUDE_HAPTIC
+#include "HapticGameCamera.h"
+#endif
 
 float gfMenuFadeAmount;
 bool gbMustRestart=false;
@@ -51,6 +55,9 @@ static eMainMenuState gvMenuBackStates[] = {
 		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupMove,
 		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupAction,
 		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupMisc,
+	
+		eMainMenuState_Start,//eMainMenuState_Tools
+		eMainMenuState_Tools,//eMainMenuState_ToolsExportModels
 
 		eMainMenuState_Options,//eMainMenuState_GraphicsRestart,
 
@@ -369,12 +376,14 @@ void cMainMenuWidget_Text::OnMouseOver(bool abOver)
 //-----------------------------------------------------------------------
 
 cMainMenuWidget_Image::cMainMenuWidget_Image(cInit *apInit, const cVector3f &avPos,const cVector2f& avSize,
-											 const tString& asImageFile, eGfxMaterialType matType,
+											 const tString& asImageFile, const tString& asImageMat,
 											 const cColor& aColor)
 										   : cMainMenuWidget(apInit,avPos,avSize)
 {
-	mpImage = mpDrawer->CreateGfxObject(asImageFile, matType);
+	mpImage = mpDrawer->CreateGfxObject(asImageFile,asImageMat);
+
 	mColor = aColor;
+
 	mvSize = avSize;
 }
 
@@ -404,15 +413,15 @@ cMainMenuWidget_List::cMainMenuWidget_List(cInit *apInit, const cVector3f &avPos
 
 	mpFont = mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("font_menu_small.fnt",30);
 
-	mpBackGfx = mpDrawer->CreateGfxObject("effect_white.jpg",eGfxMaterialType::DiffuseAlpha);
+	mpBackGfx = mpDrawer->CreateGfxObject("effect_white.jpg","diffalpha2d");
 
-	mpDownGfx = mpDrawer->CreateGfxObject("menu_list_down.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpUpGfx = mpDrawer->CreateGfxObject("menu_list_up.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpSlideGfx = mpDrawer->CreateGfxObject("menu_list_slide.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpBorderLeftGfx = mpDrawer->CreateGfxObject("menu_list_border_left.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpBorderTopGfx = mpDrawer->CreateGfxObject("menu_list_border_top.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpBorderBottomGfx = mpDrawer->CreateGfxObject("menu_list_border_bottom.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpSlideButtonGfx = mpDrawer->CreateGfxObject("menu_list_slider_button.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpDownGfx = mpDrawer->CreateGfxObject("menu_list_down.bmp","diffalpha2d");
+	mpUpGfx = mpDrawer->CreateGfxObject("menu_list_up.bmp","diffalpha2d");
+	mpSlideGfx = mpDrawer->CreateGfxObject("menu_list_slide.bmp","diffalpha2d");
+	mpBorderLeftGfx = mpDrawer->CreateGfxObject("menu_list_border_left.bmp","diffalpha2d");
+	mpBorderTopGfx = mpDrawer->CreateGfxObject("menu_list_border_top.bmp","diffalpha2d");
+	mpBorderBottomGfx = mpDrawer->CreateGfxObject("menu_list_border_bottom.bmp","diffalpha2d");
+	mpSlideButtonGfx = mpDrawer->CreateGfxObject("menu_list_slider_button.bmp","diffalpha2d");
 	
 	mvFontSize = avFontSize;
 
@@ -744,6 +753,30 @@ void cMainMenuWidget_Quit::OnMouseDown(eMButton aButton)
 //-----------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////////////
+// EXPORT MODELS
+//////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------
+
+cMainMenuWidget_ExportModels::cMainMenuWidget_ExportModels(cInit *apInit, const cVector3f &avPos,
+												 const tWString& asText,
+												 cVector2f avFontSize, eFontAlign aAlignment)
+												 : cMainMenuWidget_Button(apInit,avPos,
+												 asText,eMainMenuState_LastEnum,avFontSize,aAlignment)
+{
+
+}
+//-----------------------------------------------------------------------
+
+void cMainMenuWidget_ExportModels::OnMouseDown(eMButton aButton)
+{
+	ExportModels(mpInit->mpGame);
+}
+
+
+//-----------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////////
 // RESUME
 //////////////////////////////////////////////////////////////////////////
 
@@ -905,6 +938,121 @@ cMainMenuWidget_Text *gpInvertMouseYText=NULL;
 cMainMenuWidget_Text *gpMouseSensitivityText=NULL;
 cMainMenuWidget_Text *gpToggleCrouchText=NULL;
 
+#ifdef INCLUDE_HAPTIC
+cMainMenuWidget_Text *gpUseHapticsText=NULL;
+cMainMenuWidget_Text *gpWidgetInteractModeCameraSpeedText = NULL;
+cMainMenuWidget_Text *gpWidgetActionModeCameraSpeedText = NULL;
+cMainMenuWidget_Text *gpWidgetWeightForceScaleText = NULL;
+
+//-----------------------------------------------------------------------
+
+class cMainMenuWidget_UseHaptics : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_UseHaptics(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment){msTip = _W("");}
+
+	void OnMouseDown(eMButton aButton)
+	{
+		mpInit->mbHasHapticsOnRestart = !mpInit->mbHasHapticsOnRestart;
+
+		gpUseHapticsText->msText = mpInit->mbHasHapticsOnRestart ?
+			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		gbMustRestart = true;
+	}
+};
+
+//-----------------------------------------------------------------------
+
+class cMainMenuWidget_WeightForceScale : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_WeightForceScale(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment){msTip = _W("");}
+
+		void OnMouseDown(eMButton aButton)
+		{
+			float afX = mpInit->mfHapticForceMul;
+			if(aButton == eMButton_Left)
+			{
+				afX += 0.1f;
+				if(afX>3.0f) afX = 3.0f;
+			}
+			else if(aButton == eMButton_Right)
+			{
+				afX -= 0.1f;
+				if(afX<0.0f) afX = 0.0f;
+			}
+
+			char sTempVec[256];
+			sprintf(sTempVec,"%.1f",afX);
+			gpWidgetWeightForceScaleText->msText = cString::To16Char(sTempVec);
+
+			mpInit->mfHapticForceMul = afX;
+		}
+};
+
+//-----------------------------------------------------------------------
+
+class cMainMenuWidget_InteractModeCameraSpeed : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_InteractModeCameraSpeed(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment){msTip = _W("");}
+
+		void OnMouseDown(eMButton aButton)
+		{
+			float afX = mpInit->mpPlayer->GetHapticCamera()->GetInteractModeCameraSpeed();
+			if(aButton == eMButton_Left)
+			{
+				afX += 0.1f;
+				if(afX>3.0f) afX = 3.0f;
+			}
+			else if(aButton == eMButton_Right)
+			{
+				afX -= 0.1f;
+				if(afX<0.1f) afX = 0.1f;
+			}
+
+			char sTempVec[256];
+			sprintf(sTempVec,"%.1f",afX);
+			gpWidgetInteractModeCameraSpeedText->msText = cString::To16Char(sTempVec);
+
+			mpInit->mpPlayer->GetHapticCamera()->SetInteractModeCameraSpeed(afX);
+		}
+};
+
+//-----------------------------------------------------------------------
+
+class cMainMenuWidget_ActionModeCameraSpeed : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_ActionModeCameraSpeed(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment){msTip = _W("");}
+
+		void OnMouseDown(eMButton aButton)
+		{
+			float afX = mpInit->mpPlayer->GetHapticCamera()->GetActionModeCameraSpeed();
+			if(aButton == eMButton_Left)
+			{
+				afX += 0.1f;
+				if(afX>3.0f) afX = 3.0f;
+			}
+			else if(aButton == eMButton_Right)
+			{
+				afX -= 0.1f;
+				if(afX<0.1f) afX = 0.1f;
+			}
+
+			char sTempVec[256];
+			sprintf(sTempVec,"%.1f",afX);
+			gpWidgetActionModeCameraSpeedText->msText = cString::To16Char(sTempVec);
+
+			mpInit->mpPlayer->GetHapticCamera()->SetActionModeCameraSpeed(afX);
+		}
+};
+
+#endif // INCLUDE_HAPTIC
 
 //-----------------------------------------------------------------------
 
@@ -952,7 +1100,7 @@ public:
 		}
 
 		char sTempVec[256];
-		snprintf(sTempVec,256,"%.1f",mpInit->mpButtonHandler->mfMouseSensitivity);
+		sprintf(sTempVec,"%.1f",mpInit->mpButtonHandler->mfMouseSensitivity);
 		gpMouseSensitivityText->msText = cString::To16Char(sTempVec);
 	}
 };
@@ -981,6 +1129,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 cMainMenuWidget_Text *gpSoundVolumeText=NULL;
+cMainMenuWidget_Text *gpSoundHardwareText=NULL;
 cMainMenuWidget_Text *gpSoundOutputDevice=NULL;
 
 class cMainMenuWidget_SoundVolume : public cMainMenuWidget_Button
@@ -1010,8 +1159,28 @@ public:
 		mpInit->mpGame->GetSound()->GetLowLevel()->SetVolume(fVolume);
 
 		char sTempVec[256];
-		snprintf(sTempVec,256,"%.0f",mpInit->mpGame->GetSound()->GetLowLevel()->GetVolume()*100);
+		sprintf(sTempVec,"%.0f",mpInit->mpGame->GetSound()->GetLowLevel()->GetVolume()*100);
 		gpSoundVolumeText->msText = cString::To16Char(sTempVec);
+	}
+};
+
+class cMainMenuWidget_SoundHardware : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_SoundHardware(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment)
+	{
+		msTip = kTranslate("MainMenu", "TipSoundHardware");
+	}
+
+	void OnMouseDown(eMButton aButton)
+	{
+		mpInit->mbUseSoundHardware = !mpInit->mbUseSoundHardware;
+
+		gpSoundHardwareText->msText = mpInit->mbUseSoundHardware ?
+			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+
+		gbMustRestart = true;
 	}
 };
 
@@ -1143,6 +1312,27 @@ public:
 	}
 };
 
+#ifdef INCLUDE_HAPTIC
+
+class cMainMenuWidget_SimpleSwing : public cMainMenuWidget_Button
+{
+public:
+	cMainMenuWidget_SimpleSwing(cInit *apInit, const cVector3f &avPos, const tWString& asText,cVector2f avFontSize, eFontAlign aAlignment)
+		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment)
+	{
+	}
+
+	void OnMouseDown(eMButton aButton)
+	{
+		mpInit->mbSimpleWeaponSwing = !mpInit->mbSimpleWeaponSwing;
+		
+		gpSimpleSwingText->msText = mpInit->mbSimpleWeaponSwing ?
+									kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+	}
+};
+
+#endif
+
 class cMainMenuWidget_AllowQuickSave : public cMainMenuWidget_Button
 {
 public:
@@ -1203,14 +1393,15 @@ public:
 		: cMainMenuWidget_Button(apInit,avPos,asText,eMainMenuState_LastEnum,avFontSize,aAlignment)
 	{
 		tWStringList lstStrings;
-		FindFilesInDir(lstStrings, _W("config/"), _W("*.lang"));
+		apInit->mpGame->GetResources()->GetLowLevel()->FindFilesInDir(lstStrings,_W("config/"),_W("*.lang"));
 
 		mlCurrentFile =0;
 		int lIdx=0;
-		for(const tWString& str : lstStrings)
+		for(tWStringListIt it = lstStrings.begin(); it != lstStrings.end();++it)
 		{
-			mvFiles.push_back(str);
-			if (cString::To16Char(cString::ToLowerCase(apInit->msLanguageFile)) == cString::ToLowerCaseW(str))
+			mvFiles.push_back(*it);
+			if(	cString::To16Char(cString::ToLowerCase(apInit->msLanguageFile)) == 
+				cString::ToLowerCaseW(*it))
 			{
 				mlCurrentFile = lIdx;
 			}
@@ -1335,7 +1526,7 @@ public:
 		mpInit->mpGame->GetGraphics()->GetLowLevel()->SetGammaCorrection(mfGamma);
 		
 		char sTempVec[256];
-		snprintf(sTempVec,256,"%.1f",mfGamma);
+		sprintf(sTempVec,"%.1f",mfGamma);
 		
 		gpGammaText->msText = cString::To16Char(sTempVec);
 		if(mlGNum == 1)
@@ -1661,7 +1852,7 @@ public:
 		mpInit->mvScreenSize = gvResolutions[lCurrentNum];
 
 		char sTempVec[256];
-		snprintf(sTempVec,256,"%d x %d",mpInit->mvScreenSize.x, mpInit->mvScreenSize.y);
+		sprintf(sTempVec,"%d x %d",mpInit->mvScreenSize.x, mpInit->mvScreenSize.y);
 		gpResolutionText->msText = cString::To16Char(sTempVec);
 		
 		gbMustRestart = true;
@@ -1681,12 +1872,12 @@ public:
 
 	void OnMouseDown(eMButton aButton)
 	{
-//		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive();
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetActive(!bX);
-//		mpInit->mbPostEffects = !bX;
+		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive();
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetActive(!bX);
+		mpInit->mbPostEffects = !bX;
 
-//		gpPostEffectsText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive() ?
-//			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		gpPostEffectsText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive() ? 
+			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
 	}
 };
 
@@ -1703,11 +1894,11 @@ public:
 
 	void OnMouseDown(eMButton aButton)
 	{
-//		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive();
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomActive(!bX);
-//
-//		gpBloomText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive() ?
-//								kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive();
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomActive(!bX);
+
+		gpBloomText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive() ? 
+								kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
 	}
 };
 
@@ -1725,11 +1916,11 @@ public:
 
 	void OnMouseDown(eMButton aButton)
 	{
-//		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive();
-//		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurActive(!bX);
-//
-//		gpMotionBlurText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive() ?
-//			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		bool bX = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive();
+		mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurActive(!bX);
+
+		gpMotionBlurText->msText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive() ? 
+			kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
 	}
 };
 
@@ -1891,12 +2082,12 @@ cMainMenu::cMainMenu(cInit *apInit)  : iUpdateable("MainMenu")
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
 
 	//Load graphics
-	mpGfxBlackQuad = mpDrawer->CreateGfxObject("effect_black.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxMouse = mpDrawer->CreateGfxObject("player_crosshair_pointer.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBlackQuad = mpDrawer->CreateGfxObject("effect_black.bmp","diffalpha2d");
+	mpGfxMouse = mpDrawer->CreateGfxObject("player_crosshair_pointer.bmp","diffalpha2d");
 
-	mpGfxRainDrop = mpDrawer->CreateGfxObject("menu_rain_drop.jpg",eGfxMaterialType::DiffuseAdditive);
-	mpGfxRainSplash = mpDrawer->CreateGfxObject("menu_rain_splash.jpg",eGfxMaterialType::DiffuseAdditive);
-	mpGfxSnowFlake = mpDrawer->CreateGfxObject("menu_snow_flake.jpg",eGfxMaterialType::DiffuseAdditive);
+	mpGfxRainDrop = mpDrawer->CreateGfxObject("menu_rain_drop.jpg","diffadditive2d");
+	mpGfxRainSplash = mpDrawer->CreateGfxObject("menu_rain_splash.jpg","diffadditive2d");
+	mpGfxSnowFlake = mpDrawer->CreateGfxObject("menu_snow_flake.jpg","diffadditive2d");
 	
 	//Init effects
 	mvRainDrops.resize(70);
@@ -2021,7 +2212,7 @@ void cMainMenu::OnDraw()
 	////////////////////////////////
 	// Draw mouse
 	if(mpCurrentActionText) return;
-	cResourceImage *pImage = mpGfxMouse->mpImage;
+	cResourceImage *pImage = mpGfxMouse->GetMaterial()->GetImage();
 	cVector2l vSize = pImage->GetSize();
 	cVector2f vPosAdd(((float)vSize.x) / 2.0f, ((float)vSize.y) / 2.0f);
 	mpDrawer->DrawGfxObject(mpGfxMouse,cVector3f(0,0,100)+(mvMousePos - vPosAdd));
@@ -2332,6 +2523,11 @@ void cMainMenu::SetActive(bool abX)
 
 	if(mbActive)
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(false);
+#endif
+		
 		if (!mpInit->mbFullScreen) {
 			mpInit->mpGame->GetInput()->GetLowLevel()->LockInput(false);
 		}
@@ -2339,6 +2535,13 @@ void cMainMenu::SetActive(bool abX)
 		mpInit->mpGame->GetUpdater()->SetContainer("MainMenu");
 		mpInit->mpGame->GetScene()->SetDrawScene(false);
 		mpInit->mpGame->GetScene()->SetUpdateMap(false);
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+		{
+			mpInit->mpGame->GetHaptic()->GetLowLevel()->StopAllForces();
+			mpInit->mpGame->GetHaptic()->GetLowLevel()->SetUpdateShapes(false);
+		}
+#endif
 		
 		mpInit->mpButtonHandler->ChangeState(eButtonHandlerState_MainMenu);
 				
@@ -2398,6 +2601,11 @@ void cMainMenu::SetActive(bool abX)
 			mpInit->mpGame->GetInput()->GetLowLevel()->LockInput(true);
 		}
 
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(true);
+#endif
+
 		cSoundHandler *pSoundHandler =mpInit->mpGame->GetSound()->GetSoundHandler();
 		
 		if(mpInit->mpMapHandler->GetCurrentMapName() != "")
@@ -2418,7 +2626,10 @@ void cMainMenu::SetActive(bool abX)
 		mpInit->mpGame->GetUpdater()->SetContainer("Default");
 		mpInit->mpGame->GetScene()->SetDrawScene(true);
 		mpInit->mpGame->GetScene()->SetUpdateMap(true);
-
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpGame->GetHaptic()->GetLowLevel()->SetUpdateShapes(true);
+#endif
 		mpInit->mpButtonHandler->ChangeState(eButtonHandlerState_Game);
 
 		if(mpLogo) mpInit->mpGame->GetResources()->GetTextureManager()->Destroy(mpLogo);
@@ -2628,37 +2839,37 @@ void cMainMenu::CreateWidgets()
 	if(bFirstStart)
 	{
 		vPos = cVector3f(40, 190, 40);
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "Welcome"),15,eFontAlign_Left));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu", "Welcome"),15,eFontAlign_Left)) ); 
 		vPos.y += 18;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "Too Improve"),15,eFontAlign_Left));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu", "Too Improve"),15,eFontAlign_Left)) ); 
 		vPos.y += 28;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "StartTip1"),15,eFontAlign_Left));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu", "StartTip1"),15,eFontAlign_Left)) ); 
 		vPos.y += 18;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "StartTip2"),15,eFontAlign_Left));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu", "StartTip2"),15,eFontAlign_Left)) ); 
 		vPos.y += 18;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "StartTip3"),15,eFontAlign_Left));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu", "StartTip3"),15,eFontAlign_Left)) ); 
 		vPos.y += 28;
 		vPos.x = 395;
-		cMainMenuWidget *pGammaFirstButton = new cMainMenuWidget_Gamma(mpInit,vPos,kTranslate("MainMenu","Gamma:"),20,eFontAlign_Right,1);
+		cMainMenuWidget *pGammaFirstButton = hplNew( cMainMenuWidget_Gamma,(mpInit,vPos,kTranslate("MainMenu","Gamma:"),20,eFontAlign_Right,1) );
 		AddWidgetToState(eMainMenuState_FirstStart,pGammaFirstButton); 
 		vPos.x = 405;
-		snprintf(sTempVec,256,"%.1f",mpInit->mpGame->GetGraphics()->GetLowLevel()->GetGammaCorrection());
+		sprintf(sTempVec,"%.1f",mpInit->mpGame->GetGraphics()->GetLowLevel()->GetGammaCorrection());
 		sText = cString::To16Char(sTempVec);
-		gpGammaText2 = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+		gpGammaText2 = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 		AddWidgetToState(eMainMenuState_FirstStart,gpGammaText2); 
 		gpGammaText2->SetExtraWidget(pGammaFirstButton);
 
 		vPos.y += 31;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Image(mpInit,
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Image,(mpInit,
 																			cVector3f(250,vPos.y,30),
 																			cVector2f(300,200),
 																			"menu_gamma.bmp",
-																			eGfxMaterialType::DiffuseAlpha,
-																			cColor(1,1)));
+																			"diffalpha2d",
+																			cColor(1,1))) );
 		vPos.y+=205;
-		//AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu""StartTip4"),15,eFontAlign_Left); 
+		//AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu", "StartTip4"),15,eFontAlign_Left)); 
 		//vPos.y += 28;
-		AddWidgetToState(eMainMenuState_FirstStart,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","OK"),eMainMenuState_Start,20,eFontAlign_Center));
+		AddWidgetToState(eMainMenuState_FirstStart,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","OK"),eMainMenuState_Start,20,eFontAlign_Center)) );
 	}
 	
 
@@ -2670,7 +2881,7 @@ void cMainMenu::CreateWidgets()
 
 	if(mpInit->mpMapHandler->GetCurrentMapName() != "")
 	{
-		AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_Resume(mpInit,vPos,kTranslate("MainMenu","Resume")));
+		AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_Resume,(mpInit,vPos,kTranslate("MainMenu","Resume"))) );
 		vPos.y += 60;
 	}
 	else
@@ -2680,18 +2891,20 @@ void cMainMenu::CreateWidgets()
 
 		if(sAuto != _W("") || sSpot != _W(""))
 		{
-			AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_MainButton(mpInit,vPos,kTranslate("MainMenu","Continue"),eMainMenuState_Continue)); 
+			AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Continue"),eMainMenuState_Continue)) ); 
 			vPos.y += 51;
 		}
 	}
 
-	AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_MainButton(mpInit,vPos,kTranslate("MainMenu","New Game"),eMainMenuState_NewGame)); 
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","New Game"),eMainMenuState_NewGame)) ); 
 	vPos.y += 51;
-	AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_MainButton(mpInit,vPos,kTranslate("MainMenu","Load Game"),eMainMenuState_LoadGameSpot)); 
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Load Game"),eMainMenuState_LoadGameSpot)) ); 
 	vPos.y += 51;
-	AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_MainButton(mpInit,vPos,kTranslate("MainMenu","Options"),eMainMenuState_Options)); 
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Options"),eMainMenuState_Options)) ); 
 	vPos.y += 51;
-	AddWidgetToState(eMainMenuState_Start,new cMainMenuWidget_MainButton(mpInit,vPos,kTranslate("MainMenu","Exit"),eMainMenuState_Exit));
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Tools"),eMainMenuState_Tools)) );
+	vPos.y += 51;
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Exit"),eMainMenuState_Exit)) );
 	
 	
 	///////////////////////////////////
@@ -2699,31 +2912,31 @@ void cMainMenu::CreateWidgets()
 	///////////////////////////////////
 
 	vPos = vTextStart;//cVector3f(400, 260, 40);
-	//AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_Text(mpInitvPos,kTranslate("MainMenu","StartNewGame"),24,eFontAlign_Center); 
+	//AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","StartNewGame"),24,eFontAlign_Center)); 
 	//vPos.y += 34;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_NewGame(mpInit,vPos,kTranslate("MainMenu","Easy"),24,eFontAlign_Center,eGameDifficulty_Easy)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_NewGame,(mpInit,vPos,kTranslate("MainMenu","Easy"),24,eFontAlign_Center,eGameDifficulty_Easy)) ); 
 	vPos.y += 30;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","EasyDesc"),16,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","EasyDesc"),16,eFontAlign_Center)) ); 
 	vPos.y += 42;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_NewGame(mpInit,vPos,kTranslate("MainMenu","Normal"),24,eFontAlign_Center,eGameDifficulty_Normal)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_NewGame,(mpInit,vPos,kTranslate("MainMenu","Normal"),24,eFontAlign_Center,eGameDifficulty_Normal)) ); 
 	vPos.y += 30;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","NormalDesc"),16,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","NormalDesc"),16,eFontAlign_Center)) ); 
 	vPos.y += 42;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_NewGame(mpInit,vPos,kTranslate("MainMenu","Hard"),24,eFontAlign_Center,eGameDifficulty_Hard)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_NewGame,(mpInit,vPos,kTranslate("MainMenu","Hard"),24,eFontAlign_Center,eGameDifficulty_Hard)) ); 
 	vPos.y += 30;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","HardDesc"),16,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","HardDesc"),16,eFontAlign_Center)) ); 
 	vPos.y +=46;
-	AddWidgetToState(eMainMenuState_NewGame,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,22,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_NewGame,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,22,eFontAlign_Center)) );
 
 	///////////////////////////////////
 	// Continue
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 260, 40);
-	AddWidgetToState(eMainMenuState_Continue,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","ContinueLastSave"),20,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_Continue,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","ContinueLastSave"),20,eFontAlign_Center)) ); 
 	vPos.y += 34;
-	AddWidgetToState(eMainMenuState_Continue,new cMainMenuWidget_Continue(mpInit,vPos,kTranslate("MainMenu","Yes"),20,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_Continue,hplNew( cMainMenuWidget_Continue,(mpInit,vPos,kTranslate("MainMenu","Yes"),20,eFontAlign_Center)) ); 
 	vPos.y += 29;
-	AddWidgetToState(eMainMenuState_Continue,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","No"),eMainMenuState_Start,20,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Continue,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","No"),eMainMenuState_Start,20,eFontAlign_Center)) );
 
 	///////////////////////////////////
 	// Load Game
@@ -2737,24 +2950,24 @@ void cMainMenu::CreateWidgets()
 		
 		///////////////////////////
 		//Head
-		AddWidgetToState(state,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Load Game"),27,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Load Game"),27,eFontAlign_Center)) ); 
 		vPos.y += 42;
 		vPos.x -= 110;
 		
 		///////////////////////////
 		//Buttons
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Saved Games"),eMainMenuState_LoadGameSpot,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Saved Games"),eMainMenuState_LoadGameSpot,25,eFontAlign_Center)) ); 
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Auto Saves"),eMainMenuState_LoadGameAuto,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Auto Saves"),eMainMenuState_LoadGameAuto,25,eFontAlign_Center)) ); 
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Favorites"),eMainMenuState_LoadGameFavorite,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Favorites"),eMainMenuState_LoadGameFavorite,25,eFontAlign_Center)) ); 
 		
 		///////////////////////////
 		//Back
 		vPos.y += 150;
 		vPos.x += 130;
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,23,eFontAlign_Center));
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,23,eFontAlign_Center)) );
         
 		///////////////////////////
 		//Load type
@@ -2764,7 +2977,7 @@ void cMainMenu::CreateWidgets()
 		tString sLoadType = "Saved Games";
 		if(i==1)sLoadType = "Auto Saves";
 		if(i==2)sLoadType = "Favorites";
-		AddWidgetToState(state,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu",sLoadType)+_W(":"),21,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu",sLoadType)+_W(":"),21,eFontAlign_Center)) ); 
 		
 		///////////////////////////
 		//Saved games list
@@ -2778,17 +2991,23 @@ void cMainMenu::CreateWidgets()
 		if(i == 1)		sDir = _W("save/auto");
 		else if(i == 2) sDir = _W("save/favorite");
 		
-		gpSaveGameList[i] = new cMainMenuWidget_SaveGameList(mpInit,vPos,cVector2f(355,170),15,sDir,(int)i);
+		gpSaveGameList[i] = hplNew( cMainMenuWidget_SaveGameList,(
+														mpInit,vPos,cVector2f(355,170),15,sDir,(int)i) );
 		AddWidgetToState(state,gpSaveGameList[i]);
+			
+		iLowLevelResources *pLowLevelResources = mpInit->mpGame->GetResources()->GetLowLevel();
+		iLowLevelSystem *pLowLevelSystem = mpInit->mpGame->GetSystem()->GetLowLevel();
 
 		tWStringList lstFiles;
 		tTempFileAndDataSet setTempFiles;
 		
 		tWString sFullPath = mpInit->mpSaveHandler->GetSaveDir() + sDir;
-		FindFilesInDir(lstFiles, sFullPath, _W("*.sav"));
+		pLowLevelResources->FindFilesInDir(lstFiles,sFullPath,_W("*.sav"));
 
-		for (const tWString& sFile : lstFiles)
+		tWStringListIt fileIt = lstFiles.begin();
+		for(; fileIt != lstFiles.end(); ++fileIt)
 		{
+			tWString sFile = *fileIt;
 			cDate date = FileModifiedDate(sFullPath+_W("/")+sFile);
             
 			setTempFiles.insert(cTempFileAndData(sFile,date));
@@ -2820,14 +3039,14 @@ void cMainMenu::CreateWidgets()
 		vPos.y += 170;
 		vPos.x = vTextStart.x + 20;
 		
-		AddWidgetToState(state,new cMainMenuWidget_LoadSaveGame(mpInit,vPos,kTranslate("MainMenu","Load"),17,eFontAlign_Left,sDir,(int)i)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_LoadSaveGame,(mpInit,vPos,kTranslate("MainMenu","Load"),17,eFontAlign_Left,sDir,(int)i)) ); 
 		
 		vPos.x += 70;
 		if(i!=2)
-			AddWidgetToState(state,new cMainMenuWidget_FavoriteSaveGame(mpInit,vPos,kTranslate("MainMenu","Add To Favorites"),17,eFontAlign_Left,sDir,(int)i)); 
+			AddWidgetToState(state,hplNew( cMainMenuWidget_FavoriteSaveGame,(mpInit,vPos,kTranslate("MainMenu","Add To Favorites"),17,eFontAlign_Left,sDir,(int)i)) ); 
 		
 		vPos.x += 205;
-		AddWidgetToState(state,new cMainMenuWidget_RemoveSaveGame(mpInit,vPos,kTranslate("MainMenu","Remove"),17,eFontAlign_Left,sDir,(int)i)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_RemoveSaveGame,(mpInit,vPos,kTranslate("MainMenu","Remove"),17,eFontAlign_Left,sDir,(int)i)) ); 
 		
 		
         
@@ -2837,65 +3056,140 @@ void cMainMenu::CreateWidgets()
 	// Quit
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 260, 40);
-	AddWidgetToState(eMainMenuState_Exit,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","SureQuit"),20,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_Exit,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","SureQuit"),20,eFontAlign_Center)) ); 
 	vPos.y += 34;
-	AddWidgetToState(eMainMenuState_Exit,new cMainMenuWidget_Quit(mpInit,vPos,kTranslate("MainMenu","Yes"),20,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_Exit,hplNew( cMainMenuWidget_Quit,(mpInit,vPos,kTranslate("MainMenu","Yes"),20,eFontAlign_Center)) ); 
 	vPos.y += 29;
-	AddWidgetToState(eMainMenuState_Exit,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","No"),eMainMenuState_Start,20,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Exit,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","No"),eMainMenuState_Start,20,eFontAlign_Center)) );
+
+	///////////////////////////////////
+	// Tools
+	///////////////////////////////////
+	vPos = vTextStart;//cVector3f(400, 260, 40);
+	AddWidgetToState(eMainMenuState_Tools,hplNew( cMainMenuWidget_ExportModels,(mpInit,vPos,kTranslate("MainMenu","ExportModels"),25,eFontAlign_Center)) );
 
 	///////////////////////////////////
 	// Options
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 260, 40);
-	AddWidgetToState(eMainMenuState_Options,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Controls"),eMainMenuState_OptionsControls,25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_Options,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Controls"),eMainMenuState_OptionsControls,25,eFontAlign_Center)) ); 
 	vPos.y += 37;
-	AddWidgetToState(eMainMenuState_Options,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Game"),eMainMenuState_OptionsGame,25,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Options,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Game"),eMainMenuState_OptionsGame,25,eFontAlign_Center)) );
 	vPos.y += 37;
-	AddWidgetToState(eMainMenuState_Options,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Sound"),eMainMenuState_OptionsSound,25,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Options,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Sound"),eMainMenuState_OptionsSound,25,eFontAlign_Center)) );
 	vPos.y += 37;
-	AddWidgetToState(eMainMenuState_Options,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Graphics"),eMainMenuState_OptionsGraphics,25,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Options,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Graphics"),eMainMenuState_OptionsGraphics,25,eFontAlign_Center)) );
 	vPos.y += 37;
-	AddWidgetToState(eMainMenuState_Options,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,25,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_Options,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Start,25,eFontAlign_Center)) );
 
 	///////////////////////////////////
 	// Options Controls
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 260, 40);
 	//Head
-	AddWidgetToState(eMainMenuState_OptionsControls,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Controls"),25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsControls,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Controls"),25,eFontAlign_Center)) ); 
 	vPos.y += 37;
 	//Buttons
-	cMainMenuWidget *pWidgetInvertMouseY = new cMainMenuWidget_InvertMouseY(mpInit,vPos,kTranslate("MainMenu","Invert Mouse Y:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetInvertMouseY = hplNew( cMainMenuWidget_InvertMouseY,(mpInit,vPos,kTranslate("MainMenu","Invert Mouse Y:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsControls,pWidgetInvertMouseY); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetMouseSensitivity = new cMainMenuWidget_MouseSensitivity(mpInit,vPos,kTranslate("MainMenu","Mouse Sensitivity:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetMouseSensitivity = hplNew( cMainMenuWidget_MouseSensitivity,(mpInit,vPos,kTranslate("MainMenu","Mouse Sensitivity:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsControls,pWidgetMouseSensitivity); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetToggleCrouch = new cMainMenuWidget_ToggleCrouch(mpInit,vPos,kTranslate("MainMenu","Toggle Crouch:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetToggleCrouch = hplNew( cMainMenuWidget_ToggleCrouch,(mpInit,vPos,kTranslate("MainMenu","Toggle Crouch:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsControls,pWidgetToggleCrouch); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetChangeKeyConf = new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Change Key Mapping"),eMainMenuState_OptionsKeySetupMove,20,eFontAlign_Center);
+#ifdef INCLUDE_HAPTIC
+	cMainMenuWidget *pWidgetUseHaptics = NULL;
+	cMainMenuWidget *pWidgetInteractModeCameraSpeed = NULL;
+	cMainMenuWidget *pWidgetActionModeCameraSpeed = NULL;
+	cMainMenuWidget *pWidgetWeightForceScale = NULL;
+	if(mpInit->mbHapticsAvailable)
+	{
+		vPos.y+= 5;
+		//Use haptics
+		tWString sText = kTranslate("MainMenu","Use Haptics:");
+		if(sText == _W("")) sText = _W("Use Haptics:");
+		pWidgetUseHaptics = hplNew( cMainMenuWidget_UseHaptics,(mpInit,vPos,sText,20,eFontAlign_Right) );
+		AddWidgetToState(eMainMenuState_OptionsControls,pWidgetUseHaptics); 
+		vPos.y += 29;
+		
+		//Weight Force Scale
+		sText = kTranslate("MainMenu","Weight Force Scale:");
+		if(sText == _W("")) sText = _W("Weight Force Scale:");
+		pWidgetWeightForceScale = hplNew( cMainMenuWidget_WeightForceScale,(mpInit,vPos,sText,20,eFontAlign_Right) );
+		AddWidgetToState(eMainMenuState_OptionsControls,pWidgetWeightForceScale); 
+		vPos.y += 29;
+
+		//InteractMode camera speed
+		sText = kTranslate("MainMenu","InteractMode Camera Speed:");
+		if(sText == _W("")) sText = _W("InteractMode Camera Speed:");
+		pWidgetInteractModeCameraSpeed = hplNew( cMainMenuWidget_InteractModeCameraSpeed,(mpInit,vPos,sText,20,eFontAlign_Right) );
+		AddWidgetToState(eMainMenuState_OptionsControls,pWidgetInteractModeCameraSpeed); 
+		vPos.y += 29;
+
+		//ActionMode camera speed
+		sText = kTranslate("MainMenu","ActionMode Camera Speed:");
+		if(sText == _W("")) sText = _W("ActionMode Camera Speed:");
+		pWidgetActionModeCameraSpeed = hplNew( cMainMenuWidget_ActionModeCameraSpeed,(mpInit,vPos,sText,20,eFontAlign_Right) );
+		AddWidgetToState(eMainMenuState_OptionsControls,pWidgetActionModeCameraSpeed); 
+		vPos.y += 29;
+		
+		vPos.y+= 5;
+	}
+#endif
+	cMainMenuWidget *pWidgetChangeKeyConf = hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Change Key Mapping"),eMainMenuState_OptionsKeySetupMove,20,eFontAlign_Center) );
 	AddWidgetToState(eMainMenuState_OptionsControls,pWidgetChangeKeyConf); 
 	vPos.y += 35;
-	AddWidgetToState(eMainMenuState_OptionsControls,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Options,23,eFontAlign_Center) ); 
+	AddWidgetToState(eMainMenuState_OptionsControls,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_Options,23,eFontAlign_Center) )); 
 
 	//Text
 	vPos = cVector3f(vTextStart.x+12, vTextStart.y+37, vTextStart.z);
 
 	sText = mpInit->mpButtonHandler->mbInvertMouseY ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpInvertMouseYText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetInvertMouseY);
+	gpInvertMouseYText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetInvertMouseY) );
 	AddWidgetToState(eMainMenuState_OptionsControls,gpInvertMouseYText); 
 
 	vPos.y += 29;
-	snprintf(sTempVec,256,"%.1f",mpInit->mpButtonHandler->mfMouseSensitivity);
+	sprintf(sTempVec,"%.1f",mpInit->mpButtonHandler->mfMouseSensitivity);
 	sText = cString::To16Char(sTempVec);
-	gpMouseSensitivityText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetMouseSensitivity);
+	gpMouseSensitivityText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetMouseSensitivity) );
 	AddWidgetToState(eMainMenuState_OptionsControls,gpMouseSensitivityText); 
 
 	vPos.y += 29;
 	sText = mpInit->mpButtonHandler->mbToggleCrouch ? kTranslate("MainMenu","On"): kTranslate("MainMenu","Off");
-	gpToggleCrouchText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetToggleCrouch);
+	gpToggleCrouchText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetToggleCrouch) );
 	AddWidgetToState(eMainMenuState_OptionsControls,gpToggleCrouchText); 
+
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHapticsAvailable)
+	{
+		vPos.y+= 5;
+		vPos.y += 29;
+		sText = mpInit->mbHasHapticsOnRestart ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		gpUseHapticsText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
+		AddWidgetToState(eMainMenuState_OptionsControls,gpUseHapticsText);
+		gpUseHapticsText->SetExtraWidget(pWidgetUseHaptics);
+		
+		vPos.y += 29;
+		sprintf(sTempVec,"%.1f",mpInit->mfHapticForceMul);
+		sText = cString::To16Char(sTempVec);
+		gpWidgetWeightForceScaleText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetWeightForceScale) );
+		AddWidgetToState(eMainMenuState_OptionsControls,gpWidgetWeightForceScaleText); 
+
+		vPos.y += 29;
+		sprintf(sTempVec,"%.1f",mpInit->mpPlayer->GetHapticCamera()->GetInteractModeCameraSpeed());
+		sText = cString::To16Char(sTempVec);
+		gpWidgetInteractModeCameraSpeedText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetInteractModeCameraSpeed) );
+		AddWidgetToState(eMainMenuState_OptionsControls,gpWidgetInteractModeCameraSpeedText); 
+
+		vPos.y += 29;
+		sprintf(sTempVec,"%.1f",mpInit->mpPlayer->GetHapticCamera()->GetActionModeCameraSpeed());
+		sText = cString::To16Char(sTempVec);
+		gpWidgetActionModeCameraSpeedText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left,pWidgetActionModeCameraSpeed) );
+		AddWidgetToState(eMainMenuState_OptionsControls,gpWidgetActionModeCameraSpeedText); 
+	}
+#endif
 
 	///////////////////////////////////
 	// Options Key Setup General stuff
@@ -2905,21 +3199,21 @@ void cMainMenu::CreateWidgets()
 		eMainMenuState state = (eMainMenuState)(i+ eMainMenuState_OptionsKeySetupMove);
 		cVector3f vPos = vTextStart;//cVector3f(400, 260, 40);
 		//Head
-		AddWidgetToState(state,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Configure Keys"),25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Configure Keys"),25,eFontAlign_Center)) ); 
 		vPos.y += 42;
 		vPos.x -= 110;
 		//Buttons
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Movement"),eMainMenuState_OptionsKeySetupMove,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Movement"),eMainMenuState_OptionsKeySetupMove,25,eFontAlign_Center)) ); 
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Actions"),eMainMenuState_OptionsKeySetupAction,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Actions"),eMainMenuState_OptionsKeySetupAction,25,eFontAlign_Center)) ); 
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Misc"),eMainMenuState_OptionsKeySetupMisc,25,eFontAlign_Center)); 
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Misc"),eMainMenuState_OptionsKeySetupMisc,25,eFontAlign_Center)) ); 
 		//Back
 		vPos.y += 150;
 		vPos.x += 130;
-		AddWidgetToState(state,new cMainMenuWidget_KeyReset(mpInit,vPos,kTranslate("MainMenu","Reset to defaults"),23,eFontAlign_Center));
+		AddWidgetToState(state,hplNew( cMainMenuWidget_KeyReset,(mpInit,vPos,kTranslate("MainMenu","Reset to defaults"),23,eFontAlign_Center)) );
 		vPos.y += 32;
-		AddWidgetToState(state,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_OptionsControls,23,eFontAlign_Center));
+		AddWidgetToState(state,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_OptionsControls,23,eFontAlign_Center)) );
 	}
 
 	///////////////////////////////////
@@ -2935,66 +3229,66 @@ void cMainMenu::CreateWidgets()
 	vPos.y += 46;
 	vPos.x += 15;
 
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Forward:"),
-													18,eFontAlign_Left,pTempTextWidget,"Forward");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Forward:"),
+													18,eFontAlign_Left,pTempTextWidget,"Forward") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Backward:"),
-												18,eFontAlign_Left,pTempTextWidget,"Backward");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Backward:"),
+												18,eFontAlign_Left,pTempTextWidget,"Backward") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Strafe Left:"),
-					18,eFontAlign_Left,pTempTextWidget,"Left");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Strafe Left:"),
+					18,eFontAlign_Left,pTempTextWidget,"Left") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Strafe Right:"),
-					18,eFontAlign_Left,pTempTextWidget,"Right");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Strafe Right:"),
+					18,eFontAlign_Left,pTempTextWidget,"Right") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Run:"),
-					18,eFontAlign_Left,pTempTextWidget,"Run");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Run:"),
+					18,eFontAlign_Left,pTempTextWidget,"Run") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Crouch:"),
-					18,eFontAlign_Left,pTempTextWidget,"Crouch");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Crouch:"),
+					18,eFontAlign_Left,pTempTextWidget,"Crouch") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Jump:"),
-					18,eFontAlign_Left,pTempTextWidget,"Jump");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Jump:"),
+					18,eFontAlign_Left,pTempTextWidget,"Jump") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Lean Left:"),
-					18,eFontAlign_Left,pTempTextWidget,"LeanLeft");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Lean Left:"),
+					18,eFontAlign_Left,pTempTextWidget,"LeanLeft") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pTempTextWidget); 
-	pWidgetKeyButton = new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Lean Right:"),
-					18,eFontAlign_Left,pTempTextWidget,"LeanRight");
+	pWidgetKeyButton = hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Lean Right:"),
+					18,eFontAlign_Left,pTempTextWidget,"LeanRight") );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMove,pWidgetKeyButton); 
 	
 
@@ -3006,34 +3300,34 @@ void cMainMenu::CreateWidgets()
 	vPos.y += 46;
 	vPos.x += 15;
 
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupAction, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Interact:"),
-		18,eFontAlign_Left,pTempTextWidget,"Interact"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Interact:"),
+		18,eFontAlign_Left,pTempTextWidget,"Interact")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupAction, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Examine:"),
-		18,eFontAlign_Left,pTempTextWidget,"Examine"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Examine:"),
+		18,eFontAlign_Left,pTempTextWidget,"Examine")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupAction, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","InteractMode:"),
-		18,eFontAlign_Left,pTempTextWidget,"InteractMode"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","InteractMode:"),
+		18,eFontAlign_Left,pTempTextWidget,"InteractMode")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupAction, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Holster:"),
-		18,eFontAlign_Left,pTempTextWidget,"Holster"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Holster:"),
+		18,eFontAlign_Left,pTempTextWidget,"Holster")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupAction, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","LookMode:"),
-		18,eFontAlign_Left,pTempTextWidget,"LookMode"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupAction,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","LookMode:"),
+		18,eFontAlign_Left,pTempTextWidget,"LookMode")) ); 
 
 
 	///////////////////////////////////
@@ -3044,115 +3338,131 @@ void cMainMenu::CreateWidgets()
 	vPos.y += 46;
 	vPos.x += 15;
 
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Inventory:"),
-		18,eFontAlign_Left,pTempTextWidget,"Inventory"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Inventory:"),
+		18,eFontAlign_Left,pTempTextWidget,"Inventory")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Notebook:"),
-		18,eFontAlign_Left,pTempTextWidget,"NoteBook"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Notebook:"),
+		18,eFontAlign_Left,pTempTextWidget,"NoteBook")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Pers. Notes:"),
-		18,eFontAlign_Left,pTempTextWidget,"PersonalNotes"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Pers. Notes:"),
+		18,eFontAlign_Left,pTempTextWidget,"PersonalNotes")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Flashlight:"),
-		18,eFontAlign_Left,pTempTextWidget,"Flashlight"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Flashlight:"),
+		18,eFontAlign_Left,pTempTextWidget,"Flashlight")) ); 
 
 	vPos.y += 23;
-	pTempTextWidget = new cMainMenuWidget_Text(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left);
+	pTempTextWidget = hplNew( cMainMenuWidget_Text,(mpInit,vPos+cVector3f(fKeyTextXAdd,0,0),_W(""),18,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,pTempTextWidget); 
-	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc, new cMainMenuWidget_KeyButton(mpInit,vPos,kTranslate("MainMenu","Glowstick:"),
-		18,eFontAlign_Left,pTempTextWidget,"GlowStick"));
+	AddWidgetToState(eMainMenuState_OptionsKeySetupMisc,hplNew( cMainMenuWidget_KeyButton,(mpInit,vPos,kTranslate("MainMenu","Glowstick:"),
+		18,eFontAlign_Left,pTempTextWidget,"GlowStick")) ); 
 
 	///////////////////////////////////
 	// Options Game
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 260, 40);
 	//Head
-	AddWidgetToState(eMainMenuState_OptionsGame,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Game"),25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Game"),25,eFontAlign_Center)) ); 
 	vPos.y += 37;
 	//Buttons
-	cMainMenuWidget *pWidgetLanguage = new cMainMenuWidget_Language(mpInit,vPos,kTranslate("MainMenu","Language:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetLanguage = hplNew( cMainMenuWidget_Language,(mpInit,vPos,kTranslate("MainMenu","Language:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetLanguage); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetSubtitles = new cMainMenuWidget_Subtitles(mpInit,vPos,kTranslate("MainMenu","Subtitle:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetSubtitles = hplNew( cMainMenuWidget_Subtitles,(mpInit,vPos,kTranslate("MainMenu","Subtitle:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetSubtitles); 
 	vPos.y += 50;
-	cMainMenuWidget *pWidgetDifficulty = new cMainMenuWidget_Difficulty(mpInit,vPos,kTranslate("MainMenu","Difficulty:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetDifficulty = hplNew( cMainMenuWidget_Difficulty,(mpInit,vPos,kTranslate("MainMenu","Difficulty:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetDifficulty); 
 	vPos.y += 29;
-
-	//AddWidgetToState(eMainMenuState_OptionsGame,new cMainMenuWidget_AllowQuickSave(mpInitvPos,kTranslate("MainMenu","AllowQuickSave:"),20,eFontAlign_Right);
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbSimpleSwingInOptions)
+	{
+		AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_SimpleSwing,(mpInit,vPos,kTranslate("MainMenu","SimpleSwing:"),20,eFontAlign_Right)) ); 
+		vPos.y += 29;
+	}
+#endif
+	//AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_AllowQuickSave(mpInit,vPos,kTranslate("MainMenu","AllowQuickSave:"),20,eFontAlign_Right)); 
 	//vPos.y += 29;
 	tWString sCrosshairText = kTranslate("MainMenu","Show Crosshair:");
 	if(sCrosshairText == _W("")) sCrosshairText = _W("Show Crosshair:");
-	cMainMenuWidget *pWidgetShowCrossHair = new cMainMenuWidget_ShowCrossHair(mpInit,vPos,sCrosshairText,20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetShowCrossHair = hplNew( cMainMenuWidget_ShowCrossHair,(mpInit,vPos,sCrosshairText,20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetShowCrossHair); 
 	vPos.y += 29;
 		
-	cMainMenuWidget *pWidgetFlashItems = new cMainMenuWidget_FlashItems(mpInit,vPos,kTranslate("MainMenu","FlashItems:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetFlashItems = hplNew( cMainMenuWidget_FlashItems,(mpInit,vPos,kTranslate("MainMenu","FlashItems:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetFlashItems); 
 	vPos.y += 29;
 	
-	cMainMenuWidget *pWidgetDisablePersonal = new cMainMenuWidget_DisablePersonal(mpInit,vPos,kTranslate("MainMenu","DisablePersonal:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetDisablePersonal = hplNew( cMainMenuWidget_DisablePersonal,(mpInit,vPos,kTranslate("MainMenu","DisablePersonal:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGame,pWidgetDisablePersonal); 
 	vPos.y += 35;
-	AddWidgetToState(eMainMenuState_OptionsGame,new cMainMenuWidget_GfxBack(mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_GfxBack,(mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)) ); 
 
 	//Text
 	vPos = cVector3f(vTextStart.x+12, vTextStart.y+37, vTextStart.z);
 
 	sText = cString::To16Char(cString::SetFileExt(mpInit->msLanguageFile,""));
-	gpLanguageText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpLanguageText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpLanguageText); 
 	gpLanguageText->SetExtraWidget(pWidgetLanguage);
 
 	vPos.y += 29;
 	sText = mpInit->mbSubtitles ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpSubtitlesText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpSubtitlesText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpSubtitlesText); 
 	gpSubtitlesText->SetExtraWidget(pWidgetSubtitles);
 	
 	vPos.y +=25;
-	AddWidgetToState(eMainMenuState_OptionsGame, new cMainMenuWidget_Text(mpInit,cVector3f(vPos-cVector3f(12,0,0)),
-										kTranslate("MainMenu","VoiceLanguange:"),12,eFontAlign_Right));
-	AddWidgetToState(eMainMenuState_OptionsGame, new cMainMenuWidget_Text(mpInit,cVector3f(vPos),
-										kTranslate("MainMenu","SetThisToLanguageOfVoice"),12,eFontAlign_Left));
+	AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_Text,(mpInit,cVector3f(vPos-cVector3f(12,0,0)),
+										kTranslate("MainMenu","VoiceLanguange:"),12,eFontAlign_Right)) );
+	AddWidgetToState(eMainMenuState_OptionsGame,hplNew( cMainMenuWidget_Text,(mpInit,cVector3f(vPos),
+										kTranslate("MainMenu","SetThisToLanguageOfVoice"),12,eFontAlign_Left)) );
 	vPos.y += 25;
 	
 	sText = kTranslate("MainMenu",gvDifficultyLevel[mpInit->mDifficulty]);
-	gpDifficultyText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpDifficultyText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpDifficultyText); 
 	gpDifficultyText->SetExtraWidget(pWidgetDifficulty);
 	vPos.y += 29;
+
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbSimpleSwingInOptions)
+	{
+		sText = mpInit->mbSimpleWeaponSwing ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+		gpSimpleSwingText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
+		AddWidgetToState(eMainMenuState_OptionsGame,gpSimpleSwingText); 
+		vPos.y += 29;
+	}
+#endif
 	
 	//sText = mpInit->mbAllowQuickSave ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	//gpAllowQuickSaveText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	//gpAllowQuickSaveText = hplNew( cMainMenuWidget_Text, (mpInit,vPos,sText,20,eFontAlign_Left) );
 	//AddWidgetToState(eMainMenuState_OptionsGame,gpAllowQuickSaveText); 
 	//vPos.y += 29;
 	sText = mpInit->mbShowCrossHair ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpShowCrossHairText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpShowCrossHairText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpShowCrossHairText);
 	gpShowCrossHairText->SetExtraWidget(pWidgetShowCrossHair);
 	vPos.y += 29;
 	
 	sText = mpInit->mbFlashItems ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpFlashItemsText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpFlashItemsText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpFlashItemsText);
 	gpFlashItemsText->SetExtraWidget(pWidgetFlashItems);
 	
 	vPos.y += 29;
 	sText = mpInit->mbDisablePersonalNotes ? kTranslate("MainMenu","Off") : kTranslate("MainMenu","On");
-	gpDisablePersonalText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpDisablePersonalText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGame,gpDisablePersonalText); 
 	gpDisablePersonalText->SetExtraWidget(pWidgetDisablePersonal);
 
@@ -3161,33 +3471,44 @@ void cMainMenu::CreateWidgets()
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 230, 40);
 	//Head
-	AddWidgetToState(eMainMenuState_OptionsSound,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Sound"),25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsSound,hplNew( cMainMenuWidget_Text, (mpInit,vPos,kTranslate("MainMenu","Sound"),25,eFontAlign_Center)) ); 
 	vPos.y += 37;
 	
 	//Buttons
-	cMainMenuWidget *pWidgetSoundVolume = new cMainMenuWidget_SoundVolume(mpInit,vPos,kTranslate("MainMenu","Sound Volume:"),20,eFontAlign_Right);  
+	cMainMenuWidget *pWidgetSoundVolume = hplNew( cMainMenuWidget_SoundVolume, (mpInit,vPos,kTranslate("MainMenu","Sound Volume:"),20,eFontAlign_Right) );  
 	AddWidgetToState(eMainMenuState_OptionsSound,pWidgetSoundVolume); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetSoundOutputDevice = new cMainMenuWidget_SoundOutputDevice(mpInit,vPos,kTranslate("MainMenu","Output Device:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetSoundHardware = hplNew( cMainMenuWidget_SoundHardware, (mpInit,vPos,kTranslate("MainMenu","Use Hardware:"),20,eFontAlign_Right) );
+	AddWidgetToState(eMainMenuState_OptionsSound,pWidgetSoundHardware); 
+	vPos.y += 29;
+	cMainMenuWidget *pWidgetSoundOutputDevice = hplNew( cMainMenuWidget_SoundOutputDevice, (mpInit,vPos,kTranslate("MainMenu","Output Device:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsSound,pWidgetSoundOutputDevice);
 	vPos.y += 35;
-    AddWidgetToState(eMainMenuState_OptionsSound,new cMainMenuWidget_GfxBack(mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)); 
+    AddWidgetToState(eMainMenuState_OptionsSound,hplNew( cMainMenuWidget_GfxBack, (mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)) ); 
 
 
 	//Text
 	vPos = cVector3f(vTextStart.x+12, vTextStart.y+37, vTextStart.z);
 
-	snprintf(sTempVec,256,"%.0f",mpInit->mpGame->GetSound()->GetLowLevel()->GetVolume()*100);
+	sprintf(sTempVec,"%.0f",mpInit->mpGame->GetSound()->GetLowLevel()->GetVolume()*100);
 	sText = cString::To16Char(sTempVec);
-	gpSoundVolumeText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpSoundVolumeText = hplNew( cMainMenuWidget_Text, (mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsSound,gpSoundVolumeText); 
 	gpSoundVolumeText->SetExtraWidget(pWidgetSoundVolume);
 
 	vPos.y += 29;
+	sText = mpInit->mbUseSoundHardware ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
+	gpSoundHardwareText = hplNew( cMainMenuWidget_Text, (mpInit,vPos,sText,20,eFontAlign_Left) );
+	AddWidgetToState(eMainMenuState_OptionsSound,gpSoundHardwareText); 
+	gpSoundHardwareText->SetExtraWidget(pWidgetSoundHardware);
+
+	vPos.y += 29;
 	// Set the default to what's really being used
-	mpInit->msDeviceName = tString(mpInit->mpGame->GetSound()->GetLowLevel()->GetCurrentDeviceName());
+//	mpInit->msDeviceName = tString(OAL_Info_GetDeviceName());
+	mpInit->msDeviceName = tString("Generic");
+
 	sText = cString::To16Char(mpInit->msDeviceName);
-	gpSoundOutputDevice = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpSoundOutputDevice = hplNew( cMainMenuWidget_Text, (mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsSound,gpSoundOutputDevice);
 	gpSoundOutputDevice->SetExtraWidget(pWidgetSoundOutputDevice);
 
@@ -3196,65 +3517,73 @@ void cMainMenu::CreateWidgets()
 	///////////////////////////////////
 	vPos = vTextStart;//cVector3f(400, 230, 40);
 	//Head
-	AddWidgetToState(eMainMenuState_OptionsGraphics,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Graphics"),25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsGraphics,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Graphics"),25,eFontAlign_Center)) ); 
 	vPos.y += 37;
-
+	/*AddWidgetToState(eMainMenuState_OptionsGraphics,hplNew( cMainMenuWidget_Image, (mpInit,
+													cVector3f(400,vPos.y,30),
+													cVector2f(200,150),
+													"menu_gamma.bmp",
+													"diffalpha2d",
+													cColor(1,1))) );
+	
 	//Buttons
-	cMainMenuWidget *pWidgetResolution = new cMainMenuWidget_Resolution(mpInit,vPos,kTranslate("MainMenu","Resolution:"),20,eFontAlign_Right);
+	vPos.x -= 130;*/
+	cMainMenuWidget *pWidgetResolution = hplNew( cMainMenuWidget_Resolution,(mpInit,vPos,kTranslate("MainMenu","Resolution:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,pWidgetResolution); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetNoiseFilter = new cMainMenuWidget_NoiseFilter(mpInit,vPos,kTranslate("MainMenu","Noise Filter:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetNoiseFilter = hplNew( cMainMenuWidget_NoiseFilter,(mpInit,vPos,kTranslate("MainMenu","Noise Filter:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,pWidgetNoiseFilter); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetBloom = new cMainMenuWidget_Bloom(mpInit,vPos,kTranslate("MainMenu","Bloom:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetBloom = hplNew( cMainMenuWidget_Bloom,(mpInit,vPos,kTranslate("MainMenu","Bloom:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,pWidgetBloom); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetGamma = new cMainMenuWidget_Gamma(mpInit,vPos,kTranslate("MainMenu","Gamma:"),20,eFontAlign_Right,0);
+	cMainMenuWidget *pWidgetGamma = hplNew( cMainMenuWidget_Gamma,(mpInit,vPos,kTranslate("MainMenu","Gamma:"),20,eFontAlign_Right,0) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,pWidgetGamma); 
 	vPos.y += 29;
-	cMainMenuWidget *pWidgetShaderQuality = new cMainMenuWidget_ShaderQuality(mpInit,vPos,kTranslate("MainMenu","Shader Quality:"),20,eFontAlign_Right);
+	cMainMenuWidget *pWidgetShaderQuality = hplNew( cMainMenuWidget_ShaderQuality,(mpInit,vPos,kTranslate("MainMenu","Shader Quality:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,pWidgetShaderQuality); 
 
 	//vPos.x = 400;
 	//vPos.y = 230 + 150;
 	vPos.y += 35;
-	AddWidgetToState(eMainMenuState_OptionsGraphics,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Advanced"),eMainMenuState_OptionsGraphicsAdvanced,23,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_OptionsGraphics,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Advanced"),eMainMenuState_OptionsGraphicsAdvanced,23,eFontAlign_Center)) );
 
 	vPos.y += 35;
-	AddWidgetToState(eMainMenuState_OptionsGraphics,new cMainMenuWidget_GfxBack(mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsGraphics,hplNew( cMainMenuWidget_GfxBack,(mpInit,vPos,kTranslate("MainMenu","Back"),23,eFontAlign_Center)) ); 
 
 
 	//Text
 	vPos = cVector3f(vTextStart.x+12, vTextStart.y+37, vTextStart.z);
 
-	snprintf(sTempVec,256,"%d x %d",mpInit->mvScreenSize.x, mpInit->mvScreenSize.y);
+	sprintf(sTempVec,"%d x %d",mpInit->mvScreenSize.x, mpInit->mvScreenSize.y);
 	sText = cString::To16Char(sTempVec);
-	gpResolutionText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpResolutionText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,gpResolutionText); 
 	gpResolutionText->SetExtraWidget(pWidgetResolution);
 
 	vPos.y += 29;
 	sText = mpInit->mpPlayer->GetNoiseFilter()->IsActive() ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpNoiseFilterText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left );
+	gpNoiseFilterText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left ));
 	AddWidgetToState(eMainMenuState_OptionsGraphics,gpNoiseFilterText); 
 	gpNoiseFilterText->SetExtraWidget(pWidgetNoiseFilter);
 
 	vPos.y += 29;
-	sText = _W("DISABLED"); // mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive() ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpBloomText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	sText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive() ? kTranslate("MainMenu","On") : 
+	kTranslate("MainMenu","Off");
+	gpBloomText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,gpBloomText);
 	gpBloomText->SetExtraWidget(pWidgetBloom);
 
 	vPos.y += 29;
-	snprintf(sTempVec,256,"%.1f",mpInit->mpGame->GetGraphics()->GetLowLevel()->GetGammaCorrection());
+	sprintf(sTempVec,"%.1f",mpInit->mpGame->GetGraphics()->GetLowLevel()->GetGammaCorrection());
 	sText = cString::To16Char(sTempVec);
-	gpGammaText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpGammaText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,gpGammaText);
 	gpGammaText->SetExtraWidget(pWidgetGamma);
 
 	vPos.y += 29;
 	sText = kTranslate("MainMenu",gvShaderQuality[iMaterial::GetQuality()]);
-	gpShaderQualityText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpShaderQualityText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphics,gpShaderQualityText); 
 	gpShaderQualityText->SetExtraWidget(pWidgetShaderQuality);
 
@@ -3264,74 +3593,76 @@ void cMainMenu::CreateWidgets()
 	///////////////////////////////////
 	vPos = vTextStart + cVector3f(40,0,0);//cVector3f(400, 260, 40);
 	//Head
-	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","Advanced Graphics"),25,eFontAlign_Center)); 
+	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","Advanced Graphics"),25,eFontAlign_Center)) ); 
 	vPos.y += 37;
 	
 	//Buttons
-	cMainMenuWidget *pTextureQualityButton = new cMainMenuWidget_TextureQuality(mpInit,vPos,kTranslate("MainMenu","Texture Quality:"),20,eFontAlign_Right);
+	cMainMenuWidget *pTextureQualityButton = hplNew( cMainMenuWidget_TextureQuality,(mpInit,vPos,kTranslate("MainMenu","Texture Quality:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pTextureQualityButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pShadowsButton = new cMainMenuWidget_Shadows(mpInit,vPos,kTranslate("MainMenu","Shadows:"),20,eFontAlign_Right);
+	cMainMenuWidget *pShadowsButton = hplNew( cMainMenuWidget_Shadows,(mpInit,vPos,kTranslate("MainMenu","Shadows:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pShadowsButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pPostEffectsButton = new cMainMenuWidget_PostEffects(mpInit,vPos,kTranslate("MainMenu","Post Effects:"),20,eFontAlign_Right);
+	cMainMenuWidget *pPostEffectsButton = hplNew( cMainMenuWidget_PostEffects,(mpInit,vPos,kTranslate("MainMenu","Post Effects:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pPostEffectsButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pMotionBlurButton = new cMainMenuWidget_MotionBlur(mpInit,vPos,kTranslate("MainMenu","Motion Blur:"),20,eFontAlign_Right);
+	cMainMenuWidget *pMotionBlurButton = hplNew( cMainMenuWidget_MotionBlur,(mpInit,vPos,kTranslate("MainMenu","Motion Blur:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pMotionBlurButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pVSyncButton = new cMainMenuWidget_VSync(mpInit,vPos,kTranslate("MainMenu","VSync:"),20,eFontAlign_Right);
+	cMainMenuWidget *pVSyncButton = hplNew( cMainMenuWidget_VSync,(mpInit,vPos,kTranslate("MainMenu","VSync:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pVSyncButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pTextureFilterButton = new cMainMenuWidget_TextureFilter(mpInit,vPos,kTranslate("MainMenu","Texture Filter:"),20,eFontAlign_Right);
+	cMainMenuWidget *pTextureFilterButton = hplNew( cMainMenuWidget_TextureFilter,(mpInit,vPos,kTranslate("MainMenu","Texture Filter:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pTextureFilterButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pTextureAnisotropyButton = new cMainMenuWidget_TextureAnisotropy(mpInit,vPos,kTranslate("MainMenu","Anisotropy:"),20,eFontAlign_Right);
+	cMainMenuWidget *pTextureAnisotropyButton = hplNew( cMainMenuWidget_TextureAnisotropy,(mpInit,vPos,kTranslate("MainMenu","Anisotropy:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pTextureAnisotropyButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pFSAAButton = new cMainMenuWidget_FSAA(mpInit,vPos,kTranslate("MainMenu","Anti-Aliasing:"),20,eFontAlign_Right);
+	cMainMenuWidget *pFSAAButton = hplNew( cMainMenuWidget_FSAA,(mpInit,vPos,kTranslate("MainMenu","Anti-Aliasing:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pFSAAButton); 
 	vPos.y += 29;
-	cMainMenuWidget *pDOFButton = new cMainMenuWidget_DOF(mpInit,vPos,kTranslate("MainMenu","Depth of Field:"),20,eFontAlign_Right);
+	cMainMenuWidget *pDOFButton = hplNew( cMainMenuWidget_DOF,(mpInit,vPos,kTranslate("MainMenu","Depth of Field:"),20,eFontAlign_Right) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,pDOFButton); 
 	vPos.y += 35;
-    AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_OptionsGraphics,23,eFontAlign_Center));
+    AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","Back"),eMainMenuState_OptionsGraphics,23,eFontAlign_Center)) );
 
 	//Text
 	vPos = cVector3f(vTextStart.x+12, vTextStart.y+37, vTextStart.z) + cVector3f(40,0,0);
 
 	sText = kTranslate("MainMenu",gvTextureQuality[mpInit->mpGame->GetResources()->GetMaterialManager()->GetTextureSizeLevel()]);
-	gpTextureQualityText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpTextureQualityText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpTextureQualityText); 
 	gpTextureQualityText->SetExtraWidget(pTextureQualityButton);
 
 	vPos.y += 29;
 	sText = kTranslate("MainMenu",gvShadowTypes[mpInit->mpGame->GetGraphics()->GetRenderer3D()->GetShowShadows()]);
-	gpShadowsText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpShadowsText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpShadowsText); 
 	gpShadowsText->SetExtraWidget(pShadowsButton);
 
 	vPos.y += 29;
-	sText = _W("DISABLED"); // mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive() ?	kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpPostEffectsText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left );
+	sText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetActive() ?	kTranslate("MainMenu","On") : 
+																					kTranslate("MainMenu","Off");
+	gpPostEffectsText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left ));
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpPostEffectsText);
 	gpPostEffectsText->SetExtraWidget(pPostEffectsButton);
 
 	vPos.y += 29;
-	sText = _W("DISABLED"); // mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive() ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpMotionBlurText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	sText = mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive() ? kTranslate("MainMenu","On") : 
+	kTranslate("MainMenu","Off");
+	gpMotionBlurText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpMotionBlurText);
 	gpMotionBlurText->SetExtraWidget(pMotionBlurButton);
 
 	vPos.y += 29;
 	sText = mpInit->mbVsync ? kTranslate("MainMenu","On") : kTranslate("MainMenu","Off");
-	gpVSyncText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpVSyncText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpVSyncText);
 	gpVSyncText->SetExtraWidget(pVSyncButton);
 
 	vPos.y += 29;
 	sText = kTranslate("MainMenu",gvTextureFilter[mpInit->mpGame->GetResources()->GetMaterialManager()->GetTextureFilter()]);
-	gpTextureFilterText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpTextureFilterText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpTextureFilterText);
 	gpTextureFilterText->SetExtraWidget(pTextureFilterButton);
 
@@ -3339,7 +3670,7 @@ void cMainMenu::CreateWidgets()
 	int lAniDeg = (int)mpInit->mpGame->GetResources()->GetMaterialManager()->GetTextureAnisotropy();
 	if(lAniDeg!=1)	sText = cString::To16Char(cString::ToString(lAniDeg)+"x");
 	else			sText = kTranslate("MainMenu","Off");
-	gpTextureAnisotropyText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpTextureAnisotropyText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpTextureAnisotropyText);
 	gpTextureAnisotropyText->SetExtraWidget(pTextureAnisotropyButton);
 
@@ -3347,7 +3678,7 @@ void cMainMenu::CreateWidgets()
 	int lFSAA = mpInit->mlFSAA;
 	if(lFSAA!=0)	sText = cString::To16Char(cString::ToString(lFSAA)+"x");
 	else			sText = kTranslate("MainMenu","Off");
-	gpFSAAText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpFSAAText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpFSAAText);
 	gpFSAAText->SetExtraWidget(pFSAAButton);
 
@@ -3355,7 +3686,7 @@ void cMainMenu::CreateWidgets()
 	sText = mpInit->mpEffectHandler->GetDepthOfField()->IsDisabled() ? 
 		kTranslate("MainMenu","Off") : kTranslate("MainMenu","On");
 
-	gpDoFText = new cMainMenuWidget_Text(mpInit,vPos,sText,20,eFontAlign_Left);
+	gpDoFText = hplNew( cMainMenuWidget_Text,(mpInit,vPos,sText,20,eFontAlign_Left) );
 	AddWidgetToState(eMainMenuState_OptionsGraphicsAdvanced,gpDoFText);
 	gpDoFText->SetExtraWidget(pDOFButton);
 
@@ -3365,9 +3696,10 @@ void cMainMenu::CreateWidgets()
 	///////////////////////////////////
 
 	vPos = vTextStart;//cVector3f(400, 260, 40);
-	AddWidgetToState(eMainMenuState_GraphicsRestart, new cMainMenuWidget_Text(mpInit,vPos,kTranslate("MainMenu","GraphicsRestart"),16,eFontAlign_Center,NULL,400));
+	AddWidgetToState(eMainMenuState_GraphicsRestart,hplNew( cMainMenuWidget_Text,(mpInit,vPos,kTranslate("MainMenu","GraphicsRestart"),16,eFontAlign_Center,
+						NULL,400)) ); 
 	vPos.y += 42;
-	AddWidgetToState(eMainMenuState_GraphicsRestart, new cMainMenuWidget_Button(mpInit,vPos,kTranslate("MainMenu","OK"),eMainMenuState_Options,22,eFontAlign_Center));
+	AddWidgetToState(eMainMenuState_GraphicsRestart,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","OK"),eMainMenuState_Options,22,eFontAlign_Center))); 
 	
 }
 

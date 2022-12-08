@@ -100,7 +100,7 @@ namespace hpl {
 
 		iMaterial *GetMaterial();
 
-		void UpdateGraphics(cCamera *apCamera, float afFrameTime, cRenderList *apRenderList);
+		void UpdateGraphics(cCamera3D *apCamera, float afFrameTime, cRenderList *apRenderList);
 
 		iVertexBuffer* GetVertexBuffer();
 
@@ -109,7 +109,7 @@ namespace hpl {
 
 		cBoundingVolume* GetBoundingVolume();
 
-		cMatrixf* GetModelMatrix(cCamera *apCamera);
+		cMatrixf* GetModelMatrix(cCamera3D* apCamera);
 
 		int GetMatrixUpdateCount();
 

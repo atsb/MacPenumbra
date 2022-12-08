@@ -18,9 +18,9 @@
  */
 #include "resources/LanguageFile.h"
 #include "system/String.h"
-#include "tinyXML/tinyxml.h"
+#include "system/LowLevelSystem.h"
+#include "impl/tinyXML/tinyxml.h"
 #include "resources/Resources.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -52,10 +52,10 @@ namespace hpl {
 
 	bool cLanguageFile::LoadFromFile(const tString asFile)
 	{
-		TiXmlDocument *pDoc = new TiXmlDocument(asFile.c_str());
+		TiXmlDocument *pDoc = hplNew(TiXmlDocument,(asFile.c_str()) );
 		if(pDoc->LoadFile()==false)
 		{
-			delete pDoc;
+			hplDelete(pDoc);
 			Error("Couldn't find language file '%s'\n",asFile.c_str());
 			return false;
 		}
@@ -94,7 +94,7 @@ namespace hpl {
 				pCategory = existing->second;
 			}
 			else {
-				pCategory = new cLanguageCategory();
+				pCategory = hplNew( cLanguageCategory, () );
 				m_mapCategories.insert(tLanguageCategoryMap::value_type(sCatName, pCategory));
 			}
 
@@ -195,7 +195,7 @@ namespace hpl {
 			}
 		}
 
-		delete pDoc;
+		hplDelete(pDoc);
 
 		/*{
 			tString sRawFile = cString::SetFileExt(asFile,"")+"_raw_text.txt";

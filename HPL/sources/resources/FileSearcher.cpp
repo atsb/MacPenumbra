@@ -18,8 +18,9 @@
  */
 #include "resources/FileSearcher.h"
 #include "system/String.h"
-#include "system/Files.h"
-#include "system/Log.h"
+#include "resources/LowLevelResources.h"
+#include "system/LowLevelSystem.h"
+
 
 namespace hpl {
 
@@ -29,8 +30,9 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cFileSearcher::cFileSearcher()
+	cFileSearcher::cFileSearcher(iLowLevelResources *apLowLevelResources)
 	{
+		mpLowLevelResources = apLowLevelResources;
 	}
 
 	//-----------------------------------------------------------------------
@@ -55,17 +57,18 @@ namespace hpl {
 		//Make the path with only "/" and lower case.
 		asPath = cString::ToLowerCase(cString::ReplaceCharTo(asPath,"\\","/"));
 
-		auto it = m_setLoadedDirs.find(asPath);
+		tStringSetIt it = m_setLoadedDirs.find(asPath);
 		//If the path is not allready added, add it!
-		if (it == m_setLoadedDirs.end())
+		if(it == m_setLoadedDirs.end())
 		{
 			m_setLoadedDirs.insert(asPath);
 
-			FindFilesInDir(lstFileNames, cString::To16Char(asPath), cString::To16Char(asMask));
+			mpLowLevelResources->FindFilesInDir(lstFileNames,cString::To16Char(asPath),
+												cString::To16Char(asMask));
 
-			for(const tWString& sExt : lstFileNames)
+			for(tWStringListIt it = lstFileNames.begin();it!=lstFileNames.end();it++)
 			{
-				tString sFile = cString::To8Char(sExt);
+				tString sFile = cString::To8Char(*it);
 				tString sFileAllLower = cString::ToLowerCase(sFile);
 				tString sFilePath = cString::SetFilePath(sFile, asPath);
 				

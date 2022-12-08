@@ -22,6 +22,7 @@
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
 #include "physics/PhysicsController.h"
+#include "system/LowLevelSystem.h"
 
 #include "sound/Sound.h"
 #include "scene/SoundEntity.h"
@@ -34,7 +35,6 @@
 #include "game/Game.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
 
 #include "script/ScriptFuncs.h"
 
@@ -47,7 +47,7 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	iPhysicsJoint::iPhysicsJoint(const tString &asName, iPhysicsBody *apParentBody, iPhysicsBody *apChildBody,
-		iPhysicsWorld *apWorld,const cVector3f &avPivotPoint, const cVector3f &avPinDir)
+		iPhysicsWorld *apWorld,const cVector3f &avPivotPoint)
 		: msName(asName), mpParentBody(apParentBody), mpChildBody(apChildBody), mpWorld(apWorld)
 	{
 		mMaxLimit.msSound = "";
@@ -67,23 +67,9 @@ namespace hpl {
 		apChildBody->AddJoint(this);
 		m_mtxChildBodySetup = apChildBody->GetLocalMatrix();
 
-		mvPivotPoint = avPivotPoint;
+		cMatrixf m_mtxInvChild = cMath::MatrixInverse(apChildBody->GetLocalMatrix());
+		mvLocalPivot = cMath::MatrixMul(m_mtxInvChild,avPivotPoint);
 		mvStartPivotPoint = avPivotPoint;
-		
-		mvPinDir = avPinDir;
-		mvStartPinDir = avPinDir;
-		
-		if(mpParentBody)
-		{
-			cMatrixf m_mtxInvParent = cMath::MatrixInverse(mpParentBody->GetLocalMatrix());
-			mvLocalPivot = cMath::MatrixMul(m_mtxInvParent,avPivotPoint);
-			mvLocalPinDir = cMath::MatrixMul(m_mtxInvParent.GetRotation(),avPinDir);
-		}
-		else
-		{
-			mvLocalPivot = avPivotPoint;
-			mvLocalPinDir = avPinDir;
-		}
 
 		msMoveSound = "";
 
@@ -117,7 +103,7 @@ namespace hpl {
 
 	iPhysicsJoint::~iPhysicsJoint()
 	{
-		if(mbAutoDeleteCallback && mpCallback) delete mpCallback;
+		if(mbAutoDeleteCallback && mpCallback) hplDelete(mpCallback);
 
 		//Destroy all controllers.
 		tPhysicsControllerMapIt it = m_mapControllers.begin();
@@ -344,27 +330,17 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	bool iPhysicsJoint::OnPhysicsUpdate()
+	void iPhysicsJoint::OnPhysicsUpdate()
 	{
-		bool bFrozen = true;
-		if(mpParentBody && mpParentBody->GetEnabled())
-			bFrozen = false;
-		else if(mpChildBody->GetEnabled())
-			bFrozen = false;
-		
-		if(bFrozen && mpSound==NULL) return false;
-
 		//Get the pivot point, if there is no parent, it is stuck.
-		if(mpParentBody) {
+		if(mpParentBody)
 			mvPivotPoint = cMath::MatrixMul(mpChildBody->GetLocalMatrix(),mvLocalPivot);
-			mvPinDir = cMath::MatrixMul(mpParentBody->GetLocalMatrix(),mvLocalPinDir);
-		}
 
 		cWorld3D *pWorld3D = mpWorld->GetWorld3D();
-		if(pWorld3D == NULL) return true;
-		if(msMoveSound == "") return true;
+		if(pWorld3D == NULL) return;
+		if(msMoveSound == "") return;
 
-		if(mpWorld->GetWorld3D()->GetSound()->GetSoundHandler()->GetSilent()) return true;
+		if(mpWorld->GetWorld3D()->GetSound()->GetSoundHandler()->GetSilent()) return;
 
 		//////////////////////////////////////
 		//Get the speed
@@ -394,9 +370,9 @@ namespace hpl {
 			}
 		}
 
+
 		//Check so the body is not still
-		if(mpParentBody)
-		{
+		if(mpParentBody){
 			if(	m_mtxPrevChild == mpChildBody->GetLocalMatrix() &&
 				m_mtxPrevParent == mpParentBody->GetLocalMatrix())
 			{
@@ -405,8 +381,7 @@ namespace hpl {
 			m_mtxPrevChild = mpChildBody->GetLocalMatrix();
 			m_mtxPrevParent = mpParentBody->GetLocalMatrix();
 		}
-		else
-		{
+		else {
 			if(m_mtxPrevChild == mpChildBody->GetLocalMatrix())
 			{
 				vVel =0;
@@ -488,7 +463,6 @@ namespace hpl {
 			}
 		}
 
-		return true;
 	}
 
 	//-----------------------------------------------------------------------
@@ -547,7 +521,7 @@ namespace hpl {
 	{
 		if(mbBreakable==false) return false;
 
-		float fForcesSize = GetForceSize();
+		float fForcesSize = GetForce().Length();
 
 		if(fForcesSize >= mfBreakForce || mbBroken)
 		{
@@ -779,7 +753,7 @@ namespace hpl {
 
 		if(pData->msCallbackMaxFunc != "" || pData->msCallbackMinFunc != "")
 		{
-			cScriptJointCallback *pCallback = new cScriptJointCallback(apGame->GetScene());
+			cScriptJointCallback *pCallback = hplNew( cScriptJointCallback, (apGame->GetScene()) );
 			pCallback->msMaxFunc =pData->msCallbackMaxFunc;
 			pCallback->msMinFunc =pData->msCallbackMinFunc;
 			SetCallback(pCallback, true);

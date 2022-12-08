@@ -22,6 +22,7 @@
 
 #include "math/Math.h"
 
+#include "system/LowLevelSystem.h"
 
 
 namespace hpl {
@@ -260,19 +261,19 @@ namespace hpl {
 		//TODO: free path check with dynamic objects here.
 
 		//TODO: Some pooling here would be good.
-		cAStarNode *pNode = new cAStarNode(apAINode);
+		cAStarNode *pNode = hplNew( cAStarNode, (apAINode) );
 
 		//Check if it is in closed list.
 		tAStarNodeSetIt it = m_setClosedList.find(pNode);
 		if(it != m_setClosedList.end()){
-			delete pNode;
+			hplDelete(pNode);
 			return;
 		}
 
 		//Try to add it to the open list
 		std::pair<tAStarNodeSetIt, bool> testPair = m_setOpenList.insert(pNode);
 		if(testPair.second == false){
-			delete pNode;
+			hplDelete(pNode);
 			return;
 		}
 

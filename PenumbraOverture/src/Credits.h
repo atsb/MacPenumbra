@@ -56,7 +56,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 
 	tWStringVec mvTextRows;
 	float mfYPos;

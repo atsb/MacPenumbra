@@ -18,16 +18,17 @@
  */
 #include "scene/Scene.h"
 #include "game/Updater.h"
+#include "system/LowLevelSystem.h"
 
 #include "graphics/Graphics.h"
 #include "resources/Resources.h"
 #include "sound/Sound.h"
 #include "sound/LowLevelSound.h"
 #include "sound/SoundHandler.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "scene/World3D.h"
 #include "graphics/Renderer3D.h"
-// #include "graphics/RendererPostEffects.h"
+#include "graphics/RendererPostEffects.h"
 #include "graphics/GraphicsDrawer.h"
 #include "graphics/RenderList.h"
 #include "resources/ScriptManager.h"
@@ -37,9 +38,6 @@
 #include "resources/FileSearcher.h"
 #include "resources/MeshLoaderHandler.h"
 
-#include "system/Log.h"
-#include "system/UpdateTimerMacros.h"
-
 namespace hpl {
 
 	//////////////////////////////////////////////////////////////////////////
@@ -48,14 +46,17 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cScene::cScene(cGraphics *apGraphics, cResources *apResources, cSound* apSound,cPhysics *apPhysics, cAI *apAI)
+	cScene::cScene(cGraphics *apGraphics,cResources *apResources, cSound* apSound,cPhysics *apPhysics,
+					cSystem *apSystem, cAI *apAI, cHaptic *apHaptic)
 		: iUpdateable("HPL_Scene")
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
 		mpSound = apSound;
 		mpPhysics = apPhysics;
+		mpSystem = apSystem;
 		mpAI = apAI;
+		mpHaptic = apHaptic;
 
 		mpCurrentWorld3D = NULL;
 
@@ -89,9 +90,9 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cCamera *cScene::CreateCamera(eCameraMoveMode aMoveMode)
+	cCamera3D* cScene::CreateCamera3D(eCameraMoveMode aMoveMode)
 	{
-		auto pCamera = new cCamera();
+		cCamera3D *pCamera = hplNew( cCamera3D, () );
 		pCamera->SetAspect(mpGraphics->GetLowLevel()->GetScreenSize().x /
 							mpGraphics->GetLowLevel()->GetScreenSize().y);
 
@@ -104,12 +105,12 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void cScene::DestroyCamera(cCamera* apCam)
+	void cScene::DestroyCamera(iCamera* apCam)
 	{
 		for(tCameraListIt it=mlstCamera.begin(); it!=mlstCamera.end();it++)
 		{
 			if(*it == apCam){
-				delete *it;
+				hplDelete(*it);
 				mlstCamera.erase(it);
 				break;
 			}
@@ -117,7 +118,7 @@ namespace hpl {
 	}
 
 	//-----------------------------------------------------------------------
-	void cScene::SetCamera(cCamera* pCam)
+	void cScene::SetCamera(iCamera* pCam)
 	{
 		mpActiveCamera = pCam;
 	}
@@ -196,8 +197,10 @@ namespace hpl {
 	{
 		if(mbDrawScene && mpActiveCamera)
 		{
+			cCamera3D* pCamera3D = static_cast<cCamera3D*>(mpActiveCamera);
+
 			if(mpCurrentWorld3D)
-				mpGraphics->GetRenderer3D()->UpdateRenderList(mpCurrentWorld3D, mpActiveCamera, afFrameTime);
+				mpGraphics->GetRenderer3D()->UpdateRenderList(mpCurrentWorld3D, pCamera3D,afFrameTime);
 		}
 	}
 
@@ -215,10 +218,12 @@ namespace hpl {
 	{
 		if(mbDrawScene && mpActiveCamera)
 		{
+			cCamera3D* pCamera3D = static_cast<cCamera3D*>(mpActiveCamera);
+
 			if(mpCurrentWorld3D)
 			{
 				START_TIMING(RenderWorld)
-				mpGraphics->GetRenderer3D()->RenderWorld(mpCurrentWorld3D, mpActiveCamera, afFrameTime);
+				mpGraphics->GetRenderer3D()->RenderWorld(mpCurrentWorld3D, pCamera3D,afFrameTime);
 				STOP_TIMING(RenderWorld)
 			}
 
@@ -227,7 +232,7 @@ namespace hpl {
 			STOP_TIMING(PostSceneDraw)
 
 			START_TIMING(PostEffects)
-			// mpGraphics->GetRendererPostEffects()->Render();
+			mpGraphics->GetRendererPostEffects()->Render();
 			STOP_TIMING(PostEffects)
 		}
 		else
@@ -250,11 +255,12 @@ namespace hpl {
 
 		if(mbCameraIsListener)
 		{
+			cCamera3D* pCamera3D = static_cast<cCamera3D*>(mpActiveCamera);
 			mpSound->GetLowLevel()->SetListenerAttributes(
-					mpActiveCamera->GetPosition(),
+					pCamera3D->GetPosition(),
 					cVector3f(0,0,0),
-					mpActiveCamera->GetForward()*-1.0f,
-					mpActiveCamera->GetUp());
+					pCamera3D->GetForward()*-1.0f,
+					pCamera3D->GetUp());
 		}
 
 		if(mbUpdateMap && mpCurrentWorld3D)
@@ -318,9 +324,9 @@ namespace hpl {
 
 		////////////////////////////
 		//Add to loaded maps
-		
 		tString sName = cString::ToLowerCase(cString::SetFileExt(asFile,""));
-		if (m_setLoadedMaps.find(sName) == m_setLoadedMaps.end()) // when in cpp20 use .contains
+		tStringSetIt it = m_setLoadedMaps.find(sName);
+		if(it == m_setLoadedMaps.end())
 		{
 			m_setLoadedMaps.insert(sName);
 		}
@@ -346,7 +352,8 @@ namespace hpl {
 
 	cWorld3D* cScene::CreateWorld3D(const tString& asName)
 	{
-		cWorld3D* pWorld = new cWorld3D(asName,mpGraphics,mpResources,mpSound,mpPhysics,this,mpAI);
+		cWorld3D* pWorld = hplNew( cWorld3D, (asName,mpGraphics,mpResources,mpSound,mpPhysics,this,
+										mpSystem,mpAI,mpHaptic) );
 
 		mlstWorld3D.push_back(pWorld);
 
@@ -378,7 +385,12 @@ namespace hpl {
 	bool cScene::HasLoadedWorld(const tString &asFile)
 	{
 		tString sName = cString::ToLowerCase(cString::SetFileExt(asFile,""));
-		return m_setLoadedMaps.find(sName) != m_setLoadedMaps.end();
+		tStringSetIt it = m_setLoadedMaps.find(sName);
+
+		if(it == m_setLoadedMaps.end())
+			return false;
+		else
+			return true;
 	}
 
 	//-----------------------------------------------------------------------

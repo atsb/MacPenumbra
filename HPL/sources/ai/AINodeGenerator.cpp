@@ -20,9 +20,9 @@
 
 #include "scene/World3D.h"
 
-#include "system/Log.h"
+#include "system/LowLevelSystem.h"
+#include "system/System.h"
 #include "system/String.h"
-#include "system/Files.h"
 
 #include "resources/Resources.h"
 #include "resources/FileSearcher.h"
@@ -30,7 +30,7 @@
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 
 namespace hpl {
@@ -116,6 +116,7 @@ namespace hpl {
 
 		bool mbLoadFromFile=false;
 
+		cSystem *pSystem = apWorld->GetSystem();
 		cResources *pResources = apWorld->GetResources();
 		cFileSearcher *pFileSearcher = pResources->GetFileSearcher();
 
@@ -278,13 +279,14 @@ namespace hpl {
 	{
 		if(mpWorld->GetFileName() == "") return;
 
+		cSystem *pSystem = mpWorld->GetSystem();
 		cResources *pResources = mpWorld->GetResources();
 		cFileSearcher *pFileSearcher = pResources->GetFileSearcher();
 
 		tString sMapPath = pFileSearcher->GetFilePath(mpWorld->GetFileName());
 		tString sSaveFile = cString::SetFileExt(sMapPath,"ainodes");
 
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(sSaveFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, (sSaveFile.c_str()) );
 
 		TiXmlElement *pRootElem = static_cast<TiXmlElement*>(pXmlDoc->InsertEndChild(TiXmlElement("AiNodes")));
 
@@ -305,7 +307,7 @@ namespace hpl {
 		{
 			Error("Couldn't save XML file %s\n",sSaveFile.c_str());
 		}
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 	}
 
 	//-----------------------------------------------------------------------
@@ -314,17 +316,18 @@ namespace hpl {
 	{
 		if(mpWorld->GetFileName() == "") return;
 
+		cSystem *pSystem = mpWorld->GetSystem();
 		cResources *pResources = mpWorld->GetResources();
 		cFileSearcher *pFileSearcher = pResources->GetFileSearcher();
 
 		tString sMapPath = pFileSearcher->GetFilePath(mpWorld->GetFileName());
 		tString sSaveFile = cString::SetFileExt(sMapPath,"ainodes");
 
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(sSaveFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, (sSaveFile.c_str()) );
 		if(pXmlDoc->LoadFile()==false)
 		{
 			Warning("Couldn't open XML file %s\n",sSaveFile.c_str());
-			delete pXmlDoc;
+			hplDelete(pXmlDoc);
 			return;
 		}
 
@@ -339,7 +342,7 @@ namespace hpl {
 			mpNodeList->push_back(cTempAiNode(vPos,sName));
 		}
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 	}
 
 	//-----------------------------------------------------------------------

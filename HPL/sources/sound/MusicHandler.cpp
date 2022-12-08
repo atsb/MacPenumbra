@@ -18,13 +18,14 @@
  */
 #include "sound/MusicHandler.h"
 #include "resources/Resources.h"
+#include "system/LowLevelSystem.h"
 #include "system/String.h"
 #include "math/Math.h"
 #include "sound/LowLevelSound.h"
 #include "sound/SoundChannel.h"
 #include "sound/SoundData.h"
 #include "resources/SoundManager.h"
-#include "system/Log.h"
+
 
 namespace hpl {
 
@@ -49,16 +50,16 @@ namespace hpl {
 	cMusicHandler::~cMusicHandler()
 	{
 		if(mpMainSong){
-			delete mpMainSong->mpStream;
-			delete mpMainSong;
+			hplDelete(mpMainSong->mpStream);
+			hplDelete(mpMainSong);
 		}
 
 		tMusicEntryListIt it = mlstFadingSongs.begin();
 		while(it != mlstFadingSongs.end())
 		{
 			cMusicEntry* pSong = *it;
-			delete pSong->mpStream;
-			delete pSong;
+			hplDelete(pSong->mpStream);
+			hplDelete(pSong);
 
 			it = mlstFadingSongs.erase(it);
 			//it++;
@@ -105,8 +106,8 @@ namespace hpl {
 				{
 					pSong->mfVolume= 0;
 					pSong->mpStream->Stop();
-					delete pSong->mpStream;
-					delete pSong;
+					hplDelete(pSong->mpStream);
+					hplDelete(pSong);
 
 					it = mlstFadingSongs.erase(it);
 				} else {
@@ -116,10 +117,10 @@ namespace hpl {
 
 
 			//add it and set its properties
-			mpMainSong = new cMusicEntry();
+			mpMainSong = hplNew( cMusicEntry, () );
 
 			if(LoadAndStart(asFileName, mpMainSong,0,abLoop)==false){
-				delete mpMainSong;
+				hplDelete(mpMainSong);
 				mpMainSong = NULL;
 				return false;
 			}
@@ -243,8 +244,8 @@ namespace hpl {
 		{
 			if(mpMainSong->mpStream->IsPlaying()==false)
 			{
-				delete mpMainSong->mpStream;
-				delete mpMainSong;
+				hplDelete(mpMainSong->mpStream);
+				hplDelete(mpMainSong);
 				mpMainSong = NULL;
 			}
 			else
@@ -283,8 +284,8 @@ namespace hpl {
 			{
 				pSong->mfVolume= 0;
 				pSong->mpStream->Stop();
-				delete pSong->mpStream;
-				delete pSong;
+				hplDelete(pSong->mpStream);
+				hplDelete(pSong);
 
 				it = mlstFadingSongs.erase(it);
 			}

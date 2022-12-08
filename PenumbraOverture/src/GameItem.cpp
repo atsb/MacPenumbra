@@ -88,7 +88,7 @@ void cEntityLoader_GameItem::BeforeLoad(TiXmlElement *apRootElem, const cMatrixf
 void cEntityLoader_GameItem::AfterLoad(TiXmlElement *apRootElem, const cMatrixf &a_mtxTransform,
 										 cWorld3D *apWorld)
 {
-	cGameItem *pObject = new cGameItem(mpInit,mpEntity->GetName());
+	cGameItem *pObject = hplNew( cGameItem, (mpInit,mpEntity->GetName()) );
 	
 	pObject->msSubType = msSubType;
 	pObject->msFileName = msFileName;
@@ -97,6 +97,9 @@ void cEntityLoader_GameItem::AfterLoad(TiXmlElement *apRootElem, const cMatrixf 
 	// Set the engine objects to the object
 	pObject->SetBodies(mvBodies);
 	pObject->SetMeshEntity(mpEntity);
+#ifdef INCLUDE_HAPTIC
+	pObject->SetHapticShapes(mvHapticShapes);
+#endif
 
 	///////////////////////////////////
 	// Add a the object as user data to the body, to get the obejct later on.
@@ -246,7 +249,7 @@ void cGameItem::OnPlayerInteract()
 
 bool cGameItem::IsInView(float afMinDist)
 {
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 	
 	//Distance
 	float fDistSqr = cMath::Vector3DistSqr(	pCam->GetPosition(), 
@@ -370,7 +373,7 @@ void cGameItem::Update(float afTimeStep)
 void cGameItem::OnPostSceneDraw()
 {
 	/*iLowLevelGraphics *pLowGfx = mpInit->mpGame->GetGraphics()->GetLowLevel();
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 
 	
 	pLowGfx->SetDepthTestActive(true);
@@ -429,7 +432,7 @@ iGameEntity* cGameItem_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameItem::CreateSaveData()
 {
-	return new cGameItem_SaveData();
+	return hplNew( cGameItem_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

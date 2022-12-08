@@ -21,6 +21,7 @@
 #include "physics/CollideShape.h"
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsJoint.h"
+#include "system/LowLevelSystem.h"
 #include "physics/PhysicsMaterial.h"
 #include "physics/SurfaceData.h"
 
@@ -35,7 +36,6 @@
 #include "scene/Node3D.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -81,6 +81,8 @@ namespace hpl {
 
 		mpUserData = NULL;
 
+		mpHapticShape = NULL;
+
 		mbPushedByCharacterGravity = false;
 
 		mbIsCharacter = false;
@@ -116,7 +118,7 @@ namespace hpl {
 	{
 		//Log("Start Destroying newton body '%s' %d\n",msName.c_str(),(size_t)this);
 
-		if(mpNode) delete mpNode;
+		if(mpNode) hplDelete(mpNode);
 		mpWorld->DestroyShape(mpShape);
 
 		//Log(" Joints\n");
@@ -266,7 +268,7 @@ namespace hpl {
 	{
 		if(mpNode) return mpNode;
 
-		mpNode = new cNode3D();
+		mpNode = hplNew( cNode3D, () );
 		return mpNode;
 	}
 
@@ -483,7 +485,7 @@ namespace hpl {
 
 	iSaveData* iPhysicsBody::CreateSaveData()
 	{
-		return new cSaveData_iPhysicsBody();
+		return hplNew( cSaveData_iPhysicsBody, () );
 	}
 
 	//-----------------------------------------------------------------------

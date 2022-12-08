@@ -18,9 +18,10 @@
  */
 #include "scene/World3D.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 
 #include "math/Math.h"
 #include "math/MathTypes.h"
@@ -56,8 +57,7 @@
 #include "script/Script.h"
 #include "script/ScriptVar.h"
 
-#include "system/Log.h"
-#include "system/Files.h"
+#include "system/System.h"
 
 #include "sound/SoundEntityData.h"
 #include "sound/Sound.h"
@@ -72,7 +72,8 @@
 #include "ai/AINodeGenerator.h"
 #include "ai/AStar.h"
 
-#include "system/UpdateTimerMacros.h"
+#include "haptic/Haptic.h"
+#include "haptic/LowLevelHaptic.h"
 
 namespace hpl {
 
@@ -83,16 +84,19 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cWorld3D::cWorld3D(tString asName,cGraphics *apGraphics,cResources *apResources,cSound* apSound,
-						cPhysics *apPhysics, cScene *apScene, cAI *apAI)
+						cPhysics *apPhysics, cScene *apScene,cSystem *apSystem, cAI *apAI,
+						cHaptic *apHaptic)
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
 		mpSound = apSound;
 		mpPhysics = apPhysics;
 		mpScene = apScene;
+		mpSystem =apSystem;
 		mpAI = apAI;
+		mpHaptic = apHaptic;
 
-		mpRootNode = new cNode3D();
+		mpRootNode = hplNew( cNode3D, () );
 
 		mpScript = NULL;
 
@@ -100,7 +104,7 @@ namespace hpl {
 
 		mAmbientColor=cColor(0,0);
 
-		mpPortalContainer = new cPortalContainer();
+		mpPortalContainer = hplNew( cPortalContainer, () );
 
 		mpPhysicsWorld = NULL;
 		mbAutoDeletePhysicsWorld = false;
@@ -112,6 +116,12 @@ namespace hpl {
 
 	cWorld3D::~cWorld3D()
 	{
+		if(cHaptic::GetIsUsed())
+		{
+			//mpHaptic->GetLowLevel()->DestroyAllShapes();
+			//Not so good to do it here..
+		}
+
 		STLDeleteAll(mlstMeshEntities);
 		STLDeleteAll(mlstLights);
 		STLDeleteAll(mlstBillboards);
@@ -135,9 +145,9 @@ namespace hpl {
 		//So that bodies can stop sound entities on destruction.
 		STLDeleteAll(mlstSoundEntities);
 
-		delete mpPortalContainer;
+		hplDelete(mpPortalContainer);
 
-		delete mpRootNode;
+		hplDelete(mpRootNode);
 	}
 
 	//-----------------------------------------------------------------------
@@ -396,7 +406,7 @@ namespace hpl {
 
 	cAreaEntity* cWorld3D::CreateAreaEntity(const tString &asName)
 	{
-		cAreaEntity *pArea = new cAreaEntity();
+		cAreaEntity *pArea = hplNew( cAreaEntity, () );
 		pArea->msName = asName;
 		m_mapAreaEntities.insert(tAreaEntityMap::value_type(asName, pArea));
 		return pArea;
@@ -422,7 +432,7 @@ namespace hpl {
 
 		if(sPath!="")
 		{
-			TiXmlDocument *pEntityDoc = new TiXmlDocument();
+			TiXmlDocument *pEntityDoc = hplNew( TiXmlDocument,() );
 			if(pEntityDoc->LoadFile(sPath.c_str())==false)
 			{
 				Error("Couldn't load '%s'!\n",sPath.c_str());
@@ -446,7 +456,7 @@ namespace hpl {
 					Error("Couldn't find loader for type '%s' in file '%s'\n",sType.c_str(),sFileName.c_str());
 				}
 			}
-			delete pEntityDoc;
+			hplDelete(pEntityDoc);
 		}
 		else
 		{
@@ -460,8 +470,8 @@ namespace hpl {
 
 	cMeshEntity* cWorld3D::CreateMeshEntity(const tString &asName,cMesh *apMesh, bool abAddToContainer)
 	{
-		cMeshEntity* pMesh = new cMeshEntity(asName,apMesh,mpResources->GetMaterialManager(),
-								mpResources->GetMeshManager(), mpResources->GetAnimationManager());
+		cMeshEntity* pMesh = hplNew( cMeshEntity, (asName,apMesh,mpResources->GetMaterialManager(),
+								mpResources->GetMeshManager(), mpResources->GetAnimationManager()) );
 		mlstMeshEntities.push_back(pMesh);
 
 		if(abAddToContainer)
@@ -489,7 +499,7 @@ namespace hpl {
 
 		mpPortalContainer->Remove(apMesh);
 
-		delete apMesh;
+		hplDelete(apMesh);
 	}
 
 	//-----------------------------------------------------------------------
@@ -534,7 +544,7 @@ namespace hpl {
 
 	cLight3DPoint* cWorld3D::CreateLightPoint(const tString &asName,bool abAddToContainer)
 	{
-		cLight3DPoint* pLight = new cLight3DPoint(asName,mpResources);
+		cLight3DPoint* pLight = hplNew( cLight3DPoint, (asName,mpResources) );
 		mlstLights.push_back(pLight);
 
 		if(abAddToContainer)
@@ -550,7 +560,7 @@ namespace hpl {
 	cLight3DSpot* cWorld3D::CreateLightSpot(const tString &asName, const tString &asGobo,
 									bool abAddToContainer)
 	{
-		cLight3DSpot* pLight = new cLight3DSpot(asName,mpResources);
+		cLight3DSpot* pLight = hplNew( cLight3DSpot, (asName,mpResources) );
 		mlstLights.push_back(pLight);
 
 		if(asGobo != "")
@@ -598,7 +608,7 @@ namespace hpl {
 										const tString& asMaterial,
 										bool abAddToContainer, cMatrixf *apTransform)
 	{
-		cBillboard* pBillboard = new cBillboard(asName, avSize,mpResources,mpGraphics);
+		cBillboard* pBillboard = hplNew( cBillboard, (asName, avSize,mpResources,mpGraphics) );
 		mlstBillboards.push_back(pBillboard);
 
 		if(apTransform) pBillboard->SetMatrix(*apTransform);
@@ -640,7 +650,7 @@ namespace hpl {
 
 	cBeam* cWorld3D::CreateBeam(const tString& asName)
 	{
-		cBeam* pBeam = new cBeam(asName,mpResources,mpGraphics);
+		cBeam* pBeam = hplNew( cBeam, (asName,mpResources,mpGraphics) );
 		mlstBeams.push_back(pBeam);
 
 		mpPortalContainer->Add(pBeam, false);
@@ -742,7 +752,7 @@ namespace hpl {
 
 	cColliderEntity* cWorld3D::CreateColliderEntity(const tString &asName,iPhysicsBody *apBody)
 	{
-		cColliderEntity *pCollider =  new cColliderEntity(asName,apBody,mpPhysicsWorld);
+		cColliderEntity *pCollider =  hplNew( cColliderEntity, (asName,apBody,mpPhysicsWorld) );
 
 		mlstColliders.push_back(pCollider);
 
@@ -768,10 +778,10 @@ namespace hpl {
 			return NULL;
 		}
 
-		cSoundEntity *pSound = new cSoundEntity(asName,pData,
+		cSoundEntity *pSound = hplNew( cSoundEntity, (asName,pData,
 												mpResources->GetSoundEntityManager(),
 												this,
-												mpSound->GetSoundHandler(),abRemoveWhenOver);
+												mpSound->GetSoundHandler(),abRemoveWhenOver));
 
 		mlstSoundEntities.push_back(pSound);
 
@@ -789,7 +799,7 @@ namespace hpl {
 			if(pSound == apEntity)
 			{
 				mlstSoundEntities.erase(it);
-				delete pSound;
+				hplDelete(pSound);
 				break;
 			}
 		}
@@ -842,7 +852,7 @@ namespace hpl {
 
 	cStartPosEntity* cWorld3D::CreateStartPos(const tString &asName)
 	{
-		cStartPosEntity *pStartPos = new cStartPosEntity(asName);
+		cStartPosEntity *pStartPos = hplNew( cStartPosEntity, (asName) );
 
 		mlstStartPosEntities.push_back(pStartPos);
 
@@ -879,7 +889,7 @@ namespace hpl {
 	{
 		cAINodeContainer* pContainer=NULL;
 
-		//unsigned long lStartTime = GetTime();
+		//unsigned long lStartTime = mpSystem->GetLowLevel()->GetTime();
 
 		//////////////////////////////////
 		//See if the container is allready loaded.
@@ -914,7 +924,7 @@ namespace hpl {
 			}
 			cTempNodeContainer *pTempCont = ContIt->second;
 
-			pContainer = new cAINodeContainer(asName,asNodeName,this,avSize);
+			pContainer = hplNew( cAINodeContainer, (asName,asNodeName,this,avSize) );
 			mlstAINodeContainers.push_back(pContainer);
 
 			//Set properties
@@ -960,7 +970,7 @@ namespace hpl {
 			}
 		}
 
-		//unsigned long lTime = GetTime() - lStartTime;
+		//unsigned long lTime = mpSystem->GetLowLevel()->GetTime() - lStartTime;
 		//Log("Creating ai nodes took: %d\n",lTime);
 
 
@@ -971,7 +981,7 @@ namespace hpl {
 
 	cAStarHandler* cWorld3D::CreateAStarHandler(cAINodeContainer* apContainer)
 	{
-		cAStarHandler *pAStar = new cAStarHandler(apContainer);
+		cAStarHandler *pAStar = hplNew( cAStarHandler, (apContainer) );
 
 		mlstAStarHandlers.push_back(pAStar);
 
@@ -989,7 +999,7 @@ namespace hpl {
 		}
 
 		if(pContainer==NULL){
-			pContainer = new cTempNodeContainer();
+			pContainer = hplNew( cTempNodeContainer, () );
 			m_mapTempNodes.insert(tTempNodeContainerMap::value_type(asType,pContainer));
 		}
 
@@ -1007,7 +1017,7 @@ namespace hpl {
 		}
 
 		if(pContainer==NULL){
-			pContainer = new cTempNodeContainer();
+			pContainer = hplNew( cTempNodeContainer, () );
 			m_mapTempNodes.insert(tTempNodeContainerMap::value_type(asType,pContainer));
 		}
 
@@ -1051,7 +1061,7 @@ namespace hpl {
 				{
 					mpPortalContainer->Remove(pPS->GetEmitter(i));
 				}
-				delete pPS;
+				hplDelete(pPS);
 			}
 			else
 			{
@@ -1126,7 +1136,7 @@ namespace hpl {
 			if(pSound->IsStopped() && pSound->GetRemoveWhenOver())
 			{
 				it =  mlstSoundEntities.erase(it);
-				delete pSound;
+				hplDelete(pSound);
 			}
 			else
 			{
@@ -1218,7 +1228,7 @@ namespace hpl {
 
 	iSaveData* cWorld3D::CreateSaveData()
 	{
-		cSaveData_cWorld3D *pData = new cSaveData_cWorld3D();
+		cSaveData_cWorld3D *pData = hplNew( cSaveData_cWorld3D, () );
 
 		//Start pos
 		tStartPosEntityListIt StartIt = mlstStartPosEntities.begin();

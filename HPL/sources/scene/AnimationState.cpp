@@ -22,6 +22,7 @@
 #include "graphics/Animation.h"
 #include "resources/AnimationManager.h"
 
+#include "system/LowLevelSystem.h"
 
 
 namespace hpl {
@@ -288,7 +289,7 @@ namespace hpl {
 
 	cAnimationEvent *cAnimationState::CreateEvent()
 	{
-		cAnimationEvent *pEvent = new cAnimationEvent();
+		cAnimationEvent *pEvent = hplNew( cAnimationEvent, () );
 		pEvent->mfTime =0;
 		pEvent->mType = eAnimationEventType_LastEnum;
 		pEvent->msValue = "";
@@ -351,7 +352,7 @@ namespace hpl {
 
 	iSaveData* cAnimationState::CreateSaveData()
 	{
-		return new cSaveData_cAnimationState();
+		return hplNew( cSaveData_cAnimationState, () );
 	}
 
 	//-----------------------------------------------------------------------

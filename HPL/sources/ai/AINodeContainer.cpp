@@ -20,13 +20,13 @@
 
 #include "scene/World3D.h"
 #include "physics/PhysicsBody.h"
-#include "system/Log.h"
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 
 #include "math/Math.h"
 
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include <algorithm>
 
@@ -245,7 +245,7 @@ namespace hpl {
 		msName = asName;
 		msNodeName = asNodeName;
 
-		mpRayCallback = new cAINodeRayCallback();
+		mpRayCallback = hplNew( cAINodeRayCallback, () );
 
 		mlMaxNodeEnds = 5;
 		mlMinNodeEnds = 2;
@@ -261,7 +261,7 @@ namespace hpl {
 
 	cAINodeContainer::~cAINodeContainer()
 	{
-		delete mpRayCallback;
+		hplDelete(mpRayCallback);
 
 		STLDeleteAll(mvNodes);
 	}
@@ -283,7 +283,7 @@ namespace hpl {
 
 	void cAINodeContainer::AddNode(const tString &asName, const cVector3f &avPosition, void *apUserData)
 	{
-		cAINode *pNode = new cAINode();
+		cAINode *pNode = hplNew( cAINode, () );
 		pNode->msName = asName;
 		pNode->mvPosition = avPosition;
 		pNode->mpUserData = apUserData;
@@ -470,12 +470,11 @@ namespace hpl {
 			if(mvGridSize.y >0)
 				vGridPos.y = (int)(vLocalPos.y / mvGridSize.y);
 
-			/*
-			Log("Adding node %d, world: (%s) local (%s), at %d : %d\n",i,
+			if(false)Log("Adding node %d, world: (%s) local (%s), at %d : %d\n",i,
 												pNode->GetPosition().ToString().c_str(),
 												vLocalPos.ToString().c_str(),
 												vGridPos.x,vGridPos.y);
-			*/
+
 			mvGrids[vGridPos.y * (mvGridMapSize.x+1) + vGridPos.x].mlstNodes.push_back(pNode);
 		}
 	}
@@ -544,7 +543,7 @@ namespace hpl {
 
 	void cAINodeContainer::SaveToFile(const tString &asFile)
 	{
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(asFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument,(asFile.c_str()) );
 
 		TiXmlElement *pRootElem = static_cast<TiXmlElement*>(pXmlDoc->InsertEndChild(TiXmlElement("AINodes")));
 
@@ -570,7 +569,7 @@ namespace hpl {
 		{
 			Error("Couldn't save XML file %s\n",asFile.c_str());
 		}
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 	}
 
 	//-----------------------------------------------------------------------
@@ -579,11 +578,11 @@ namespace hpl {
 	{
 		BuildNodeGridMap();
 
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(asFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, (asFile.c_str()) );
 		if(pXmlDoc->LoadFile()==false)
 		{
 			Warning("Couldn't open XML file %s\n",asFile.c_str());
-			delete pXmlDoc;
+			hplDelete(pXmlDoc);
 			return;
 		}
 
@@ -611,7 +610,7 @@ namespace hpl {
 			}
 		}
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 	}
 	//-----------------------------------------------------------------------
 

@@ -17,11 +17,12 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "resources/ParticleManager.h"
+
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "resources/FileSearcher.h"
 #include "graphics/Graphics.h"
 #include "graphics/ParticleSystem3D.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -32,7 +33,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cParticleManager::cParticleManager(cGraphics* apGraphics,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
@@ -92,12 +94,13 @@ namespace hpl {
 				return NULL;
 			}
 
-			cParticleSystemData3D *pPSData = new cParticleSystemData3D(sTypeName,mpResources,mpGraphics);
+			cParticleSystemData3D *pPSData = hplNew( cParticleSystemData3D, (sTypeName,
+																		mpResources,mpGraphics) );
 
 			if(pPSData->LoadFromFile(sPath)==false)
 			{
 				Error("Can't load data from particle system file '%s'\n",sTypeName.c_str());
-				delete pPSData;
+				hplDelete(pPSData);
 				return NULL;
 			}
 
@@ -144,12 +147,13 @@ namespace hpl {
 				return;
 			}
 
-			cParticleSystemData3D *pPSData = new cParticleSystemData3D(sTypeName,mpResources,mpGraphics);
+			cParticleSystemData3D *pPSData = hplNew( cParticleSystemData3D, (sTypeName,
+																	mpResources,mpGraphics) );
 
 			if(pPSData->LoadFromFile(sPath)==false)
 			{
 				Error("Can't load data from particle system file '%s'\n",sTypeName.c_str());
-				delete pPSData;
+				hplDelete(pPSData);
 				return;
 			}
 

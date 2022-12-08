@@ -267,7 +267,7 @@ void cPlayerHands::Update(float afTimeStep)
 	
 	///////////////////////////////////
 	//Get the camera properties
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 	
 	cVector3f vRot = cVector3f(pCam->GetPitch(), pCam->GetYaw(),pCam->GetRoll());
 	cMatrixf mtxSmoothCam = 	cMath::MatrixRotate(vRot * -1.0f, eEulerRotationOrder_YXZ);
@@ -435,10 +435,10 @@ bool cPlayerHands::AddModelFromFile(const tString &asFile)
 	
 	////////////////////////////////////////////////
 	//Load the document
-	TiXmlDocument *pXmlDoc = new TiXmlDocument(sPath.c_str());
+	TiXmlDocument *pXmlDoc = hplNew( TiXmlDocument, (sPath.c_str()) );
 	if(pXmlDoc->LoadFile()==false){
 		Error("Couldn't load XML document '%s'\n",sPath.c_str());
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 		return false;
 	}
 	
@@ -447,7 +447,7 @@ bool cPlayerHands::AddModelFromFile(const tString &asFile)
 	TiXmlElement *pRootElem = pXmlDoc->FirstChildElement();
 	if(pRootElem==NULL){
 		Error("Couldn't load root from XML document '%s'\n",sPath.c_str());
-		delete  pXmlDoc ;
+		hplDelete( pXmlDoc );
 		return false;
 	}
 	
@@ -456,7 +456,7 @@ bool cPlayerHands::AddModelFromFile(const tString &asFile)
 	TiXmlElement *pMainElem = pRootElem->FirstChildElement("MAIN");
 	if(pMainElem==NULL){
 		Error("Couldn't load MAIN element from XML document '%s'\n",sPath.c_str());
-		delete  pXmlDoc ; 
+		hplDelete( pXmlDoc ); 
 		return false;
 	}
 
@@ -465,9 +465,9 @@ bool cPlayerHands::AddModelFromFile(const tString &asFile)
 	
 	switch(handType)
 	{
-	case ePlayerHandType_Normal:		pHudModel = new cHudModel_Normal(); break;
-	case ePlayerHandType_WeaponMelee:	pHudModel = new cHudModel_WeaponMelee(); break;
-	case ePlayerHandType_Throw:			pHudModel = new cHudModel_Throw(); break;
+	case ePlayerHandType_Normal:		pHudModel = hplNew( cHudModel_Normal,() ); break;
+	case ePlayerHandType_WeaponMelee:	pHudModel = hplNew( cHudModel_WeaponMelee,() ); break;
+	case ePlayerHandType_Throw:			pHudModel = hplNew( cHudModel_Throw,() ); break;
 	}
 
 	pHudModel->msName = cString::ToString(pMainElem->Attribute("Name"),"");
@@ -487,7 +487,7 @@ bool cPlayerHands::AddModelFromFile(const tString &asFile)
 
 	AddHudModel(pHudModel);
 
-	delete  pXmlDoc ;
+	hplDelete( pXmlDoc );
 	return true;
 }
 
@@ -638,7 +638,7 @@ void cPlayerHands::UpdatePrevPostions()
 {
 	///////////////////////////////////
 	//Get current position
-	auto pCam = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCam = mpInit->mpPlayer->GetCamera();
 	cVector3f vCamRotation(pCam->GetPitch(),pCam->GetYaw(),0);
 	cVector3f vCamPosition = pCam->GetPosition();
 	

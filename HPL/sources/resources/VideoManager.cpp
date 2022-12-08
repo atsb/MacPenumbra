@@ -18,11 +18,11 @@
  */
 #include "resources/VideoManager.h"
 
+#include "system/LowLevelSystem.h"
 #include "system/String.h"
 #include "resources/Resources.h"
 #include "resources/FileSearcher.h"
 #include "graphics/VideoStream.h"
-#include "system/Log.h"
 
 namespace hpl {
 
@@ -33,7 +33,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cVideoManager::cVideoManager(cGraphics* apGraphics,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
@@ -83,7 +84,7 @@ namespace hpl {
 		if(pVideo->LoadFromFile(sPath)==false)
 		{
 			EndLoad();
-			delete pVideo;
+			hplDelete(pVideo);
 			Error("Could not load video '%s'\n",asName.c_str());
 			return NULL;
 		}
@@ -108,7 +109,7 @@ namespace hpl {
 		if(apResource)
 		{
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

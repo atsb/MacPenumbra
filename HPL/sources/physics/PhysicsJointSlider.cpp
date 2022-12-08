@@ -78,7 +78,7 @@ namespace hpl {
 
 	iSaveData* iPhysicsJointSlider::CreateSaveData()
 	{
-		return new cSaveData_iPhysicsJointSlider();
+		return hplNew( cSaveData_iPhysicsJointSlider, () );
 	}
 
 	//-----------------------------------------------------------------------

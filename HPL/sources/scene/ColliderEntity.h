@@ -35,12 +35,12 @@ namespace hpl {
 		~cColliderEntity();
 
 		iMaterial *GetMaterial(){ return NULL;}
-		void UpdateGraphics(cCamera *apCamera, float afFrameTime, cRenderList *apRenderList){}
+		void UpdateGraphics(cCamera3D *apCamera, float afFrameTime, cRenderList *apRenderList){}
 		iVertexBuffer* GetVertexBuffer(){ return NULL;}
 
 		cBoundingVolume* GetBoundingVolume();
 
-		cMatrixf* GetModelMatrix(cCamera *apCamera);
+		cMatrixf* GetModelMatrix(cCamera3D* apCamera);
 		int GetMatrixUpdateCount();
 
 		eRenderableType GetRenderType(){ return eRenderableType_Dummy;}

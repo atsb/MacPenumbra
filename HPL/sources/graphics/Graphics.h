@@ -25,9 +25,10 @@ namespace hpl {
 
 	class cResources;
 	class cRenderer3D;
-	// class cRendererPostEffects;
+	class cRendererPostEffects;
 	class cRenderList;
 	class cGraphicsDrawer;
+	class iLowLevelResources;
 	class iLowLevelGraphics;
 	class cMeshCreator;
 	class cMaterialHandler;
@@ -35,10 +36,10 @@ namespace hpl {
 	class cGraphics
 	{
 	public:
-		cGraphics(iLowLevelGraphics *apLowLevelGraphics);
+		cGraphics(iLowLevelGraphics *apLowLevelGraphics,iLowLevelResources *apLowLevelResources);
 		~cGraphics();
 
-		bool Init(int alWidth, int alHeight, bool abFullscreen, int alMultisampling,
+		bool Init(int alWidth, int alHeight, int alBpp, int abFullscreen, int alMultisampling,
 					const tString &asWindowCaption,cResources* apResources);
 
 		/**
@@ -54,17 +55,18 @@ namespace hpl {
 		cGraphicsDrawer* GetDrawer();
 
 		cRenderer3D* GetRenderer3D(){ return mpRenderer3D;}
-		// cRendererPostEffects* GetRendererPostEffects(){ return mpRendererPostEffects;}
+		cRendererPostEffects* GetRendererPostEffects(){ return mpRendererPostEffects;}
 		cMeshCreator* GetMeshCreator(){return mpMeshCreator;}
 		cMaterialHandler* GetMaterialHandler(){return mpMaterialHandler;}
 
 	private:
 		iLowLevelGraphics *mpLowLevelGraphics;
+		iLowLevelResources *mpLowLevelResources;
 		cGraphicsDrawer *mpDrawer;
 		cMeshCreator *mpMeshCreator;
 		cMaterialHandler *mpMaterialHandler;
 		cRenderer3D* mpRenderer3D;
-		// cRendererPostEffects* mpRendererPostEffects;
+		cRendererPostEffects* mpRendererPostEffects;
 		cRenderList *mpRenderList;
 	};
 

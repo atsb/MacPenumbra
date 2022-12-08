@@ -155,7 +155,7 @@ cCharacterMove::cCharacterMove(cInit *apInit)
 
 	mbMoveToNewNode = false;
 
-	mpAStarCallback = new cCharacterAStarCallback(this);
+	mpAStarCallback = hplNew( cCharacterAStarCallback, (this) );
 
 	mvTempStart = 0;
 	mvTempEnd =0;
@@ -170,7 +170,7 @@ cCharacterMove::cCharacterMove(cInit *apInit)
 
 cCharacterMove::~cCharacterMove()
 {
-	if(mpAStarCallback) delete  mpAStarCallback ;
+	if(mpAStarCallback) hplDelete( mpAStarCallback );
 }
 
 //-----------------------------------------------------------------------

@@ -34,7 +34,7 @@ namespace hpl {
 		cColor(float afR, float afG, float afB, float afA);
 		cColor(float afR, float afG, float afB);
 		cColor();
-		explicit cColor(float afVal);
+		cColor(float afVal);
 		cColor(float afVal, float afA);
 
 		cColor operator*(float afVal) const;

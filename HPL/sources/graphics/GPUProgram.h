@@ -28,6 +28,12 @@ namespace hpl {
 
 	class iTexture;
 
+	enum eGpuProgramType
+	{
+		eGpuProgramType_Vertex,
+		eGpuProgramType_Fragment
+	};
+
 	enum eGpuProgramMatrix
 	{
 		eGpuProgramMatrix_View,
@@ -40,7 +46,9 @@ namespace hpl {
 	class iGpuProgram : public iResourceBase
 	{
 	public:
-		iGpuProgram(tString asName) : iResourceBase(asName, 0) {}
+		iGpuProgram(tString asName, eGpuProgramType aType) : iResourceBase(asName,0){
+			mProgramType = aType;
+		}
 		virtual ~iGpuProgram(){}
 
 		static void SetLogDebugInformation(bool abX){mbDebugInfo = abX;}
@@ -51,7 +59,7 @@ namespace hpl {
 		 * \param asEntry
 		 * \return
 		 */
-		virtual bool CreateFromFile(const tString& asVertexFile, const tString& asFragmentFile)=0;
+		virtual bool CreateFromFile(const tString& asFile, const tString& asEntry)=0;
 
 		/**
 		 * Bind the program to the GPU
@@ -89,9 +97,15 @@ namespace hpl {
 		virtual bool SetMatrixf(const tString& asName, const cMatrixf& mMtx)=0;
 		virtual bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType)=0;
 
-		virtual bool SetTexture(const tString& asName,iTexture* apTexture)=0;
+		virtual bool SetTexture(const tString& asName,iTexture* apTexture, bool abAutoDisable=true)=0;
+		virtual bool SetTextureToUnit(int alUnit, iTexture* apTexture)=0;
+
+
+		eGpuProgramType GetType() { return mProgramType;}
 
 	protected:
+		eGpuProgramType mProgramType;
+
 		static bool mbDebugInfo;
 	};
 };

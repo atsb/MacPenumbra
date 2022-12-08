@@ -35,21 +35,21 @@ namespace hpl {
 #define eRendererDebugFlag_DrawBoundingSphere	(0x00000020)
 #define eRendererDebugFlag_DrawLightBoundingBox	(0x00000040)
 #define eRendererDebugFlag_RenderLines			(0x00000080)
-#define eRendererDebugFlag_DrawPhysicsBox       (0x00000100)
 
 	typedef tFlag tRendererDebugFlag;
 
 	class cResources;
 	class iLowLevelGraphics;
+	class iLowLevelResources;
 	class iTexture;
-	class cCamera;
+	class cCamera3D;
 	class cWorld3D;
 	class iVertexBuffer;
 	class cMeshCreator;
 	class cRenderList;
 	class iRenderable;
 	class iLight3D;
-	// class cRendererPostEffects;
+	class cRendererPostEffects;
 	class cSector;
 
 	class cResources;
@@ -75,14 +75,15 @@ namespace hpl {
 		void Reset(iLowLevelGraphics *apLowLevel);
 
 		//Setings that doesn't change:
-		iGpuProgram *mpExtrudeProgram;
+		iGpuProgram *mpVtxExtrudeProgram;
+		iGpuProgram *mpFragExtrudeProgram;
 		iLowLevelGraphics* mpLowLevel;
 
 		unsigned int *mpTempIndexArray;
 
 		//Setting that changes
 		iLight3D* mpLight;
-		cCamera *mpCamera;
+		cCamera3D* mpCamera;
 		cFrustum* mpFrustum;
 
 		cSector *mpSector;
@@ -106,9 +107,11 @@ namespace hpl {
 		eMaterialBlendMode mBlendMode;
 		eMaterialChannelMode mChannelMode;
 
-		iGpuProgram* mpProgram;
+		iGpuProgram* mpVertexProgram;
 		bool mbVertexUseLight;
 		iMaterialProgramSetup* mpVtxProgramSetup;
+
+		iGpuProgram* mpFragmentProgram;
 
 		bool mbMatrixWasNULL;
 
@@ -133,9 +136,9 @@ namespace hpl {
 						cMeshCreator* apMeshCreator, cRenderList *apRenderList);
 		~cRenderer3D();
 
-		void UpdateRenderList(cWorld3D* apWorld, cCamera *apCamera, float afFrameTime);
+		void UpdateRenderList(cWorld3D* apWorld, cCamera3D* apCamera, float afFrameTime);
 
-		void RenderWorld(cWorld3D* apWorld, cCamera *apCamera, float afFrameTime);
+		void RenderWorld(cWorld3D* apWorld, cCamera3D* apCamera, float afFrameTime);
 
 		void SetSkyBox(iTexture *apTexture, bool abAutoDestroy);
 		void SetSkyBoxActive(bool abX);
@@ -171,7 +174,7 @@ namespace hpl {
 
 		cBoundingVolume* GetFogBV(){return &mFogBV;}
 
-		// void SetPostEffects(cRendererPostEffects *apPostEffects){ mpPostEffects = apPostEffects;}
+		void SetPostEffects(cRendererPostEffects *apPostEffects){ mpPostEffects = apPostEffects;}
 
 
 		//Debug setup
@@ -187,51 +190,53 @@ namespace hpl {
 		void FetchOcclusionQueries();
 
 	private:
-		inline void BeginRendering(cCamera *apCamera);
+		inline void BeginRendering(cCamera3D* apCamera);
 
 		void InitSkyBox();
 
 		//Render steps
-		void RenderFog(cCamera *apCamera);
+		void RenderFog(cCamera3D *apCamera);
 
-		void RenderSkyBox(cCamera *apCamera);
+		void RenderSkyBox(cCamera3D *apCamera);
 
-		void RenderZ(cCamera *apCamera);
+		void RenderZ(cCamera3D *apCamera);
 
-		void RenderOcclusionQueries(cCamera *apCamera);
+		void RenderOcclusionQueries(cCamera3D *apCamera);
 
-		void RenderLight(cCamera *apCamera);
+		void RenderLight(cCamera3D *apCamera);
 
-		void RenderDiffuse(cCamera *apCamera);
+		void RenderDiffuse(cCamera3D *apCamera);
 
-		void RenderTrans(cCamera *apCamera);
+		void RenderTrans(cCamera3D *apCamera);
 
-		void RenderDebug(cCamera *apCamera);
+		void RenderDebug(cCamera3D *apCamera);
 
-		void RenderDebugObject(cCamera *apCamera,iRenderable* &apObject, iMaterial* apPrevMat,
+		inline void RenderDebugObject(cCamera3D *apCamera,iRenderable* &apObject, iMaterial* apPrevMat,
 					int alPrevMatId,iVertexBuffer* apPrevVtxBuff,
 					eMaterialRenderType aRenderType, iLight3D* apLight);
-		
-		void RenderPhysicsDebug(cWorld3D *apWorld, cCamera *apCamera);
 
 		iLowLevelGraphics *mpLowLevelGraphics;
+		iLowLevelResources *mpLowLevelResources;
 
-		// cRendererPostEffects *mpPostEffects;
+		cRendererPostEffects *mpPostEffects;
 
 		bool mbLog;
 
 		float mfRenderTime;
 
-		iGpuProgram *mpDiffuseProgram;
-		iGpuProgram *mpSolidFogProgram;
+		iGpuProgram *mpDiffuseVtxProgram;
+		iGpuProgram *mpDiffuseFragProgram;
+		iGpuProgram *mpSolidFogVtxProgram;
+		iGpuProgram *mpSolidFogFragProgram;
 
 		iTexture *mpFogLinearSolidTexture;
 
 		iTexture *mpFogLinearAddTexture;
 		iTexture *mpFogLinearAlphaTexture;
 
-		iGpuProgram *mpRefractProgram;
-		iGpuProgram *mpRefractSpecProgram;
+		iGpuProgram *mpRefractVtxProgram;
+		iGpuProgram *mpRefractFragProgram;
+		iGpuProgram *mpRefractSpecFragProgram;
 		bool mbRefractionAvailable;
 		bool mbRefractionUsed;
 

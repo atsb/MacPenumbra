@@ -17,7 +17,7 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "system/LogicTimer.h"
-#include "system/System.h"
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -27,12 +27,20 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cLogicTimer::cLogicTimer(int alUpdatesPerSec)
+	cLogicTimer::cLogicTimer(int alUpdatesPerSec, iLowLevelSystem *apLowLevelSystem)
 	{
 		mlMaxUpdates = alUpdatesPerSec;
-		mlUpdateCount = 0;
+		mlUpdateCount =0;
+
+		mpLowLevelSystem = apLowLevelSystem;
 
 		SetUpdatesPerSec(alUpdatesPerSec);
+	}
+
+	//-----------------------------------------------------------------------
+
+	cLogicTimer::~cLogicTimer()
+	{
 	}
 
 	//-----------------------------------------------------------------------
@@ -44,7 +52,7 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 	void cLogicTimer::Reset()
 	{
-		mlLocalTime = (double)GetAppTimeMS();
+		mlLocalTime = (double)GetApplicationTime();
 	}
 
 	//-----------------------------------------------------------------------
@@ -54,7 +62,7 @@ namespace hpl {
 		++mlUpdateCount;
 		if(mlUpdateCount > mlMaxUpdates) return false;
 
-		if(mlLocalTime< (double)GetAppTimeMS())
+		if(mlLocalTime< (double)GetApplicationTime())
 		{
 			Update();
 			return true;
@@ -77,7 +85,7 @@ namespace hpl {
 
 	void cLogicTimer::SetUpdatesPerSec(int alUpdatesPerSec)
 	{
-		mlLocalTimeAdd = 1000.0 / ((double)alUpdatesPerSec);
+		mlLocalTimeAdd = 1000.0/((double)alUpdatesPerSec);
 		Reset();
 	}
 
@@ -112,7 +120,7 @@ namespace hpl {
 
 	void cLogicTimer::Update()
 	{
-		mlLocalTime += mlLocalTimeAdd;
+		mlLocalTime+=mlLocalTimeAdd;
 	}
 
 	//-----------------------------------------------------------------------

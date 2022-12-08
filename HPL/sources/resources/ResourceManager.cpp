@@ -19,12 +19,12 @@
 #include "resources/ResourceManager.h"
 #include "system/String.h"
 
+#include "resources/LowLevelResources.h"
 #include "resources/FileSearcher.h"
 #include "resources/ResourceBase.h"
-#include "system/System.h"
-#include "system/Log.h"
 
-#include <stdint.h>
+#include "system/LowLevelSystem.h"
+
 #include <algorithm>
 
 namespace hpl {
@@ -37,9 +37,13 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	iResourceManager::iResourceManager(cFileSearcher *apFileSearcher)
+	iResourceManager::iResourceManager(cFileSearcher *apFileSearcher,
+										iLowLevelResources *apLowLevelResources,
+										iLowLevelSystem *apLowLevelSystem)
 	{
 		mpFileSearcher = apFileSearcher;
+		mpLowLevelResources = apLowLevelResources;
+		mpLowLevelSystem = apLowLevelSystem;
 		mlHandleCount=0;
 	}
 
@@ -64,7 +68,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	iResourceBase* iResourceManager::GetByHandle(uint32_t alHandle)
+	iResourceBase* iResourceManager::GetByHandle(unsigned long alHandle)
 	{
 		tResourceHandleMapIt it = m_mapHandleResources.find(alHandle);
 		if(it == m_mapHandleResources.end())return NULL;
@@ -87,7 +91,7 @@ namespace hpl {
 		if(apResource->HasUsers()==false){
 			m_mapHandleResources.erase(apResource->GetHandle());
 			m_mapNameResources.erase(apResource->GetName());
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}*/
 
@@ -139,7 +143,7 @@ namespace hpl {
 			if(pRes->HasUsers()==false)
 			{
 				RemoveResource(pRes);
-				delete pRes;
+				hplDelete(pRes);
 			}
 		}
 		//Log("--------------------------------------\n");
@@ -180,7 +184,7 @@ namespace hpl {
 
 	void iResourceManager::BeginLoad(const tString& asFile)
 	{
-		mlTimeStart = GetAppTimeMS();
+		mlTimeStart = GetApplicationTime();
 
 		//Log("Begin resource: %s\n",asFile.c_str());
 
@@ -231,7 +235,7 @@ namespace hpl {
 
 		if(abLog && iResourceBase::GetLogCreateAndDelete())
 		{
-			uintptr_t lTime = GetAppTimeMS() - mlTimeStart;
+			unsigned long lTime = GetApplicationTime() - mlTimeStart;
 			Log("%sLoaded resource %s in %d ms\n",GetTabs().c_str(), apResource->GetName().c_str(),lTime);
 			apResource->SetLogDestruction(true);
 		}
@@ -251,11 +255,12 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	uint32_t iResourceManager::GetHandle()
+	unsigned long iResourceManager::GetHandle()
 	{
 		return mlHandleCount++;
 	}
 
 	//-----------------------------------------------------------------------
+
 
 }

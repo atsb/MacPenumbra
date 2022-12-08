@@ -25,6 +25,7 @@
 #include "physics/PhysicsBody.h"
 #include "physics/PhysicsWorld.h"
 
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -60,8 +61,8 @@ namespace hpl {
 		pChildBody->SetMatrix(m_mtxChildBodySetup);
 		if(pParentBody) pParentBody->SetMatrix(m_mtxParentBodySetup);
 
-		iPhysicsJointBall *pJoint = apWorld->CreateJointBall(msName,mvStartPivotPoint,mvPinDir,pParentBody,pChildBody);
-		pJoint->SetConeLimits(mfMaxConeAngle, mfMaxTwistAngle);
+		iPhysicsJointBall *pJoint = apWorld->CreateJointBall(msName,mvStartPivotPoint,pParentBody,pChildBody);
+		pJoint->SetConeLimits(mvConePin,mfMaxConeAngle, mfMaxTwistAngle);
 
 		pChildBody->SetMatrix(mtxChildTemp);
 		if(pParentBody) pParentBody->SetMatrix(mtxParentTemp);
@@ -80,7 +81,7 @@ namespace hpl {
 
 	iSaveData* iPhysicsJointBall::CreateSaveData()
 	{
-		return new cSaveData_iPhysicsJointBall();
+		return hplNew( cSaveData_iPhysicsJointBall, () );
 	}
 
 	//-----------------------------------------------------------------------

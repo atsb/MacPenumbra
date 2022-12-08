@@ -18,19 +18,19 @@
  */
 #include "graphics/Graphics.h"
 
+#include "system/LowLevelSystem.h"
 #include "graphics/LowLevelGraphics.h"
+#include "resources/LowLevelResources.h"
 #include "graphics/GraphicsDrawer.h"
 #include "graphics/Renderer3D.h"
-// #include "graphics/RendererPostEffects.h"
+#include "graphics/RendererPostEffects.h"
 #include "graphics/RenderList.h"
 #include "graphics/MaterialHandler.h"
 #include "graphics/MeshCreator.h"
 #include "game/Updateable.h"
 #include "resources/Resources.h"
-#include "system/Log.h"
 
 // Materials
-#ifdef OLD_MATS
 #include "graphics/Material_Alpha.h"
 #include "graphics/Material_Diffuse.h"
 #include "graphics/Material_DiffuseSpec.h"
@@ -44,7 +44,6 @@
 #include "graphics/Material_Alpha.h"
 #include "graphics/Material_EnvMap_Reflect.h"
 #include "graphics/Material_Water.h"
-#endif
 
 namespace hpl {
 
@@ -54,15 +53,16 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cGraphics::cGraphics(iLowLevelGraphics *apLowLevelGraphics)
+	cGraphics::cGraphics(iLowLevelGraphics *apLowLevelGraphics, iLowLevelResources *apLowLevelResources)
 	{
 		mpLowLevelGraphics = apLowLevelGraphics;
+		mpLowLevelResources = apLowLevelResources;
 
 		mpDrawer = NULL;
 		mpMeshCreator = NULL;
 		mpMaterialHandler = NULL;
 		mpRenderer3D = NULL;
-		// mpRendererPostEffects = NULL;
+		mpRendererPostEffects = NULL;
 	}
 
 	//-----------------------------------------------------------------------
@@ -72,12 +72,12 @@ namespace hpl {
 		Log("Exiting Graphics Module\n");
 		Log("--------------------------------------------------------\n");
 
-		delete mpRenderer3D;
-		// delete mpRendererPostEffects;
-		delete mpDrawer;
-		delete mpMeshCreator;
-		delete mpMaterialHandler;
-		delete mpRenderList;
+		hplDelete(mpRenderer3D);
+		hplDelete(mpRendererPostEffects);
+		hplDelete(mpDrawer);
+		hplDelete(mpMeshCreator);
+		hplDelete(mpMaterialHandler);
+		hplDelete(mpRenderList);
 
 		Log("--------------------------------------------------------\n\n");
 	}
@@ -90,45 +90,44 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	bool cGraphics::Init(int alWidth, int alHeight, bool abFullscreen,
-						 int alMultisampling, const tString &asWindowCaption,
-						 cResources* apResources)
+	bool cGraphics::Init(	int alWidth, int alHeight, int alBpp, int abFullscreen,
+							int alMultisampling,const tString &asWindowCaption,
+							cResources* apResources)
 	{
 		Log("Initializing Graphics Module\n");
 		Log("--------------------------------------------------------\n");
 
 		Log(" Init low level graphics\n");
-		mpLowLevelGraphics->Init(alWidth, alHeight, abFullscreen, alMultisampling, asWindowCaption);
+		mpLowLevelGraphics->Init(alWidth,alHeight,alBpp,abFullscreen,alMultisampling,asWindowCaption);
 
 		Log(" Creating graphic systems\n");
-		mpMaterialHandler = new cMaterialHandler(this, apResources);
-		mpDrawer = new cGraphicsDrawer(mpLowLevelGraphics, apResources->GetImageManager());
-		mpRenderList = new cRenderList(this);
-		mpMeshCreator = new cMeshCreator(mpLowLevelGraphics, apResources);
-		mpRenderer3D = new cRenderer3D(mpLowLevelGraphics,apResources,mpMeshCreator,mpRenderList);
-//		mpRendererPostEffects = new cRendererPostEffects,(mpLowLevelGraphicsapResources, mpRenderList, mpRenderer3D);
-//		mpRenderer3D->SetPostEffects(mpRendererPostEffects);
+		mpMaterialHandler = hplNew( cMaterialHandler,(this, apResources));
+		mpDrawer = hplNew( cGraphicsDrawer,(mpLowLevelGraphics, apResources->GetImageManager()));
+		mpRenderList = hplNew( cRenderList,(this));
+		mpMeshCreator = hplNew( cMeshCreator,(mpLowLevelGraphics, apResources));
+		mpRenderer3D = hplNew( cRenderer3D,(mpLowLevelGraphics,apResources,mpMeshCreator,mpRenderList));
+		mpRendererPostEffects = hplNew( cRendererPostEffects,(mpLowLevelGraphics,apResources,mpRenderList,
+														mpRenderer3D));
+		mpRenderer3D->SetPostEffects(mpRendererPostEffects);
 
 
 		//Add all the materials.
 		Log(" Adding engine materials\n");
-		/*
-		mpMaterialHandler->Add(new cMaterialType_Diffuse());
-		mpMaterialHandler->Add(new cMaterialType_Bump());
-		mpMaterialHandler->Add(new cMaterialType_DiffuseSpec());
-		mpMaterialHandler->Add(new cMaterialType_BumpSpec());
-		mpMaterialHandler->Add(new cMaterialType_BumpColorSpec());
+		mpMaterialHandler->Add(hplNew( cMaterialType_Diffuse,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_Bump,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_DiffuseSpec,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_BumpSpec,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_BumpColorSpec,()) );
 
-		mpMaterialHandler->Add(new cMaterialType_Additive());
-		mpMaterialHandler->Add(new cMaterialType_Alpha());
-		mpMaterialHandler->Add(new cMaterialType_Flat());
-		mpMaterialHandler->Add(new cMaterialType_Modulative());
-		mpMaterialHandler->Add(new cMaterialType_ModulativeX2());
+		mpMaterialHandler->Add(hplNew( cMaterialType_Additive,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_Alpha,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_Flat,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_Modulative,()) );
+		mpMaterialHandler->Add(hplNew( cMaterialType_ModulativeX2,()) );
 
-		mpMaterialHandler->Add(new cMaterialType_EnvMap_Reflect());
+		mpMaterialHandler->Add(hplNew( cMaterialType_EnvMap_Reflect,()) );
 
-		mpMaterialHandler->Add(new cMaterialType_Water());
-		*/
+		mpMaterialHandler->Add(hplNew( cMaterialType_Water,()) );
 
 		Log("--------------------------------------------------------\n\n");
 

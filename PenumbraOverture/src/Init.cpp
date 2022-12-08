@@ -17,6 +17,7 @@
  * along with Penumbra Overture.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Init.h"
+#include "impl/CGProgram.h"
 #include "Player.h"
 #include "ButtonHandler.h"
 #include "MapHandler.h"
@@ -52,7 +53,9 @@
 #include "MapLoadText.h"
 #include "PreMenu.h"
 #include "Credits.h"
-#include "DebugMenu.h"
+#ifdef INCLUDE_HAPTIC
+#include "HapticGameCamera.h"
+#endif
 
 #include "MainMenu.h"
 
@@ -61,7 +64,7 @@
 #include "Version.h" // cool version .h that uses SVN revision #s
 
 // MUST include Last as Unix X11 header defined DestroyAll which blows up MapHandler.h class definition
-#include "game/impl/SDLGameSetup.h"
+#include "impl/SDLGameSetup.h"
 
 //Global init...
 cInit* gpInit;
@@ -99,6 +102,10 @@ cInit::cInit(void)  : iUpdateable("Init")
 	mlMaxSoundDataNum = 120;
 	mlMaxPSDataNum = 12;
 	mbShowCrossHair = false;
+#ifdef INCLUDE_HAPTIC
+	mbHasHaptics = false;
+	mbHasHapticsOnRestart = false;
+#endif
 
 	gpInit = this;
 }
@@ -119,7 +126,7 @@ cInit::~cInit(void)
 
 void cInit::CreateHardCodedPS(iParticleEmitterData *apPE)
 {
-	cParticleSystemData3D *pPS = new cParticleSystemData3D(apPE->GetName(),mpGame->GetResources(),mpGame->GetGraphics());
+	cParticleSystemData3D *pPS = hplNew( cParticleSystemData3D, (apPE->GetName(),mpGame->GetResources(),mpGame->GetGraphics()) );
 	pPS->AddEmitterData(apPE);
 	mpGame->GetResources()->GetParticleManager()->AddData3D(pPS);
 }
@@ -128,7 +135,17 @@ void cInit::CreateHardCodedPS(iParticleEmitterData *apPE)
 
 bool cInit::Init(tString asCommandLine)
 {
+	/*if(asCommandLine != "")
+	{
+		Log("CommandLine: %s\n",asCommandLine.c_str());
+		if(cSerialChecker::Validate(asCommandLine)<=0)
+		{
+			FatalError("Invalid serial number!\n");
+		}
+	}*/
+
 	//iResourceBase::SetLogCreateAndDelete(true);
+	SetWindowCaption("Penumbra Loading...");
 
 	// PERSONAL DIR /////////////////////
 	tWString sPersonalDir = GetSystemSpecialPath(eSystemPath_Personal);
@@ -140,6 +157,21 @@ bool cInit::Init(tString asCommandLine)
 
 	// CREATE NEEDED DIRS /////////////////////
 	gsUserSettingsPath = sPersonalDir + PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME _W("settings.cfg");
+	#ifndef WIN32
+	// For Mac OS X and Linux move the OLD Episode 1 folder to Penumbra/Overture and symlink to the old path
+	if (FolderExists(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra Overture/Episode1"))
+			&& !IsFileLink(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra Overture/Episode1"))) {
+		// Create the new folder
+		if(!FolderExists(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra")))
+			CreateFolder(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra"));
+		// Move the Older Episode 1 to the new Overture
+		RenameFile(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra Overture/Episode1"),
+				sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra/Overture"));
+		// Link back the old one to the new one
+		LinkFile(sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra/Overture"),
+			sPersonalDir + PERSONAL_RELATIVEROOT _W("Penumbra Overture/Episode1"));
+	}
+	#endif
 
 	tWString vDirs[] = { PERSONAL_RELATIVEPIECES //auto includes ,
 			PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME_PARENT,
@@ -156,20 +188,21 @@ bool cInit::Init(tString asCommandLine)
 	}
 
 	// LOG FILE SETUP /////////////////////
-	SetLogFile(cString::To8Char(sPersonalDir+PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME _W("hpl.log")).c_str());
-	SetUpdateLogFile(cString::To8Char(sPersonalDir+PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME _W("hpl_update.log")).c_str());
+	SetLogFile(sPersonalDir+PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME _W("hpl.log"));
+	SetUpdateLogFile(sPersonalDir+PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME _W("hpl_update.log"));
 
+	
 	// MAIN INIT /////////////////////
 	
 	//Check for what settings file to use.
 	if(FileExists(gsUserSettingsPath))
 	{
-		mpConfig = new cConfigFile(gsUserSettingsPath);
+		mpConfig = hplNew( cConfigFile, (gsUserSettingsPath) );
 		gbUsingUserSettings = true;
 	}
 	else
 	{
-		mpConfig = new cConfigFile(gsDefaultSettingsPath);
+		mpConfig = hplNew( cConfigFile, (gsDefaultSettingsPath) );
 		gbUsingUserSettings = false;
 	}
 	
@@ -180,8 +213,8 @@ bool cInit::Init(tString asCommandLine)
 	//If last init was not okay, reset all settings.
 	if ( mpConfig->GetBool("Game","LastInitOK",true) == false )
 	{
-		delete  mpConfig ;
-		mpConfig = new cConfigFile(gsDefaultSettingsPath);
+		hplDelete( mpConfig );
+		mpConfig = hplNew( cConfigFile, (gsDefaultSettingsPath) );
 		gbUsingUserSettings = false;
 		CreateMessageBoxW(
 			_W("Info"), 
@@ -195,7 +228,7 @@ bool cInit::Init(tString asCommandLine)
 		mpConfig->Save();
 	}
 
-    mpGameConfig = new cConfigFile(_W("config/game.cfg"));
+    mpGameConfig = hplNew( cConfigFile, (_W("config/game.cfg")) );
 	mpGameConfig->Load();
 
 	mvScreenSize.x = mpConfig->GetInt("Screen","Width",800);
@@ -209,6 +242,31 @@ bool cInit::Init(tString asCommandLine)
 	mbAllowQuickSave  = mpConfig->GetBool("Game","AllowQuickSave",false);
 	mbFlashItems  = mpConfig->GetBool("Game","FlashItems",true);
 	mbShowCrossHair  = mpConfig->GetBool("Game","ShowCrossHair",false);
+
+#ifdef INCLUDE_HAPTIC
+	mbSimpleWeaponSwing  = mpConfig->GetBool("Game","SimpleWeaponSwing",false);
+	mbDisablePersonalNotes  = mpConfig->GetBool("Game","DisablePersonalNotes",false);
+
+	mbHapticsAvailable = mpConfig->GetBool("Haptics","Available",false);
+	if(mbHapticsAvailable)
+	{
+		mbHasHaptics = mpConfig->GetBool("Haptics","Active",false);
+		cHaptic::SetIsUsed(mbHasHaptics);
+		mbHasHapticsOnRestart = mbHasHaptics;
+	}
+	else
+	{
+		mbHasHaptics = false;
+	}
+	mfHapticForceMul = mpConfig->GetFloat("Haptics","ForceMul",1.0f);
+	mfHapticMoveScreenSpeedMul = mpConfig->GetFloat("Haptics","MoveScreenSpeedMul",1.0f);
+	mfHapticScale = mpConfig->GetFloat("Haptics","Scale",0.04f);
+	mfHapticProxyRadius = mpConfig->GetFloat("Haptics","ProxyRadius",0.019f);
+	mfHapticOffsetZ = mpConfig->GetFloat("Haptics","OffsetZ",1.9f);
+	mfHapticMaxInteractDist = mpConfig->GetFloat("Haptics","HapticMaxInteractDist",2);
+
+	mbSimpleSwingInOptions = mpConfig->GetBool("Game","SimpleSwingInOptions",mbHapticsAvailable ? true:false); 
+#endif
 
 	msGlobalScriptFile = mpConfig->GetString("Map","GlobalScript","global_script.hps");
 	msLanguageFile = mpConfig->GetString("Game","LanguageFile","english.lang");
@@ -232,23 +290,68 @@ bool cInit::Init(tString asCommandLine)
 	mPhysicsAccuracy = (ePhysicsAccuracy)mpConfig->GetInt("Physics","Accuracy",ePhysicsAccuracy_High);
 	mfPhysicsUpdatesPerSec = mpConfig->GetFloat("Physics","UpdatesPerSec",60.0f);
 
+	mlMaxSoundChannels = mpConfig->GetInt("Sound","MaxSoundChannels",32);
+	mbUseSoundHardware = mpConfig->GetBool("Sound","UseSoundHardware",false);
+	//mbForceGenericSoundDevice = mpConfig->GetBool("Sound", "ForceGeneric", false);
+	mlStreamUpdateFreq = mpConfig->GetInt("Sound","StreamUpdateFreq",10);
+	mbUseSoundThreading = mpConfig->GetBool("Sound","UseThreading",true);
+#if __APPLE__
+	// TODO: once we fix/replace OAL wrapper, look at this again
+	// Override to false for macOS as threaded OAL is broken there
+	mbUseSoundThreading = false;
+#endif
+	//mbUseVoiceManagement = mpConfig->GetBool("Sound","UseVoiceManagement", true);
+	mlMaxMonoChannelsHint = mpConfig->GetInt("Sound","MaxMonoChannelsHint",0);
+	mlMaxStereoChannelsHint = mpConfig->GetInt("Sound","MaxStereoChannelsHint",0);
+	//mlStreamBufferSize = mpConfig->GetInt("Sound", "StreamBufferSize", 64);
+	//mlStreamBufferCount = mpConfig->GetInt("Sound", "StreamBufferCount", 4);
 	msDeviceName = mpConfig->GetString("Sound","DeviceName","NULL");
 
 	iGpuProgram::SetLogDebugInformation(false);
 	iResourceBase::SetLogCreateAndDelete(mbLogResources);
 
-	GameSetupOptions options;
-	options.ScreenWidth = mvScreenSize.x;
-	options.ScreenHeight = mvScreenSize.y;
-	options.Fullscreen = mbFullScreen;
-	options.Multisampling = mlFSAA;
-	options.AudioDeviceName = mpConfig->GetString("Sound", "DeviceName", "NULL");
-	options.WindowCaption = "Penumbra Overture";
+	cSetupVarContainer Vars;
+	Vars.AddInt("ScreenWidth",mvScreenSize.x);
+	Vars.AddInt("ScreenHeight",mvScreenSize.y);
+	Vars.AddInt("ScreenBpp",32);
+	Vars.AddBool("Fullscreen",mbFullScreen);
+	Vars.AddInt("Multisampling",mlFSAA);
+	Vars.AddInt("LogicUpdateRate",60);
+	Vars.AddBool("UseSoundHardware",mbUseSoundHardware);
+	Vars.AddBool("ForceGeneric", mpConfig->GetBool("Sound", "ForceGeneric", false));
+	Vars.AddInt("MaxSoundChannels",mlMaxSoundChannels);
+	Vars.AddInt("StreamUpdateFreq",mlStreamUpdateFreq);
+    Vars.AddBool("UseSoundThreading", mbUseSoundThreading);
+	Vars.AddBool("UseVoiceManagement", mpConfig->GetBool("Sound","UseVoiceManagement",true));
+	Vars.AddInt("MaxMonoChannelsHint",mlMaxMonoChannelsHint);
+	Vars.AddInt("MaxStereoChannelsHint",mlMaxStereoChannelsHint);
+	Vars.AddInt("StreamBufferSize",mpConfig->GetInt("Sound", "StreamBufferSize", 64));
+	Vars.AddInt("StreamBufferCount",mpConfig->GetInt("Sound", "StreamBufferCount", 4));
+	Vars.AddString("DeviceName",mpConfig->GetString("Sound", "DeviceName", "NULL"));
+	Vars.AddString("WindowCaption", "Penumbra");
+
+	Vars.AddBool("LowLevelSoundLogging", mpConfig->GetBool("Sound","LowLevelLogging", false));
+
+	// Set CG Options
+	cCGProgram::SetFProfile(mpConfig->GetString("Graphics","ForceFP","AUTO"));
+	cCGProgram::SetVProfile(mpConfig->GetString("Graphics","ForceVP","AUTO"));
 
 	iLowLevelGameSetup *pSetUp = NULL;
 
-	pSetUp = new cSDLGameSetup();
-	mpGame = new cGame(pSetUp, options);
+	pSetUp = hplNew( cSDLGameSetup, () );
+	mpGame = hplNew( cGame, ( pSetUp,Vars) );
+    
+#ifdef INCLUDE_HAPTIC
+	//Make sure there really is haptic support!
+	if(mbHasHaptics && cHaptic::GetIsUsed()==false)
+	{
+		CreateMessageBoxW(_W("Error!"),_W("No haptic support found. Mouse will be used instead!\n"));
+		mbHasHaptics = false;
+	}
+#endif
+
+	//Make sure hardware is really used.
+	mbUseSoundHardware = mpGame->GetSound()->GetLowLevel()->IsHardwareAccelerated();
 
 	mpGame->GetGraphics()->GetLowLevel()->SetVsyncActive(mbVsync);
 
@@ -270,42 +373,42 @@ bool cInit::Init(tString asCommandLine)
 
 	
 	//Add loaders
-	mpGame->GetResources()->AddEntity3DLoader(new cEntityLoader_GameObject("Object",this));
-	mpGame->GetResources()->AddEntity3DLoader(new cEntityLoader_GameItem("Item",this));
-	mpGame->GetResources()->AddEntity3DLoader(new cEntityLoader_GameSwingDoor("SwingDoor",this));
-	mpGame->GetResources()->AddEntity3DLoader(new cEntityLoader_GameLamp("Lamp",this));
-	mpGame->GetResources()->AddEntity3DLoader(new cEntityLoader_GameEnemy("Enemy",this));
+	mpGame->GetResources()->AddEntity3DLoader(hplNew( cEntityLoader_GameObject,("Object",this)) );
+	mpGame->GetResources()->AddEntity3DLoader(hplNew( cEntityLoader_GameItem,("Item",this)) );
+	mpGame->GetResources()->AddEntity3DLoader(hplNew( cEntityLoader_GameSwingDoor,("SwingDoor",this)) );
+	mpGame->GetResources()->AddEntity3DLoader(hplNew( cEntityLoader_GameLamp,("Lamp",this)) );
+	mpGame->GetResources()->AddEntity3DLoader(hplNew( cEntityLoader_GameEnemy,("Enemy",this)) );
 
-    mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameArea("script",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameLink("link",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameSaveArea("save",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameLadder("ladder",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameDamageArea("damage",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameForceArea("force",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameLiquidArea("liquid",this));
-	mpGame->GetResources()->AddArea3DLoader(new cAreaLoader_GameStickArea("stick",this));
+    mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameArea,("script",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameLink,("link",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameSaveArea,("save",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameLadder,("ladder",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameDamageArea,("damage",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameForceArea,("force",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameLiquidArea,("liquid",this)) );
+	mpGame->GetResources()->AddArea3DLoader(hplNew( cAreaLoader_GameStickArea,("stick",this)) );
 
 		
 	/// FIRST LOADING SCREEN ////////////////////////////////////
-	mpGraphicsHelper = new cGraphicsHelper(this);
+	mpGraphicsHelper = hplNew( cGraphicsHelper, (this) );
 	mpGraphicsHelper->DrawLoadingScreen("");
 
 	// SOUND ////////////////////////////////
 	mpGame->GetSound()->GetLowLevel()->SetVolume(mpConfig->GetFloat("Sound","Volume",1));
 		
 	// PHYSICS INIT /////////////////////
-	mpGame->GetPhysics()->LoadSurfaceData("materials.cfg");
+	mpGame->GetPhysics()->LoadSurfaceData("materials.cfg", mpGame->GetHaptic());
 	
 	// EARLY GAME INIT /////////////////////
-	mpEffectHandler = new cEffectHandler(this);
+	mpEffectHandler = hplNew( cEffectHandler, (this) );
 	
 	// GRAPHICS INIT ////////////////////
-//	mpGame->GetGraphics()->GetRendererPostEffects()->SetActive(mbPostEffects);
-//	mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomActive(mpConfig->GetBool("Graphics", "Bloom", true));
-//	mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomSpread(6);
+	mpGame->GetGraphics()->GetRendererPostEffects()->SetActive(mbPostEffects);
+	mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomActive(mpConfig->GetBool("Graphics", "Bloom", true));
+	mpGame->GetGraphics()->GetRendererPostEffects()->SetBloomSpread(6);
 
-//	mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurActive(mpConfig->GetBool("Graphics", "MotionBlur", false));
-//	mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurAmount(mpConfig->GetFloat("Graphics", "MotionBlurAmount", 0.3f));
+	mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurActive(mpConfig->GetBool("Graphics", "MotionBlur", false));
+	mpGame->GetGraphics()->GetRendererPostEffects()->SetMotionBlurAmount(mpConfig->GetFloat("Graphics", "MotionBlurAmount", 0.3f));
 
 	mpGame->GetGraphics()->GetRenderer3D()->SetRefractionUsed(mpConfig->GetBool("Graphics", "Refractions", false));
 
@@ -327,39 +430,48 @@ bool cInit::Init(tString asCommandLine)
 
 	mpGame->SetLimitFPS( mpConfig->GetBool("Graphics","LimitFPS",true));
 
+#ifdef INCLUDE_HAPTIC
+	// HAPTIC INIT ////////////////////
+	if(mbHasHaptics)
+	{
+		mpGame->GetHaptic()->GetLowLevel()->SetWorldScale(mfHapticScale);
+		mpGame->GetHaptic()->GetLowLevel()->SetVirtualMousePosBounds(cVector2f(-60,-60),
+											cVector2f(25,25), cVector2f(800, 600));
+		mpGame->GetHaptic()->GetLowLevel()->SetProxyRadius(mfHapticProxyRadius);
+	}
+#endif
+	
 	// BASE GAME INIT /////////////////////
-	mpMusicHandler = new cGameMusicHandler(this);
-	mpPlayerHands = new cPlayerHands(this);
-	mpButtonHandler = new cButtonHandler(this);
-	mpMapHandler = new cMapHandler(this);
-	mpGameMessageHandler = new cGameMessageHandler(this);
-	mpRadioHandler = new cRadioHandler(this);
-	mpInventory = new cInventory(this);
-	mpFadeHandler = new cFadeHandler(this);
-	mpSaveHandler = new cSaveHandler(this);
-	mpTriggerHandler = new cTriggerHandler(this);
-	mpAttackHandler = new cAttackHandler(this);
-	mpNotebook = new cNotebook(this);
-	mpNumericalPanel = new cNumericalPanel(this);
-	mpDeathMenu = new cDeathMenu(this);
-	mpPlayer = new cPlayer(this);
-	mpMapLoadText = new cMapLoadText(this);
-	mpPreMenu = new cPreMenu(this);
-	mpCredits = new cCredits(this);
-	mpDebugMenu = new cDebugMenu(this);
+	mpMusicHandler = hplNew( cGameMusicHandler,(this) );
+	mpPlayerHands = hplNew( cPlayerHands,(this) );
+	mpButtonHandler = hplNew( cButtonHandler,(this) );
+	mpMapHandler = hplNew( cMapHandler,(this) );
+	mpGameMessageHandler = hplNew( cGameMessageHandler,(this) );
+	mpRadioHandler = hplNew( cRadioHandler,(this) );
+	mpInventory = hplNew( cInventory,(this) );
+	mpFadeHandler = hplNew( cFadeHandler,(this) );
+	mpSaveHandler = hplNew( cSaveHandler,(this) );
+	mpTriggerHandler = hplNew( cTriggerHandler,(this) );
+	mpAttackHandler = hplNew( cAttackHandler,(this) );
+	mpNotebook = hplNew( cNotebook,(this) );
+	mpNumericalPanel = hplNew( cNumericalPanel,(this) );
+	mpDeathMenu = hplNew( cDeathMenu,(this) );
+	mpPlayer = hplNew( cPlayer,(this) );
+	mpMapLoadText = hplNew( cMapLoadText,(this) );
+	mpPreMenu = hplNew( cPreMenu,(this) );
+	mpCredits = hplNew( cCredits,(this) );
     
-	mpIntroStory = new cIntroStory(this);
+	mpIntroStory = hplNew( cIntroStory,(this) );
 
-	mpMainMenu = new cMainMenu(this);
+	mpMainMenu = hplNew( cMainMenu,(this) );
 
 	// UPDATE STATES INIT /////////////////////
 	//Add to the global state
 	mpGame->GetUpdater()->AddGlobalUpdate(mpButtonHandler);
 	mpGame->GetUpdater()->AddGlobalUpdate(mpSaveHandler);
-	mpGame->GetUpdater()->AddGlobalUpdate(mpDebugMenu);
 
 	//Add to the default state
-	// mpGame->GetUpdater()->AddUpdate("Default", mpButtonHandler);
+	mpGame->GetUpdater()->AddUpdate("Default", mpButtonHandler);
 	mpGame->GetUpdater()->AddUpdate("Default", mpPlayer);
 	mpGame->GetUpdater()->AddUpdate("Default", mpPlayerHands);
 	mpGame->GetUpdater()->AddUpdate("Default", mpMusicHandler);
@@ -442,8 +554,8 @@ bool cInit::Init(tString asCommandLine)
 	// Create newer settings file, if using default.
 	if(gbUsingUserSettings == false)
 	{
-		if(mpConfig) delete  mpConfig ;
-		mpConfig = new cConfigFile(gsUserSettingsPath);
+		if(mpConfig) hplDelete( mpConfig );
+		mpConfig = hplNew( cConfigFile, (gsUserSettingsPath) );
 		gbUsingUserSettings = true;
 	}
 
@@ -505,9 +617,27 @@ void cInit::Reset()
 
 void cInit::Exit()
 {
+#ifdef INCLUDE_HAPTIC
+	mpConfig->SetBool("Haptics","Active",mbHasHapticsOnRestart);
+	mpConfig->SetBool("Haptics","Available",mbHapticsAvailable);
+	mpConfig->SetFloat("Haptics","ForceMul",mfHapticForceMul);
+	mpConfig->SetFloat("Haptics","MoveScreenSpeedMul",mfHapticMoveScreenSpeedMul);
+	mpConfig->SetFloat("Haptics","Scale",mfHapticScale);
+	mpConfig->SetFloat("Haptics","ProxyRadius",mfHapticProxyRadius);
+	mpConfig->SetFloat("Haptics","OffsetZ",mfHapticOffsetZ);
+	mpConfig->SetFloat("Haptics","HapticMaxInteractDist",mfHapticMaxInteractDist);
+	mpConfig->SetFloat("Haptics","ProxyRadius",mfHapticProxyRadius);
+	mpConfig->SetFloat("Haptics","OffsetZ",mfHapticOffsetZ);
+	if(mbHasHaptics)
+	{
+		mpConfig->SetFloat("Haptics","InteractModeCameraSpeed",mpPlayer->GetHapticCamera()->GetInteractModeCameraSpeed());
+		mpConfig->SetFloat("Haptics","ActionModeCameraSpeed",mpPlayer->GetHapticCamera()->GetActionModeCameraSpeed());
+	}
+#endif
+
 	// PLAYER EXIT /////////////////////
 	//Log(" Exit Save Handler\n");
-	//delete  mpSaveHandler ;
+	//hplDelete( mpSaveHandler );
 
 	Log(" Reset maphandler\n");
 	mpMapHandler->Reset();
@@ -515,65 +645,70 @@ void cInit::Exit()
 
 	Log(" Exit Player\n");
 	// PLAYER EXIT /////////////////////
-	delete  mpPlayer ;
+	hplDelete( mpPlayer );
 	
 	// BASE GAME EXIT //////////////////
 	Log(" Exit Button Handler\n");
-	delete  mpButtonHandler ;
+	hplDelete( mpButtonHandler );
 	Log(" Exit Map Handler\n");
-	delete  mpMapHandler ;
+	hplDelete( mpMapHandler );
 	//Log(" Exit Game Scripts\n");
-	//delete  mpGameScripts ;
+	//hplDelete( mpGameScripts );
 	Log(" Exit Game Message Handler\n");
-	delete  mpGameMessageHandler ;
+	hplDelete( mpGameMessageHandler );
 	Log(" Exit Radio Handler\n");
-	delete  mpRadioHandler ;
+	hplDelete( mpRadioHandler );
 	Log(" Exit Inventory\n");
-	delete  mpInventory ;
+	hplDelete( mpInventory );
 	Log(" Exit Fade Handler\n");
-	delete  mpFadeHandler ;
+	hplDelete( mpFadeHandler );
 	Log(" Exit Save Handler\n");
-	delete  mpSaveHandler ;
+	hplDelete( mpSaveHandler );
 	Log(" Exit Trigger Handler\n");
-	delete  mpTriggerHandler ;
+	hplDelete( mpTriggerHandler );
 	Log(" Exit Attack Handler\n");
-	delete  mpAttackHandler ;
+	hplDelete( mpAttackHandler );
 	Log(" Exit Notebook\n");
-	delete  mpNotebook ;
+	hplDelete( mpNotebook );
 	Log(" Exit Numerical panel\n");
-	delete  mpNumericalPanel ;
+	hplDelete( mpNumericalPanel );
 	Log(" Exit Intro story\n");
-	delete  mpIntroStory ;
+	hplDelete( mpIntroStory );
 	Log(" Exit Death menu\n");
-	delete  mpDeathMenu ;
+	hplDelete( mpDeathMenu );
 	Log(" Exit Graphics helper\n");
-	delete  mpGraphicsHelper ;
+	hplDelete( mpGraphicsHelper );
 	Log(" Exit Main menu\n");
-	delete  mpMainMenu ;
+	hplDelete( mpMainMenu );
 	Log(" Exit Player hands\n");
-	delete  mpPlayerHands ;
+	hplDelete( mpPlayerHands );
 	Log(" Exit Music handler\n");
-	delete  mpMusicHandler ;
+	hplDelete( mpMusicHandler );
 	Log(" Exit Map Load Text\n");
-	delete  mpMapLoadText ;
+	hplDelete( mpMapLoadText );
 	Log(" Exit PreMenu\n");
-	delete  mpPreMenu ;
+	hplDelete( mpPreMenu );
 	Log(" Exit Credits\n");
-	delete  mpCredits ;
-	Log(" Exit DebugMenu\n");
-	delete  mpDebugMenu ;
+	hplDelete( mpCredits );
 
     Log(" Saving config\n");
 	//Save engine stuff.
-//	mpConfig->SetBool("Graphics", "Bloom",mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive());
-//	mpConfig->SetBool("Graphics", "MotionBlur",mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive());
-//	mpConfig->SetFloat("Graphics", "MotionBlurAmount",mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurAmount());
+	mpConfig->SetBool("Graphics", "Bloom",mpGame->GetGraphics()->GetRendererPostEffects()->GetBloomActive());
+	mpConfig->SetBool("Graphics", "MotionBlur",mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurActive());
+	mpConfig->SetFloat("Graphics", "MotionBlurAmount",mpGame->GetGraphics()->GetRendererPostEffects()->GetMotionBlurAmount());
 	mpConfig->SetBool("Graphics", "DepthOfField",!mpEffectHandler->GetDepthOfField()->IsDisabled());
 	mpConfig->GetBool("Graphics", "Refractions", mpGame->GetGraphics()->GetRenderer3D()->GetRefractionUsed());
 	
 	mpConfig->SetFloat("Sound","Volume",mpGame->GetSound()->GetLowLevel()->GetVolume());
+	mpConfig->SetBool("Sound","UseSoundHardware", mbUseSoundHardware);
+	mpConfig->SetInt("Sound","MaxSoundChannels",mlMaxSoundChannels);
+	mpConfig->SetInt("Sound","StreamUpdateFreq",mlStreamUpdateFreq);
+	mpConfig->SetBool("Sound","UseThreading",mbUseSoundThreading);
+	mpConfig->SetInt("Sound","MaxMonoChannelsHint",mlMaxMonoChannelsHint);
+	mpConfig->SetInt("Sound","MaxStereoChannelsHint",mlMaxStereoChannelsHint);
 	mpConfig->SetString("Sound","DeviceName",msDeviceName);
 
+	
 	mpConfig->SetInt("Graphics","TextureSizeLevel",mpGame->GetResources()->GetMaterialManager()->GetTextureSizeLevel());
 	mpConfig->SetInt("Graphics","TextureFilter",mpGame->GetResources()->GetMaterialManager()->GetTextureFilter());
 	mpConfig->SetFloat("Graphics","TextureAnisotropy",mpGame->GetResources()->GetMaterialManager()->GetTextureAnisotropy());
@@ -588,13 +723,13 @@ void cInit::Exit()
 	mpConfig->SetInt("Graphics","Shadows",mpGame->GetGraphics()->GetRenderer3D()->GetShowShadows());
 		
 	Log(" Exit Effect Handler\n");
-	delete  mpEffectHandler ;
+	hplDelete( mpEffectHandler );
 
 	Log(" Exit Game\n");
 
 	// MAIN EXIT /////////////////////
 	//Delete the game,  do this after all else is deleted.
-	delete  mpGame ;
+	hplDelete( mpGame );
 	
 	Log(" Saving last config\n");
 	//Save the stuff to the config file
@@ -610,6 +745,11 @@ void cInit::Exit()
 	mpConfig->SetBool("Game","AllowQuickSave",mbAllowQuickSave); 
 	mpConfig->SetBool("Game","FlashItems",mbFlashItems); 
 	mpConfig->SetBool("Game","ShowCrossHair",mbShowCrossHair);
+
+#ifdef INCLUDE_HAPTIC
+	mpConfig->SetBool("Game","SimpleWeaponSwing",mbSimpleWeaponSwing);
+	mpConfig->SetBool("Game","SimpleSwingInOptions",mbSimpleSwingInOptions);
+#endif
 	
 	mpConfig->SetString("Map","File",msStartMap); 
 	mpConfig->SetString("Map","StartPos",msStartLink);
@@ -628,9 +768,9 @@ void cInit::Exit()
 	mpConfig->SetBool("Debug", "LogResources", mbLogResources);
 
 	mpConfig->Save();
-	delete  mpConfig ;
+	hplDelete( mpConfig );
 
-	delete  mpGameConfig ;
+	hplDelete( mpGameConfig );
 }
 
 //-----------------------------------------------------------------------
@@ -675,7 +815,7 @@ void cInit::PreloadParticleSystem(const tString &asFile)
 	if(asFile=="") return;
 	cParticleSystem3D *pPS  = mpGame->GetResources()->GetParticleManager()->CreatePS3D(
 																"",asFile,1,cMatrixf::Identity);
-	delete  pPS ;
+	hplDelete( pPS );
 }
 
 //-----------------------------------------------------------------------

@@ -141,7 +141,7 @@ namespace hpl {
 	#endif
 	public:
 		iPhysicsJoint(const tString &asName, iPhysicsBody *apParentBody, iPhysicsBody *apChildBody,
-						iPhysicsWorld *apWorld,const cVector3f &avPivotPoint, const cVector3f &avPinDir);
+						iPhysicsWorld *apWorld,const cVector3f &avPivotPoint);
 		virtual ~iPhysicsJoint();
 
 		const tString& GetName(){ return msName;}
@@ -164,7 +164,7 @@ namespace hpl {
 
 		virtual cVector3f GetVelocity()=0;
 		virtual cVector3f GetAngularVelocity()=0;
-		virtual float GetForceSize()=0;
+		virtual cVector3f GetForce()=0;
 
 		virtual float GetDistance()=0;
 		virtual float GetAngle()=0;
@@ -227,7 +227,7 @@ namespace hpl {
 
 		void SetAllControllersPaused(bool abX);
 
-		bool OnPhysicsUpdate();
+		void OnPhysicsUpdate();
 
 		void SetSound(cSoundEntity *apSound){ mpSound = apSound;}
 		cSoundEntity* GetSound(){ return mpSound;}
@@ -253,8 +253,6 @@ namespace hpl {
 		cVector3f mvStartPivotPoint;
 
 		cVector3f mvLocalPivot;
-		cVector3f mvLocalPinDir;
-		cVector3f mvStartPinDir;
 
 		float mfStickyMinDistance;
 		float mfStickyMaxDistance;

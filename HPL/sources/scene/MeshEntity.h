@@ -174,7 +174,7 @@ namespace hpl {
 		 */
 		bool CheckColliderShapeCollision(iPhysicsWorld *apWorld,
 										iCollideShape *apShape, const cMatrixf &a_mtxShape,
-										tVector3fList *apPosList, tIntVec *apNumVec);
+										tVector3fList *apPosList, tIntList *apNumList);
 
 		void ResetGraphicsUpdated();
 
@@ -195,13 +195,13 @@ namespace hpl {
 		void UpdateLogic(float afTimeStep);
 
 		//Renderable implementation.
-		void UpdateGraphics(cCamera *apCamera,float afFrameTime, cRenderList *apRenderList);
+		void UpdateGraphics(cCamera3D *apCamera,float afFrameTime, cRenderList *apRenderList);
 		void SetRendered(bool abX);
 		iMaterial *GetMaterial();
 		iVertexBuffer* GetVertexBuffer();
 		bool IsShadowCaster();
 		cBoundingVolume* GetBoundingVolume();
-		cMatrixf* GetModelMatrix(cCamera *apCamera);
+		cMatrixf* GetModelMatrix(cCamera3D *apCamera);
 		int GetMatrixUpdateCount();
 		eRenderableType GetRenderType();
 

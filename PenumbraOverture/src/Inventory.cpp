@@ -27,6 +27,10 @@
 #include "EffectHandler.h"
 #include "RadioHandler.h"
 #include "Notebook.h"
+#ifdef INCLUDE_HAPTIC
+#include "HapticGameCamera.h"
+#endif
+
 #include "GlobalInit.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -40,17 +44,29 @@ cInventory::cInventory(cInit *apInit)  : iUpdateable("Inventory")
 	mpInit = apInit;
 	mpDrawer = apInit->mpGame->GetGraphics()->GetDrawer();
 
-	mpGfxBackground = mpDrawer->CreateGfxObject("inventory_background.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBackground = mpDrawer->CreateGfxObject("inventory_background.bmp","diffalpha2d");
+
+	//mpBatteryMeter = mpDrawer->CreateGfxObject("inventory_battery_meter.bmp","diffalpha2d");
+	//mpBatteryMeterBar = mpDrawer->CreateGfxObject("inventory_battery_meter_bar.bmp","diffalpha2d");
+
+	//mpBagpack = mpDrawer->CreateGfxObject("inventory_backpack.bmp","diffalpha2d");
+
+	//mpHealthFrame = mpDrawer->CreateGfxObject("inventory_health_frame.bmp","diffalpha2d");
+	//mpHealthBack = mpDrawer->CreateGfxObject("inventory_health_background.bmp","diffalpha2d");
+	//mpHealthMan_Fine = mpDrawer->CreateGfxObject("inventory_health_fine.bmp","diffalpha2d");
+	//mpHealthMan_Caution = mpDrawer->CreateGfxObject("inventory_health_caution.bmp","diffalpha2d"); 
+	//mpHealthMan_Danger = mpDrawer->CreateGfxObject("inventory_health_danger.bmp","diffalpha2d");
+	//mpHealthTextFrame = mpDrawer->CreateGfxObject("inventory_health_text_slot.bmp","diffalpha2d");
 
 	mpFont = mpInit->mpGame->GetResources()->GetFontManager()->CreateFontData("verdana.fnt");
 
-	mpContext = new cInventoryContext(mpInit);
+	mpContext = hplNew( cInventoryContext, (mpInit) );
 
 	mbMessageActive = false;
 	msMessage = _W("");
-	mfMessageAlpha = 0;
+	mfMessageAlpha =0;
 
-	mpMessageBackground = mpDrawer->CreateGfxObject("effect_black.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpMessageBackground = mpDrawer->CreateGfxObject("effect_black.bmp","diffalpha2d");
 
 	///////////////////////////////////
 	//Init normal slots
@@ -61,7 +77,7 @@ cInventory::cInventory(cInit *apInit)  : iUpdateable("Inventory")
 	for(float y=0; y<4; ++y)
 	for(float x=0; x<6; ++x)
 	{
-		pSlot = new cInventorySlot(mpInit,vSlotBegin + cVector2f(x * 77,y*69),false,lCount++);
+		pSlot = hplNew( cInventorySlot, (mpInit,vSlotBegin + cVector2f(x * 77,y*69),false,lCount++) );
 		AddWidget(pSlot);
 		mlstSlots.push_back(pSlot);
 	}
@@ -73,7 +89,7 @@ cInventory::cInventory(cInit *apInit)  : iUpdateable("Inventory")
 	cVector2f vEquipSlotBegin = cVector2f(400 - 77*4.5f,15);
 	for(float x=0; x<9; ++x)
 	{
-		pSlot = new cInventorySlot(mpInit,vEquipSlotBegin + cVector2f(x*77,0),true,lCount++);
+		pSlot = hplNew( cInventorySlot, (mpInit,vEquipSlotBegin + cVector2f(x*77,0),true,lCount++) );
 		AddWidget(pSlot);
 		mlstSlots.push_back(pSlot);
 		pSlot->SetEquipIndex(lEquipSlot++);
@@ -82,44 +98,49 @@ cInventory::cInventory(cInit *apInit)  : iUpdateable("Inventory")
 
 	///////////////////////////////////
 	//Init other widgests
-	cInventoryBattery *pBattery = new cInventoryBattery(mpInit,
+	cInventoryBattery *pBattery = hplNew( cInventoryBattery,(mpInit,
 														cRect2f(400 - 77*3.5f, 15 + 69 + 5,77,135),
-														NULL,30.0f);
+														NULL,30.0f) );
 	AddWidget(pBattery);
 
-	cInventoryHealth *pHealth = new cInventoryHealth(mpInit,
+	cInventoryHealth *pHealth = hplNew( cInventoryHealth, (mpInit,
 														cRect2f(400 - 77*3.5f, 15 + 69*3 + 5,
 																77,135),
-														NULL,30.0f);
+														NULL,30.0f) );
 	AddWidget(pHealth);
 
 	///////////////////////////////////
 	//Init items types
 	mvItemTypes.resize(eGameItemType_LastEnum, NULL);
 
-	mvItemTypes[eGameItemType_Normal] = new cGameItemType_Normal(mpInit);
-	mvItemTypes[eGameItemType_Notebook] = new cGameItemType_Notebook(mpInit);
-	mvItemTypes[eGameItemType_Note] = new cGameItemType_Note(mpInit);
-	mvItemTypes[eGameItemType_Battery] = new cGameItemType_Battery(mpInit);
-	mvItemTypes[eGameItemType_Flashlight] = new cGameItemType_Flashlight(mpInit);
-	mvItemTypes[eGameItemType_GlowStick] = new cGameItemType_GlowStick(mpInit);
-	mvItemTypes[eGameItemType_Flare] = new cGameItemType_Flare(mpInit);
-	mvItemTypes[eGameItemType_Painkillers] = new cGameItemType_Painkillers(mpInit);
-	mvItemTypes[eGameItemType_WeaponMelee] = new cGameItemType_WeaponMelee(mpInit);
-	mvItemTypes[eGameItemType_Throw] = new cGameItemType_Throw(mpInit);
+	mvItemTypes[eGameItemType_Normal] = hplNew( cGameItemType_Normal,(mpInit) );
+	mvItemTypes[eGameItemType_Notebook] = hplNew( cGameItemType_Notebook,(mpInit) );
+	mvItemTypes[eGameItemType_Note] = hplNew( cGameItemType_Note,(mpInit));
+	mvItemTypes[eGameItemType_Battery] = hplNew( cGameItemType_Battery,(mpInit) );
+	mvItemTypes[eGameItemType_Flashlight] = hplNew( cGameItemType_Flashlight,(mpInit) );
+	mvItemTypes[eGameItemType_GlowStick] = hplNew( cGameItemType_GlowStick,(mpInit) );
+	mvItemTypes[eGameItemType_Flare] = hplNew( cGameItemType_Flare,(mpInit) );
+	mvItemTypes[eGameItemType_Painkillers] = hplNew( cGameItemType_Painkillers,(mpInit) );
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics)
+		mvItemTypes[eGameItemType_WeaponMelee] = hplNew( cGameItemType_WeaponMeleeHaptX,(mpInit) );
+	else
+#endif
+		mvItemTypes[eGameItemType_WeaponMelee] = hplNew( cGameItemType_WeaponMelee,(mpInit) );
+	mvItemTypes[eGameItemType_Throw] = hplNew( cGameItemType_Throw,(mpInit) );
 
 	Reset();
 }
 
 cInventory::~cInventory(void)
 {
-	delete  mpContext ;
+	hplDelete( mpContext );
 
 	ClearCallbacks();
 	
 	for(size_t i=0; i<mvItemTypes.size(); ++i)
 	{
-		if(mvItemTypes[i])  delete mvItemTypes[i];
+		if(mvItemTypes[i])  hplDelete(mvItemTypes[i]);
 	}
 
 	STLDeleteAll(mlstWidgets);
@@ -134,7 +155,7 @@ cInventory::~cInventory(void)
 
 //-----------------------------------------------------------------------
 
-iInventoryWidget::iInventoryWidget(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject, float afZ)
+iInventoryWidget::iInventoryWidget(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, float afZ)
 {
 	mpInit = apInit;
 	mRect = aRect;
@@ -148,7 +169,7 @@ void iInventoryWidget::Draw()
 {
 	if(mpGfxObject==NULL) return;
 	
-	cVector2l vSize = mpGfxObject->mpImage->GetSize();
+	cVector2l vSize = mpGfxObject->GetMaterial()->GetImage()->GetSize();
 	mpDrawer->DrawGfxObject(mpGfxObject, cVector3f(mRect.x,mRect.y,mfZ),
 							cVector2f((float)vSize.x, (float)vSize.y),
 							cColor(1, mpInit->mpInventory->GetAlpha()));
@@ -166,7 +187,7 @@ void iInventoryWidget::Draw()
 cInventorySlot::cInventorySlot(cInit *apInit, const cVector2f &avPos, bool abEquip, int alIndex)
 : iInventoryWidget(apInit, cRect2f(avPos.x, avPos.y,77, 66),NULL, 10.0f)
 {
-	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot.bmp","diffalpha2d");
 	mpItem = NULL;
 	mbEquip = abEquip;
 	mlIndex = alIndex;
@@ -183,7 +204,7 @@ void cInventorySlot::OnDraw()
 	if(mpItem)
 	{
 		cVector3f vPos(mRect.x + 4,	mRect.y + 4 ,5);
-		cVector2l vSize = mpItem->GetGfxObject()->mpImage->GetSize();
+		cVector2l vSize = mpItem->GetGfxObject()->GetMaterial()->GetImage()->GetSize();
 		
 		mpDrawer->DrawGfxObject(mpItem->GetGfxObject(), vPos,
 								cVector2f((float)vSize.x, (float)vSize.y),
@@ -209,7 +230,7 @@ void cInventorySlot::OnDraw()
 	{
 		if(mpGfxBack == NULL)
 		{
-			mpGfxBack = mpDrawer->CreateGfxObject("inventory_slot_equip"+cString::ToString(mlEquipIndex+1)+".bmp",eGfxMaterialType::DiffuseAlpha);
+			mpGfxBack = mpDrawer->CreateGfxObject("inventory_slot_equip"+cString::ToString(mlEquipIndex+1)+".bmp","diffalpha2d");
 		}
 
 		mpDrawer->DrawGfxObject(mpGfxBack,cVector3f(mRect.x,mRect.y,1),cVector2f(77,66),
@@ -457,8 +478,8 @@ bool cInventoryItem::Init(cGameItem *apGameItem)
 
 	if(apGameItem->GetImageFile()!="")
 	{
-		mpGfxObject = mpDrawer->CreateGfxObject(apGameItem->GetImageFile(),eGfxMaterialType::DiffuseAlpha);
-		mpGfxObjectAdditive = mpDrawer->CreateGfxObject(apGameItem->GetImageFile(),eGfxMaterialType::DiffuseAdditive);
+		mpGfxObject = mpDrawer->CreateGfxObject(apGameItem->GetImageFile(),"diffalpha2d");
+		mpGfxObjectAdditive = mpDrawer->CreateGfxObject(apGameItem->GetImageFile(),"diffadditive2d");
 	}
 	else
 		mpGfxObject = NULL;
@@ -491,7 +512,7 @@ bool cInventoryItem::InitFromFile(const tString &asFile)
 
 	if(sPath!="")
 	{
-		TiXmlDocument *pEntityDoc = new TiXmlDocument();
+		TiXmlDocument *pEntityDoc = hplNew( TiXmlDocument, () );
 		if(pEntityDoc->LoadFile(sPath.c_str())==false)
 		{
 			Error("Couldn't load '%s'!\n",sPath.c_str());
@@ -525,15 +546,15 @@ bool cInventoryItem::InitFromFile(const tString &asFile)
 
 			if(sImageFile != "")
 			{
-				mpGfxObject = mpDrawer->CreateGfxObject(sImageFile,eGfxMaterialType::DiffuseAlpha);
-				mpGfxObjectAdditive = mpDrawer->CreateGfxObject(sImageFile,eGfxMaterialType::DiffuseAdditive);
+				mpGfxObject = mpDrawer->CreateGfxObject(sImageFile,"diffalpha2d");
+				mpGfxObjectAdditive = mpDrawer->CreateGfxObject(sImageFile,"diffadditive2d");
 			}
 			else 
 				mpGfxObject = NULL;
 			
 			msEntityFile = sEntityFile;
 		}
-		delete  pEntityDoc ;
+		hplDelete( pEntityDoc );
 	}
 	else
 	{
@@ -549,7 +570,7 @@ bool cInventoryItem::InitFromFile(const tString &asFile)
 void cInventoryItem::Drop()
 {
 	cWorld3D *pWorld = mpInit->mpGame->GetScene()->GetWorld3D();
-	auto pCamera = mpInit->mpPlayer->GetCamera();
+	cCamera3D *pCamera = mpInit->mpPlayer->GetCamera();
 
 	cMatrixf mtxItem = cMatrixf::Identity;
 	mtxItem.SetTranslation(pCamera->GetPosition());
@@ -574,13 +595,13 @@ void cInventoryItem::Drop()
 
 //-----------------------------------------------------------------------
 
-cInventoryBattery::cInventoryBattery(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject,
+cInventoryBattery::cInventoryBattery(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, 
 									   float afZ)
 		: iInventoryWidget(apInit,aRect,apGfxObject,afZ)
 {
-	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot_double.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxBatteryMeter = mpDrawer->CreateGfxObject("inventory_battery_meter.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxBatteryMeterBar = mpDrawer->CreateGfxObject("inventory_battery_meter_bar.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot_double.bmp","diffalpha2d");
+	mpGfxBatteryMeter = mpDrawer->CreateGfxObject("inventory_battery_meter.bmp","diffalpha2d");
+	mpGfxBatteryMeterBar = mpDrawer->CreateGfxObject("inventory_battery_meter_bar.bmp","diffalpha2d");
 }
 
 cInventoryBattery::~cInventoryBattery()
@@ -613,7 +634,7 @@ void cInventoryBattery::OnDraw()
 void cInventoryBattery::OnMouseOver()
 {
 	char sPercent[256];
-	snprintf(sPercent, sizeof(sPercent), " %.0f%% ", mpInit->mpPlayer->GetPower());
+	sprintf(sPercent," %.0f%% ",mpInit->mpPlayer->GetPower());
 	mpInit->mpInventory->SetItemName(kTranslate("Inventory", "BatteryLevel"));
 	mpInit->mpInventory->SetItemDesc(	kTranslate("Inventory", "BatteryLevelDesc1") +
 										cString::To16Char(sPercent) +
@@ -633,14 +654,14 @@ void cInventoryBattery::OnUpdate(float afTimeStep)
 
 //-----------------------------------------------------------------------
 
-cInventoryHealth::cInventoryHealth(cInit *apInit, const cRect2f &aRect, const cGfxObject* apGfxObject,
+cInventoryHealth::cInventoryHealth(cInit *apInit, const cRect2f &aRect, cGfxObject* apGfxObject, 
 									 float afZ)
 									 : iInventoryWidget(apInit,aRect,apGfxObject,afZ)
 {
-	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot_double.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxFine = mpDrawer->CreateGfxObject("inventory_health_fine.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxCaution = mpDrawer->CreateGfxObject("inventory_health_caution.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxDanger = mpDrawer->CreateGfxObject("inventory_health_danger.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxObject = mpDrawer->CreateGfxObject("inventory_slot_double.bmp","diffalpha2d");
+	mpGfxFine = mpDrawer->CreateGfxObject("inventory_health_fine.bmp","diffalpha2d");
+	mpGfxCaution = mpDrawer->CreateGfxObject("inventory_health_caution.bmp","diffalpha2d");
+	mpGfxDanger = mpDrawer->CreateGfxObject("inventory_health_danger.bmp","diffalpha2d");
 }
 
 cInventoryHealth::~cInventoryHealth()
@@ -657,7 +678,7 @@ void cInventoryHealth::OnDraw()
 	float fAlpha = mpInit->mpInventory->GetAlpha();
 	float fPercent = mpInit->mpPlayer->GetHealth()/100.0f;
 	
-	const cGfxObject *pGfxMan;
+	cGfxObject *pGfxMan;
 	if(fPercent > 0.75f){		pGfxMan = mpGfxFine;
 	}
 	else if(fPercent > 0.3f){	pGfxMan = mpGfxCaution;
@@ -711,15 +732,15 @@ cInventoryContext::cInventoryContext(cInit *apInit)
 
 	mbActive = false;
 
-	mpGfxBack = mpDrawer->CreateGfxObject("inventory_context_back.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxCorner11 = mpDrawer->CreateGfxObject("inventory_context_11.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxCorner12 = mpDrawer->CreateGfxObject("inventory_context_12.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxCorner21 = mpDrawer->CreateGfxObject("inventory_context_21.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxCorner22 = mpDrawer->CreateGfxObject("inventory_context_22.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxRight = mpDrawer->CreateGfxObject("inventory_context_right.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxLeft = mpDrawer->CreateGfxObject("inventory_context_left.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxTop = mpDrawer->CreateGfxObject("inventory_context_top.bmp",eGfxMaterialType::DiffuseAlpha);
-	mpGfxBottom = mpDrawer->CreateGfxObject("inventory_context_bottom.bmp",eGfxMaterialType::DiffuseAlpha);
+	mpGfxBack = mpDrawer->CreateGfxObject("inventory_context_back.bmp","diffalpha2d");
+	mpGfxCorner11 = mpDrawer->CreateGfxObject("inventory_context_11.bmp","diffalpha2d");
+	mpGfxCorner12 = mpDrawer->CreateGfxObject("inventory_context_12.bmp","diffalpha2d");
+	mpGfxCorner21 = mpDrawer->CreateGfxObject("inventory_context_21.bmp","diffalpha2d");
+	mpGfxCorner22 = mpDrawer->CreateGfxObject("inventory_context_22.bmp","diffalpha2d");
+	mpGfxRight = mpDrawer->CreateGfxObject("inventory_context_right.bmp","diffalpha2d");
+	mpGfxLeft = mpDrawer->CreateGfxObject("inventory_context_left.bmp","diffalpha2d");
+	mpGfxTop = mpDrawer->CreateGfxObject("inventory_context_top.bmp","diffalpha2d");
+	mpGfxBottom = mpDrawer->CreateGfxObject("inventory_context_bottom.bmp","diffalpha2d");
 
 	
 	mvPos.z = 40.0f;
@@ -1043,7 +1064,7 @@ void cInventory::OnDraw()
 	mpDrawer->DrawGfxObject(mpHealthBack,cVector3f(vManPos.x,vManPos.y,2),cVector2f(150,266),
 							cColor((1-fPercent)*0.7f + 0.3f,fPercent*0.7f + 0.3f, 0.3f, mfAlpha));
 	
-	const cGfxObject *pGfxMan;
+	cGfxObject *pGfxMan;
 	tWString wsText;
 	if(fPercent > 0.75f){		pGfxMan = mpHealthMan_Fine;
 								wsText = kTranslate("Inventory","HealthFine");
@@ -1080,7 +1101,7 @@ void cInventory::OnDraw()
 	{
 		cVector3f vPos(mvMousePos.x + mvCurrentItemOffset.x, 
 						mvMousePos.y + mvCurrentItemOffset.y,15);
-		cVector2l vSize = mpCurrentItem->GetGfxObject()->mpImage->GetSize();
+		cVector2l vSize = mpCurrentItem->GetGfxObject()->GetMaterial()->GetImage()->GetSize();
 
 		mpDrawer->DrawGfxObject(mpCurrentItem->GetGfxObject(), vPos,
 								cVector2f((float)vSize.x, (float)vSize.y),
@@ -1134,6 +1155,11 @@ void cInventory::SetActive(bool abX)
     
 	if(mbActive)
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(false);
+#endif
+
 		mLastCrossHairState = mpInit->mpPlayer->GetCrossHairState();
 		
 		mvMousePos = cVector2f(400,300);
@@ -1142,6 +1168,11 @@ void cInventory::SetActive(bool abX)
 	}
 	else
 	{
+#ifdef INCLUDE_HAPTIC
+		if(mpInit->mbHasHaptics)
+			mpInit->mpPlayer->GetHapticCamera()->SetActive(true);
+#endif
+
 		mpInit->mpPlayer->SetCrossHairState(mLastCrossHairState);
 		mbMessageActive = false;
 	}
@@ -1212,14 +1243,14 @@ void cInventory::AddItem(cGameItem *apGameItem)
 
 	//////////////////////////
 	//Create item
-	cInventoryItem *pItem = new cInventoryItem(mpInit);
+	cInventoryItem *pItem = hplNew( cInventoryItem, (mpInit) );
 	pItem->Init(apGameItem);
 	
 	cGameItemType *pType = GetItemType(pItem->GetItemType());
     if(pType->OnPickUp(pItem,true)==false)
 	{
 		CheckPickupCallback(pItem->GetName());
-		delete  pItem ;
+		hplDelete( pItem );
 		return;
 	}
 	
@@ -1247,7 +1278,7 @@ void cInventory::AddItemFromFile(const tString &asName,const tString &asFile, in
 {
 	/////////////////////////////////
 	//Create Item	
-	cInventoryItem *pItem = new cInventoryItem(mpInit);
+	cInventoryItem *pItem = hplNew( cInventoryItem, (mpInit) );
 	pItem->SetName(asName);
 	pItem->InitFromFile(asFile);
 
@@ -1255,7 +1286,7 @@ void cInventory::AddItemFromFile(const tString &asName,const tString &asFile, in
 	if(pType->OnPickUp(pItem,false)==false)
 	{
 		CheckPickupCallback(pItem->GetName());
-		delete  pItem ;
+		hplDelete( pItem );
 		return;
 	}
 
@@ -1281,7 +1312,7 @@ void cInventory::AddItemFromFile(const tString &asName,const tString &asFile, in
 		{
 			pFoundItem->AddCount(pItem->GetCount());
 			CheckPickupCallback(pItem->GetName());
-			delete  pItem ; 
+			hplDelete( pItem ); 
 			return;
 		}
 	}
@@ -1339,7 +1370,7 @@ void cInventory::RemoveItem(cInventoryItem *apItem)
 		mpCurrentItem = NULL;
 	}
 
-	delete  apItem ;
+	hplDelete( apItem );
 }
 
 //-----------------------------------------------------------------------
@@ -1537,7 +1568,7 @@ void cInventory::AddPickupCallback(const tString &asItem, const tString &asFunct
 {
 	//Log("Adding callback %s %s\n",asItem.c_str(),asFunction.c_str());
 
-	cInventoryPickupCallback *pCallback = new cInventoryPickupCallback();
+	cInventoryPickupCallback *pCallback = hplNew( cInventoryPickupCallback, () );
 	pCallback->msFunction = asFunction;
 	pCallback->msItem = asItem;
 
@@ -1565,7 +1596,7 @@ void cInventory::AddUseCallback(const tString &asItem, const tString &asObject, 
 	}
 
 	//Add new.
-	cInventoryUseCallback *pCallback = new cInventoryUseCallback();
+	cInventoryUseCallback *pCallback = hplNew( cInventoryUseCallback,());
 	pCallback->msFunction = asFunction;
 	pCallback->msItem = asItem;
 	pCallback->msObject = asObject;
@@ -1577,7 +1608,7 @@ void cInventory::AddUseCallback(const tString &asItem, const tString &asObject, 
 
 void cInventory::AddCombineCallback(const tString &asItem1,const tString &asItem2, const tString &asFunction)
 {
-	cInventoryCombineCallback *pCallback = new cInventoryCombineCallback();
+	cInventoryCombineCallback *pCallback = hplNew( cInventoryCombineCallback, () );
 	pCallback->msFunction = asFunction;
 	pCallback->msItem1 = asItem1;
 	pCallback->msItem2 = asItem2;
@@ -1597,7 +1628,7 @@ void cInventory::RemovePickupCallback(const tString &asFunction)
 		if(pCallback->msFunction == asFunction)
 		{
 			m_mapPickupCallbacks.erase(it++);
-			delete  pCallback ;
+			hplDelete( pCallback );
 		}
 		else
 		{
@@ -1615,7 +1646,7 @@ void cInventory::RemoveUseCallback(const tString &asFunction)
 		if(pCallback->msFunction == asFunction)
 		{
 			m_mapUseCallbacks.erase(it++);
-			delete  pCallback ;
+			hplDelete( pCallback );
 		}
 		else
 		{
@@ -1639,7 +1670,7 @@ void cInventory::RemoveCombineCallback(const tString &asFunction)
 			else
 			{
 				mlstCombineCallbacks.erase(it);
-				delete  pCallback ;
+				hplDelete( pCallback );
 			}
 			return;
 		}
@@ -1713,8 +1744,7 @@ bool cInventory::CheckCombineCallback(const tString &asItem1,const tString &asIt
 
 	if(pFinalCallback)
 	{
-		char sString[30];
-		snprintf(sString, sizeof(sString), "%d", alSlotIndex);
+		char sString[30];sprintf(sString,"%d",alSlotIndex);
 
 		tString sCommand = pFinalCallback->msFunction + "(\""+asItem1+"\", \""+asItem2+"\", "+
 														cString::ToString(sString,"")+")";
@@ -1736,7 +1766,7 @@ bool cInventory::CheckCombineCallback(const tString &asItem1,const tString &asIt
 		if(pCallback->bKillMe)
 		{
 			it = mlstCombineCallbacks.erase(it);
-			delete  pCallback ;
+			hplDelete( pCallback );
 		}
 		else
 		{
@@ -1780,7 +1810,7 @@ void cInventory::SaveToGlobal(cInventory_GlobalSave *apSave)
 		saveItem.msSubType = pItem->msSubType;
 
 		saveItem.msEntityFile = pItem->msEntityFile;
-		saveItem.msGfxObjectFile = pItem->mpGfxObject->msSourceFile;
+		saveItem.msGfxObjectFile = pItem->mpGfxObject->GetSourceFile();
 
 		saveItem.msHudModelFile = pItem->msHudModelFile;
 		saveItem.msHudModelName = pItem->msHudModelName;
@@ -1832,7 +1862,7 @@ void cInventory::LoadFromGlobal(cInventory_GlobalSave *apSave)
 	cContainerListIterator<cInventoryItem_GlobalSave> ItemIt = apSave->mlstItems.GetIterator();
 	while(ItemIt.HasNext())
 	{
-		cInventoryItem *pItem = new cInventoryItem(mpInit);
+		cInventoryItem *pItem = hplNew( cInventoryItem, (mpInit) );
 		cInventoryItem_GlobalSave saveItem = ItemIt.Next();
 
 		pItem->msName = saveItem.msName;
@@ -1844,8 +1874,8 @@ void cInventory::LoadFromGlobal(cInventory_GlobalSave *apSave)
 		pItem->msSubType = saveItem.msSubType;
 
 		pItem->msEntityFile = saveItem.msEntityFile;
-		pItem->mpGfxObject = mpDrawer->CreateGfxObject(saveItem.msGfxObjectFile, eGfxMaterialType::DiffuseAlpha);
-		pItem->mpGfxObjectAdditive = mpDrawer->CreateGfxObject(saveItem.msGfxObjectFile,eGfxMaterialType::DiffuseAdditive);
+		pItem->mpGfxObject = mpDrawer->CreateGfxObject(saveItem.msGfxObjectFile, "diffalpha2d");
+		pItem->mpGfxObjectAdditive = mpDrawer->CreateGfxObject(saveItem.msGfxObjectFile,"diffadditive2d");
 
 		pItem->msHudModelFile = saveItem.msHudModelFile;
 		pItem->msHudModelName = saveItem.msHudModelName;
@@ -1974,7 +2004,7 @@ int cSaveData_cInventory::GetSaveCreatePrio()
 
 iSaveData* cInventory::CreateSaveData()
 {
-	cSaveData_cInventory *pData = new cSaveData_cInventory();
+	cSaveData_cInventory *pData = hplNew( cSaveData_cInventory, () );
 	
 	//////////////////////
 	//Use callbacks

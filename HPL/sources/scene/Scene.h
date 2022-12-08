@@ -25,7 +25,7 @@
 #include "script/ScriptVar.h"
 
 #include "game/Updateable.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 
 #include "resources/MeshLoader.h"
 
@@ -34,13 +34,15 @@ namespace hpl {
 	class cAI;
 	class cGraphics;
 	class cResources;
+	class cSystem;
 	class cSound;
 	class cPhysics;
-	class cCamera;
+	class cHaptic;
+	class iCamera;
 	class cUpdater;
 	class cWorld3D;
 
-	typedef std::list<cCamera*> tCameraList;
+	typedef std::list<iCamera*> tCameraList;
 	typedef tCameraList::iterator tCameraListIt;
 
 	typedef std::list<cWorld3D*> tWorld3DList;
@@ -49,7 +51,8 @@ namespace hpl {
 	class cScene : public iUpdateable
 	{
 	public:
-		cScene(cGraphics *apGraphics,cResources *apResources, cSound* apSound, cPhysics *apPhysics, cAI *apAI);
+		cScene(cGraphics *apGraphics,cResources *apResources, cSound* apSound, cPhysics *apPhysics,
+				cSystem *apSystem, cAI *apAI, cHaptic *apHaptic);
 		~cScene();
 
 		void Reset();
@@ -82,16 +85,16 @@ namespace hpl {
 
 		///// CAMERA METHODS ////////////////////
 
-		cCamera* CreateCamera(eCameraMoveMode aMoveMode);
+		cCamera3D* CreateCamera3D(eCameraMoveMode aMoveMode);
 
-		void DestroyCamera(cCamera* apCam);
+		void DestroyCamera(iCamera* apCam);
 
 		/**
 		 * This sets the current camera
 		 * \param pCam
 		 */
-		void SetCamera(cCamera* pCam);
-		cCamera* GetCamera(){ return mpActiveCamera; }
+		void SetCamera(iCamera* pCam);
+		iCamera* GetCamera(){ return mpActiveCamera; }
 
 		void SetCameraIsListener(bool abX){ mbCameraIsListener = abX; }
 
@@ -109,12 +112,16 @@ namespace hpl {
 		void SetUpdateMap(bool abX){ mbUpdateMap = abX;}
 		bool GetUpdateMap(){return mbUpdateMap;}
 
+		cSystem* GetSystem(){ return mpSystem;}
+
 	private:
 		cGraphics *mpGraphics;
 		cResources *mpResources;
 		cSound *mpSound;
 		cPhysics *mpPhysics;
+		cSystem *mpSystem;
 		cAI *mpAI;
+		cHaptic *mpHaptic;
 
 		bool mbDrawScene;
 		bool mbUpdateMap;
@@ -123,7 +130,7 @@ namespace hpl {
 		cWorld3D* mpCurrentWorld3D;
 
 		tCameraList mlstCamera;
-		cCamera *mpActiveCamera;
+		iCamera *mpActiveCamera;
 		bool mbCameraIsListener;
 
 		tScriptVarMap m_mapLocalVars;

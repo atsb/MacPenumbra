@@ -142,7 +142,20 @@ public:
 	bool OnAction(cInventoryItem *apItem, int alActionNum);
 };
 
+#ifdef INCLUDE_HAPTIC
+//----------------------------------------------
 
+// WEAPON MELEE HAPTX
+
+class cGameItemType_WeaponMeleeHaptX : public cGameItemType
+{
+public:
+	cGameItemType_WeaponMeleeHaptX(cInit *apInit);
+
+	bool OnAction(cInventoryItem *apItem, int alActionNum);
+};
+
+#endif
 //----------------------------------------------
 
 

@@ -16,10 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <stdint.h>
 #include "resources/ResourceBase.h"
-#include "system/Log.h"
+
+#include "system/LowLevelSystem.h"
+
 
 namespace hpl {
 
@@ -32,7 +32,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 	iResourceBase::iResourceBase(tString asName,unsigned int alPrio){
-		mlTime = (uint32_t)time(NULL);
+		mlTime = (unsigned long)time(NULL);
 		mlPrio = alPrio;
 		mlHandle = 0;
 		mlUserCount =0;
@@ -50,7 +50,7 @@ namespace hpl {
 	void iResourceBase::IncUserCount()
 	{
 		mlUserCount++;
-		mlTime = (uint32_t)time(NULL);
+		mlTime = (unsigned long)time(NULL);
 	}
 
 	//-----------------------------------------------------------------------

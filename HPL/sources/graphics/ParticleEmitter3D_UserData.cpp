@@ -25,7 +25,7 @@
 #include "graphics/ParticleSystem3D.h"
 #include "graphics/RenderList.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include "resources/Resources.h"
 #include "resources/MaterialManager.h"
@@ -57,7 +57,8 @@ namespace hpl {
 
 	iParticleEmitter* cParticleEmitterData3D_UserData::Create(tString asName, cVector3f avSize)
 	{
-		iParticleEmitter3D *pPE = new cParticleEmitter3D_UserData(asName,&mvMaterials,avSize, mpGraphics,mpResources,this);
+		iParticleEmitter3D *pPE = hplNew( cParticleEmitter3D_UserData, (asName,&mvMaterials,avSize,
+																mpGraphics,mpResources,this) );
 
 		cMatrixf mtxOffset = cMath::MatrixRotate(mvAngleOffset,eEulerRotationOrder_XYZ);
 		mtxOffset.SetTranslation(mvPosOffset);
@@ -488,7 +489,7 @@ namespace hpl {
 		switch ( mPEType )
 		{
 			case ePEType_Beam:
-				delete mpVtxBuffer;								// Destroy the current Vertex Buffer, as it's filled with quads we don't need now :)
+				hplDelete(mpVtxBuffer);								// Destroy the current Vertex Buffer, as it's filled with quads we don't need now :)
 
 				if ( apData->mbUseBeamNoise )
 				{

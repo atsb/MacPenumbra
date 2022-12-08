@@ -19,6 +19,8 @@
 #include "graphics/Skeleton.h"
 
 #include "graphics/Bone.h"
+#include "system/MemoryManager.h"
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -30,7 +32,7 @@ namespace hpl {
 
 	cSkeleton::cSkeleton()
 	{
-		mpRootBone = new cBone("__root_bone",this);
+		mpRootBone = hplNew( cBone, ("__root_bone",this) );
 		mpRootBone->SetTransform(cMatrixf::Identity);
 	}
 
@@ -40,7 +42,7 @@ namespace hpl {
 	{
 		//All bones are deleted in this call.
 		//No need to delete the bones in the containers.
-		delete mpRootBone;
+		hplDelete(mpRootBone);
 	}
 
 	//-----------------------------------------------------------------------

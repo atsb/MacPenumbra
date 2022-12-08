@@ -25,25 +25,26 @@
 #include "system/SystemTypes.h"
 #include "graphics/GraphicsTypes.h"
 #include "resources/ResourceBase.h"
+#include "resources/LowLevelResources.h"
 
 namespace hpl {
 
 	class ImageManager;
 	class iLowLevelGraphics;
 	class cGraphicsDrawer;
-	struct cGfxObject;
-	class Bitmap;
+	class cGfxObject;
+	class iBitmap2D;
 
 	//------------------------------------------------
 
 	class cGlyph
 	{
 	public:
-		cGlyph(	const cGfxObject *apObject, const cVector2f &avOffset,
+		cGlyph(	cGfxObject *apObject, const cVector2f &avOffset,
 				const cVector2f &avSize, float afAdvance);
-		~cGlyph() = default;
+		~cGlyph();
 
-		const cGfxObject *mpGfxObject;
+		cGfxObject *mpGfxObject;
 		cVector2f mvOffset;
 		cVector2f mvSize;
 		float mfAdvance;
@@ -52,13 +53,16 @@ namespace hpl {
 	typedef std::vector<cGlyph*> tGlyphVec;
 	typedef tGlyphVec::iterator tGlyphVecIt;
 
-	class FontData : public iResourceBase
+	class iFontData : public iResourceBase
 	{
 	public:
-		FontData(const tString &asName);
-		~FontData();
+		iFontData(const tString &asName, iLowLevelGraphics* apLowLevelGraphics);
+		~iFontData();
 
-		bool CreateFromBitmapFile(const tString &asFileName);
+		virtual bool CreateFromFontFile(const tString &asFileName, int alSize,unsigned short alFirstChar,
+									unsigned short alLastChar)=0;
+
+		virtual bool CreateFromBitmapFile(const tString &asFileName)=0;
 
 
 		void Destroy(){}
@@ -66,9 +70,10 @@ namespace hpl {
 		/**
 		 * Used internally
 		 */
-		void SetUp(cGraphicsDrawer *apGraphicsDrawer)
+		void SetUp(cGraphicsDrawer *apGraphicsDrawer, iLowLevelResources* apLowLevelResources)
 		{
 			mpGraphicsDrawer = apGraphicsDrawer;
+			mpLowLevelResources = apLowLevelResources;
 		}
 
 		/**
@@ -135,6 +140,8 @@ namespace hpl {
 		float GetLength(const cVector2f& avSize,const wchar_t* sText);
 
 	protected:
+		iLowLevelGraphics* mpLowLevelGraphics;
+		iLowLevelResources* mpLowLevelResources;
 		cGraphicsDrawer *mpGraphicsDrawer;
 
 		tGlyphVec mvGlyphs;
@@ -145,10 +152,10 @@ namespace hpl {
 
 		cVector2f mvSizeRatio;
 
-		cGlyph* CreateGlyph(const Bitmap &aBmp, const cVector2l &avOffset,const cVector2l &avSize,
+		cGlyph* CreateGlyph(iBitmap2D* apBmp, const cVector2l &avOffset,const cVector2l &avSize,
 							const cVector2l& avFontSize, int alAdvance);
 		void AddGlyph(cGlyph *apGlyph);
 	};
 
 };
-#endif
+#endif // HPL_FONTDATA_H

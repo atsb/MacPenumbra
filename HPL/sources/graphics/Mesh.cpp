@@ -18,6 +18,8 @@
  */
 #include "graphics/Mesh.h"
 
+#include "system/LowLevelSystem.h"
+
 #include "graphics/SubMesh.h"
 #include "resources/MaterialManager.h"
 #include "resources/AnimationManager.h"
@@ -32,7 +34,6 @@
 #include "graphics/ParticleSystem3D.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
 
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
@@ -64,7 +65,7 @@ namespace hpl {
 		mpAnimationManager = apAnimationManager;
 		mpSkeleton = NULL;
 
-		mpRootNode = new cNode3D();
+		mpRootNode = hplNew( cNode3D, () );
 	}
 
 	//-----------------------------------------------------------------------
@@ -73,17 +74,17 @@ namespace hpl {
 	{
 		for(int i=0;i<(int)mvSubMeshes.size();i++)
 		{
-			delete mvSubMeshes[i];
+			hplDelete(mvSubMeshes[i]);
 		}
-		if(mpSkeleton) delete mpSkeleton;
+		if(mpSkeleton) hplDelete(mpSkeleton);
 
 		for(int i=0;i< (int)mvAnimations.size(); i++)
 		{
 			//mpAnimationManager->Destroy(mvAnimations[i]);
-			delete mvAnimations[i];
+			hplDelete(mvAnimations[i]);
 		}
 
-		if(mpRootNode) delete mpRootNode;
+		if(mpRootNode) hplDelete(mpRootNode);
 
 		STLDeleteAll(mvColliders);
 		STLDeleteAll(mvPhysicJoints);
@@ -112,7 +113,7 @@ namespace hpl {
 
 	cSubMesh* cMesh::CreateSubMesh(const tString &asName)
 	{
-		cSubMesh* pSubMesh = new cSubMesh(asName,mpMaterialManager);
+		cSubMesh* pSubMesh = hplNew( cSubMesh, (asName,mpMaterialManager) );
 
 		pSubMesh->mpParent = this;
 
@@ -203,7 +204,7 @@ namespace hpl {
 			for(int i=0;i< (int)mvAnimations.size(); i++)
 			{
 				//mpAnimationManager->Destroy(mvAnimations[i]);
-				delete mvAnimations[i];
+				hplDelete(mvAnimations[i]);
 			}
 		}
 
@@ -229,7 +230,7 @@ namespace hpl {
 
 	cMeshJoint* cMesh::CreatePhysicsJoint(ePhysicsJointType aType)
 	{
-		cMeshJoint* pJoint = new cMeshJoint();
+		cMeshJoint* pJoint = hplNew( cMeshJoint,() );
 		pJoint->mType = aType;
 
 		mvPhysicJoints.push_back(pJoint);
@@ -275,11 +276,11 @@ namespace hpl {
 		else if(apMeshJoint->mType == ePhysicsJointType_Ball)
 		{
 			iPhysicsJointBall *pJoint = apWorld->CreateJointBall(sNamePrefix+apMeshJoint->msName,
-												vPivot,vPinDir,apParentBody,apChildBody);
+												vPivot,apParentBody,apChildBody);
 
 			pJoint->SetCollideBodies(apMeshJoint->mbCollide);
 
-			pJoint->SetConeLimits(cMath::ToRad(apMeshJoint->mfMin),cMath::ToRad(apMeshJoint->mfMax));
+			pJoint->SetConeLimits(vPinDir,cMath::ToRad(apMeshJoint->mfMin),cMath::ToRad(apMeshJoint->mfMax));
 
 			return pJoint;
 		}
@@ -735,7 +736,7 @@ namespace hpl {
 
 	cMeshCollider* cMesh::CreateCollider(eCollideShapeType aType)
 	{
-		cMeshCollider* pColl = new cMeshCollider();
+		cMeshCollider* pColl = hplNew( cMeshCollider, () );
 		pColl->mType = aType;
 
 		mvColliders.push_back(pColl);
@@ -798,7 +799,7 @@ namespace hpl {
 
 	cMeshLight* cMesh::CreateLight(eLight3DType aType)
 	{
-		cMeshLight* pLight = new cMeshLight();
+		cMeshLight* pLight = hplNew( cMeshLight, () );
 
 		mvLights.push_back(pLight);
 
@@ -862,7 +863,7 @@ namespace hpl {
 
 	cMeshBillboard* cMesh::CreateBillboard()
 	{
-		cMeshBillboard *pBillboard = new cMeshBillboard();
+		cMeshBillboard *pBillboard = hplNew( cMeshBillboard, () );
 		mvBillboards.push_back(pBillboard);
 		return pBillboard;
 	}
@@ -897,7 +898,7 @@ namespace hpl {
 
 	cMeshBeam* cMesh::CreateBeam()
 	{
-		cMeshBeam *pBeam = new cMeshBeam();
+		cMeshBeam *pBeam = hplNew( cMeshBeam, () );
 		mvBeams.push_back(pBeam);
 		return pBeam;
 	}
@@ -932,7 +933,7 @@ namespace hpl {
 
 	cMeshReference* cMesh::CreateReference()
 	{
-		cMeshReference *pRef = new cMeshReference();
+		cMeshReference *pRef = hplNew( cMeshReference, () );
 		mvReferences.push_back(pRef);
 		return pRef;
 	}
@@ -980,7 +981,7 @@ namespace hpl {
 
 	cMeshParticleSystem* cMesh::CreateParticleSystem()
 	{
-		cMeshParticleSystem *pPS = new cMeshParticleSystem();
+		cMeshParticleSystem *pPS = hplNew( cMeshParticleSystem, () );
 		mvParticleSystems.push_back(pPS);
 		return pPS;
 	}
@@ -1016,7 +1017,7 @@ namespace hpl {
 
 	cMeshSoundEntity* cMesh::CreateSoundEntity()
 	{
-		cMeshSoundEntity *pSound = new cMeshSoundEntity();
+		cMeshSoundEntity *pSound = hplNew( cMeshSoundEntity, () );
 		mvSoundEntities.push_back(pSound);
 		return pSound;
 	}

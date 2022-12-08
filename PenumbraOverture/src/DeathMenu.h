@@ -55,7 +55,7 @@ protected:
 	cVector3f mvPositon;
 	cRect2f mRect;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 
 	cVector2f mvFontSize;
 	tWString msText;
@@ -122,14 +122,14 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpGfxBackground;
+	cGfxObject *mpGfxBackground;
 
 	bool mbMouseIsDown;
 
 	bool mbActive;
 	float mfAlpha;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 	
 	cVector2f mvMousePos;
 

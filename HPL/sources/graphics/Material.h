@@ -82,7 +82,10 @@ namespace hpl {
 	enum eMaterialChannelMode
 	{
 		eMaterialChannelMode_RGBA,
+		eMaterialChannelMode_RGB,
+		eMaterialChannelMode_A,
 		eMaterialChannelMode_Z,
+		eMaterialChannelMode_LastEnum,
 	};
 
 	//---------------------------------------------------
@@ -92,7 +95,56 @@ namespace hpl {
 	class cTextureManager;
 	class cGpuProgramManager;
 	class iLight;
+	class iCamera;
 	class iLight3D;
+
+	//---------------------------------------------------
+
+	class iGLStateProgram : public iGpuProgram
+	{
+	public:
+		iGLStateProgram(tString asName)
+			: iGpuProgram(asName,eGpuProgramType_Fragment)
+		{
+			mbSetUpDone = false;
+		}
+		virtual ~iGLStateProgram(){}
+
+		void SetUp(iLowLevelGraphics *apLowLevelGraphics)
+		{
+			if(mbSetUpDone==false)
+			{
+				mpLowGfx = apLowLevelGraphics;
+				mbSetUpDone = true;
+				InitData();
+			}
+		}
+
+		virtual void Bind()=0;
+		virtual void UnBind()=0;
+
+		bool CreateFromFile(const tString& asFile, const tString& asEntry){return false;}
+		bool SetFloat(const tString& asName, float afX){return false;}
+
+		bool SetVec2f(const tString& asName, float afX,float afY){return false;}
+		bool SetVec3f(const tString& asName, float afX,float afY,float afZ){return false;}
+		bool SetVec4f(const tString& asName, float afX,float afY,float afZ, float afW){return false;}
+		bool SetMatrixf(const tString& asName, const cMatrixf& mMtx){return false;}
+		bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType){return false;}
+		bool SetTexture(const tString& asName,iTexture* apTexture, bool abAutoDisable=true){return false;}
+		bool SetTextureToUnit(int alUnit, iTexture* apTexture){return false;}
+
+		eGpuProgramType GetType() { return mProgramType;}
+
+		void Destroy(){}
+	protected:
+
+		iLowLevelGraphics *mpLowGfx;
+
+		bool mbSetUpDone;
+
+		virtual void InitData()=0;
+	};
 
 	//---------------------------------------------------------------
 
@@ -135,11 +187,12 @@ namespace hpl {
 		virtual void Update(float afTimeStep){}
 
 		//The new render system stuff
-		virtual iGpuProgram* GetProgramEx(eMaterialRenderType aType, int alPass, iLight3D *apLight){return NULL;}
+		virtual iGpuProgram* GetVertexProgram(eMaterialRenderType aType, int alPass, iLight3D *apLight){return NULL;}
 		virtual bool VertexProgramUsesLight(eMaterialRenderType aType, int alPass, iLight3D *apLight){return false;}
 		virtual bool VertexProgramUsesEye(eMaterialRenderType aType, int alPass, iLight3D *apLight){return false;}
 		virtual iMaterialProgramSetup * GetVertexProgramSetup(eMaterialRenderType aType, int alPass, iLight3D *apLight){return NULL;}
 
+		virtual iGpuProgram* GetFragmentProgram(eMaterialRenderType aType, int alPass, iLight3D *apLight){return NULL;}
 		virtual iMaterialProgramSetup * GetFragmentProgramSetup(eMaterialRenderType aType, int alPass, iLight3D *apLight){return NULL;}
 
 		virtual eMaterialAlphaMode GetAlphaMode(eMaterialRenderType aType, int alPass, iLight3D *apLight){return eMaterialAlphaMode_Solid;}
@@ -169,10 +222,10 @@ namespace hpl {
 
 		void SetTexture(iTexture* apTex,eMaterialTexture aType){ mvTexture[aType] = apTex; }
 
-		void SetProgram(iGpuProgram* apProgram, unsigned int alNum){
-						mpProgram[alNum] = apProgram;}
-		iGpuProgram* GetProgram(unsigned int alNum){
-						return mpProgram[alNum];}
+		void SetProgram(iGpuProgram* apProgram, eGpuProgramType aType, unsigned int alNum){
+						mpProgram[aType][alNum] = apProgram;}
+		iGpuProgram* GetProgram(eGpuProgramType aType,unsigned int alNum){
+						return mpProgram[aType][alNum];}
 
 		/**
 		 * return true if the material is transparent
@@ -199,7 +252,8 @@ namespace hpl {
 		void SetId(int alId){ mlId = alId;}
 		int GetId(){ return mlId;}
 
-		virtual iGpuProgram* GetRefractionProgam(){ return NULL;}
+		virtual iGpuProgram* GetRefractionVertexProgam(){ return NULL;}
+		virtual iGpuProgram* GetRefractionFragmentProgam(){ return NULL;}
 
 		virtual bool GetRefractionUsesDiffuse(){ return false;}
 		virtual eMaterialTexture GetRefractionDiffuseTexture(){ return eMaterialTexture_Diffuse;}
@@ -235,7 +289,7 @@ namespace hpl {
 
 		tTextureVec mvTexture;
 
-		iGpuProgram *mpProgram[kMaxProgramNum];
+		iGpuProgram *mpProgram[2][kMaxProgramNum];
 
 		int mlPassCount;
 

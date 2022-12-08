@@ -21,6 +21,7 @@
 #include "physics/Physics.h"
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
+#include "system/LowLevelSystem.h"
 #include "math/Math.h"
 
 #include "scene/World3D.h"
@@ -64,6 +65,8 @@ namespace hpl {
 		mfMaxScrapeFreqSpeed = 3;
 		mfMiddleScrapeSpeed = 2;
 		msScrapeSoundName = "";
+
+		mpHapticSurface = NULL;
 	}
 
 	//-----------------------------------------------------------------------
@@ -596,7 +599,7 @@ namespace hpl {
 
 	cSurfaceImpactData* cSurfaceData::CreateImpactData(float afMinSpeed)
 	{
-		cSurfaceImpactData *pData = new cSurfaceImpactData();
+		cSurfaceImpactData *pData = hplNew( cSurfaceImpactData, () );
 		pData->mfMinSpeed = afMinSpeed;
 
 		mvImpactData.push_back(pData);
@@ -630,7 +633,7 @@ namespace hpl {
 
 	cSurfaceImpactData* cSurfaceData::CreateHitData(float afMinSpeed)
 	{
-		cSurfaceImpactData *pData = new cSurfaceImpactData();
+		cSurfaceImpactData *pData = hplNew( cSurfaceImpactData, () );
 		pData->mfMinSpeed = afMinSpeed;
 
 		mvHitData.push_back(pData);

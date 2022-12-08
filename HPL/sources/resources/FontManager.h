@@ -25,7 +25,7 @@ namespace hpl {
 
 	class cGraphics;
 	class cResources;
-	class FontData;
+	class iFontData;
 
 	class cFontManager : public iResourceManager
 	{
@@ -42,7 +42,7 @@ namespace hpl {
 		 * \param alLastChar last ASCII character to be rendered
 		 * \return
 		 */
-		FontData* CreateFontData(const tString& asName, int alSize=16,unsigned short alFirstChar=32,
+		iFontData* CreateFontData(const tString& asName, int alSize=16,unsigned short alFirstChar=32,
 								unsigned short alLastChar=255);
 
 		void Destroy(iResourceBase* apResource);

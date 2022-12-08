@@ -19,37 +19,29 @@
 #ifndef HPL_SYSTEM_H
 #define HPL_SYSTEM_H
 
-#include "system/SystemTypes.h"
-
 namespace hpl {
 
-//	extern void CreateMessageBox ( const char* asCaption, const char *fmt, ...);
-//	extern void CreateMessageBox ( eMsgBoxType eType, const char* asCaption, const char *fmt, ...);
+	class iLowLevelSystem;
+	class cLogicTimer;
 
-	typedef enum
+	class cSystem
 	{
-		eMsgBoxType_Info,
-		eMsgBoxType_Error,
-		eMsgBoxType_Warning,
-		eMsgBoxType_Default
-	} eMsgBoxType;
+	public:
+		cSystem(iLowLevelSystem *apLowLevelSystem);
+		~cSystem();
 
-	void CreateMessageBoxW(const wchar_t* asCaption, const wchar_t* fmt, ...);
-	void CreateMessageBoxW(eMsgBoxType eType, const wchar_t* asCaption, const wchar_t* fmt, ...);
+		iLowLevelSystem* GetLowLevel();
 
-	void OpenBrowserWindow(const tWString& asURL);
+		/**
+		 * Creates a logic timer.
+		 * \param alUpdatesPerSec Frequency of the timer.
+		 * \return
+		 */
+		cLogicTimer * CreateLogicTimer(unsigned int alUpdatesPerSec);
 
-	void CopyTextToClipboard(const tWString &asText);
-	tWString LoadTextFromClipboard();
-
-	void SetWindowCaption(const tString &asName);
-	bool HasWindowFocus(const tWString &asWindowCaption);
-
-	void InitAppTime();
-	uint64_t GetAppTimeMS();
-	float GetAppTimeFloat();
-	cDate GetDate();
+	private:
+		iLowLevelSystem *mpLowLevelSystem;
+	};
 
 };
-
 #endif // HPL_SYSTEM_H

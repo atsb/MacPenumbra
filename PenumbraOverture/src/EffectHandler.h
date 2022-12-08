@@ -47,7 +47,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpWhiteGfx;
+	cGfxObject *mpWhiteGfx;
 
 	bool mbActive;
 
@@ -85,6 +85,10 @@ private:
 	cInit *mpInit;
 
 	cVector3f mvAdd;
+
+#ifdef INCLUDE_HAPTIC
+	iHapticForce *mpForce;
+#endif
 	
 	std::list<cEffect_ShakeScreen_Shake> mlstShakes;
 };
@@ -110,7 +114,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpFlashGfx;
+	cGfxObject *mpFlashGfx;
 
 	cGameSaveArea *mpSaveArea;
 
@@ -155,7 +159,7 @@ public:
 	void Reset();
 private:
 	cInit *mpInit;
-	// cRendererPostEffects *mpPostEffects;
+	cRendererPostEffects *mpPostEffects;
 
 	iPhysicsBody *mpFocusBody;
 	
@@ -183,7 +187,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpWhiteGfx;
+	cGfxObject *mpWhiteGfx;
 
 	bool mbActive;
 	float mfAlpha;
@@ -226,7 +230,7 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 	
     tSubTitleList mlstSubTitles;	
 };

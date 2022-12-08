@@ -21,12 +21,14 @@
 
 #include "system/SystemTypes.h"
 
-
 namespace hpl {
+
 	class cUpdater;
 	class iLowLevelGameSetup;
+	class iLowLevelSystem;
 	class cLogicTimer;
 
+	class cSystem;
 	class cInput;
 	class cResources;
 	class cGraphics;
@@ -35,17 +37,19 @@ namespace hpl {
 	class cScript;
 	class cPhysics;
 	class cAI;
+	class cHaptic;
 
 	class cFPSCounter
 	{
 	public:
-		cFPSCounter();
+		cFPSCounter(iLowLevelSystem* apLowLevelSystem);
 
 		void AddFrame();
 
 		float mfFPS;
 		float mfUpdateRate;
 	private:
+		iLowLevelSystem* mpLowLevelSystem;
 		int mlFramecounter;
 		float mfFrametimestart;
 		float mfFrametime;
@@ -53,14 +57,25 @@ namespace hpl {
 
 	//---------------------------------------------------
 
-	struct GameSetupOptions {
-		int ScreenWidth = 800;
-		int ScreenHeight = 600;
-		bool Fullscreen = false;
-		int Multisampling = 0;
+	class cSetupVarContainer
+	{
+	public:
+		cSetupVarContainer();
 
-		tString AudioDeviceName{};
-		tString WindowCaption{};
+		void AddString(const tString& asName, const tString& asValue);
+
+		void AddInt(const tString& asName, int alValue);
+		void AddFloat(const tString& asName, float afValue);
+		void AddBool(const tString& asName, bool abValue);
+
+		const tString& GetString(const tString& asName);
+
+		float GetFloat(const tString& asName, float afDefault);
+		int GetInt(const tString& asName,int alDefault);
+		bool GetBool(const tString& asName, bool abDefault);
+	private:
+		std::map<tString, tString>  m_mapVars;
+		tString msBlank;
 	};
 
 	//---------------------------------------------------
@@ -68,11 +83,12 @@ namespace hpl {
 	class cGame
 	{
 	public:
-		cGame(iLowLevelGameSetup *apGameSetup, GameSetupOptions &options);
-		cGame(iLowLevelGameSetup *apGameSetup, int alWidth, int alHeight, bool abFullscreen, int alMultisampling=0);
+		cGame(iLowLevelGameSetup *apGameSetup, cSetupVarContainer &aVars);
+		cGame(iLowLevelGameSetup *apGameSetup,int alWidth, int alHeight, int alBpp, bool abFullscreen,
+					unsigned int alUpdateRate=60,int alMultisampling=0);
 		~cGame();
 	private:
-		void GameInit(iLowLevelGameSetup *apGameSetup, GameSetupOptions &options);
+		void GameInit(iLowLevelGameSetup *apGameSetup, cSetupVarContainer &aVars);
 
 	public:
 
@@ -105,6 +121,12 @@ namespace hpl {
 
 		/**
 		*
+		* \return A pointer to the System
+		*/
+		cSystem* GetSystem();
+
+		/**
+		*
 		* \return A pointer to the Input
 		*/
 		cInput* GetInput();
@@ -129,7 +151,11 @@ namespace hpl {
 		* \return A pointer to the AI
 		*/
 		cAI* GetAI();
-
+		/**
+		*
+		* \return A pointer to the haptic
+		*/
+		cHaptic* GetHaptic();
 		cScript* GetScript();
 
 		void ResetLogicTimer();
@@ -176,12 +202,14 @@ namespace hpl {
 
 		//Modules that Game connnect to:
 		cResources *mpResources;
+		cSystem *mpSystem;
 		cInput *mpInput;
 		cGraphics *mpGraphics;
 		cScene *mpScene;
 		cSound *mpSound;
 		cPhysics *mpPhysics;
 		cAI *mpAI;
+		cHaptic *mpHaptic;
 		cScript *mpScript;
 	};
 

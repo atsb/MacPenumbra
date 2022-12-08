@@ -23,7 +23,8 @@
 #include "physics/PhysicsJoint.h"
 
 #include "math/Math.h"
-#include "system/Log.h"
+
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 
@@ -257,7 +258,7 @@ namespace hpl {
 
 	iSaveData* iPhysicsController::CreateSaveData()
 	{
-		return new cSaveData_iPhysicsController();
+		return hplNew( cSaveData_iPhysicsController, () );
 	}
 
 	//-----------------------------------------------------------------------

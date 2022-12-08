@@ -182,6 +182,9 @@ void cGameEnemyState_Worm_Hunt::OnEnterState(iGameEnemyState *apPrevState)
 	mpEnemy->PlayAnim("Idle",true,0.2f);
 
 	float fMul = 1.0f;
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics) fMul = 0.6f;
+#endif
 
 	//Setup body
 	mpEnemy->SetupBody();
@@ -424,7 +427,7 @@ void cGameEnemyState_Worm_Hunt::OnDraw()
 
 void cGameEnemyState_Worm_Hunt::OnPostSceneDraw()
 {
-	auto pCamera = mpInit->mpGame->GetScene()->GetCamera();
+	cCamera3D *pCamera = static_cast<cCamera3D*>(mpInit->mpGame->GetScene()->GetCamera());
 
 	cVector3f vPos =	mpMover->GetCharBody()->GetPosition() +
 		mpMover->GetCharBody()->GetForward() * 
@@ -523,9 +526,9 @@ cGameEnemy_Worm::cGameEnemy_Worm(cInit *apInit,const tString& asName,TiXmlElemen
 
 	//////////////////////////////
 	//Set up states
-	AddState(new cGameEnemyState_Worm_Idle(STATE_IDLE,mpInit,this));
-	AddState(new cGameEnemyState_Worm_Hunt(STATE_HUNT,mpInit,this));
-	AddState(new cGameEnemyState_Worm_Dead(STATE_DEAD,mpInit,this));
+	AddState(hplNew( cGameEnemyState_Worm_Idle,(STATE_IDLE,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Worm_Hunt,(STATE_HUNT,mpInit,this)) );
+	AddState(hplNew( cGameEnemyState_Worm_Dead,(STATE_DEAD,mpInit,this)) );
 
 	/////////////////////////////
 	//Internal variables
@@ -681,7 +684,7 @@ void cGameEnemy_Worm::OnLoad()
 	iPhysicsWorld *pPhysicsWorld = mpInit->mpGame->GetScene()->GetWorld3D()->GetPhysicsWorld();
 	mpAttackShape = pPhysicsWorld->CreateBoxShape(mvAttackDamageSize,NULL);
 
-	mpMeshCallback = new cGameEnemy_Worm_MeshCallback(this);
+	mpMeshCallback = hplNew(  cGameEnemy_Worm_MeshCallback, (this) );
 	mpMeshEntity->SetCallback(mpMeshCallback);
 
 	//Set up enemy
@@ -1002,7 +1005,7 @@ void cGameEnemy_Worm::SetupTail()
 	for(int i=0; i<7; ++i)
 	{
 		//Create and set to right data
-		mvTailSegments[i] = new cWormTailSegment();
+		mvTailSegments[i] = hplNew(  cWormTailSegment, () );
 		cWormTailSegment *pSegment = mvTailSegments[i];
 		if(i==0){
 			mpRootSegment = pSegment;

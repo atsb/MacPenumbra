@@ -18,13 +18,16 @@
  */
 #include "system/SerializeClass.h"
 
+
+#include "system/LowLevelSystem.h"
+
+#include "system/String.h"
+
 #include "graphics/GraphicsTypes.h"
 #include "math/MathTypes.h"
 #include "system/Container.h"
-#include "system/String.h"
-#include "system/Log.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 #include <stdio.h>
 
@@ -198,7 +201,7 @@ namespace hpl {
 
 		glTabs=0;
 
-		TiXmlDocument* pXmlDoc = new TiXmlDocument();
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, () );
 
 		//Create root
 		TiXmlElement XmlRoot(asRoot.c_str());
@@ -219,7 +222,7 @@ namespace hpl {
 
 		if(pFile) fclose(pFile);
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 		return bRet;
 	}
 
@@ -296,7 +299,7 @@ namespace hpl {
 		glTabs=0;
 
 		//Load document
-		TiXmlDocument* pXmlDoc = new TiXmlDocument();
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument,() );
 		#ifdef WIN32
 		FILE *pFile = _wfopen(asFile.c_str(),_W("rb"));
 		#else
@@ -309,7 +312,7 @@ namespace hpl {
 									cString::To8Char(asFile).c_str(),
 									pXmlDoc->ErrorDesc());
 			if(pFile) fclose(pFile);
-			delete pXmlDoc;
+			hplDelete(pXmlDoc);
 			return false;
 		}
 		if(pFile) fclose(pFile);
@@ -322,7 +325,7 @@ namespace hpl {
 
 		LoadFromElement(apData,pClassElem);
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 		return true;
 	}
 
@@ -423,14 +426,14 @@ namespace hpl {
 			/////////// INT 32 ////////////////////////////////
 			case eSerializeType_Int32:
 			{
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%d", PointerValue(pVal,int));
+				sprintf(msTempCharArray, "%d", PointerValue(pVal,int));
 				return msTempCharArray; break;
 			}
 
 			/////////// FLOAT 32 ////////////////////////////////
 			case eSerializeType_Float32:
 			{
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f", PointerValue(pVal,float));
+				sprintf(msTempCharArray, "%f", PointerValue(pVal,float));
 				return msTempCharArray; break;
 			}
 
@@ -445,7 +448,7 @@ namespace hpl {
 			case eSerializeType_Vector2l:
 			{
 				cVector2l &vVec = PointerValue(pVal,cVector2l);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%d %d",vVec.x, vVec.y);
+				sprintf(msTempCharArray, "%d %d",vVec.x, vVec.y);
 				return msTempCharArray; break;
 			}
 
@@ -453,7 +456,7 @@ namespace hpl {
 			case eSerializeType_Vector2f:
 			{
 				cVector2f &vVec = PointerValue(pVal,cVector2f);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f",vVec.x, vVec.y);
+				sprintf(msTempCharArray, "%f %f",vVec.x, vVec.y);
 				return msTempCharArray; break;
 			}
 
@@ -461,7 +464,7 @@ namespace hpl {
 			case eSerializeType_Vector3l:
 			{
 				cVector3l &vVec = PointerValue(pVal,cVector3l);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%d %d %d",vVec.x, vVec.y,vVec.z);
+				sprintf(msTempCharArray, "%d %d %d",vVec.x, vVec.y,vVec.z);
 				return msTempCharArray; break;
 			}
 
@@ -469,7 +472,7 @@ namespace hpl {
 			case eSerializeType_Vector3f:
 			{
 				cVector3f &vVec = PointerValue(pVal,cVector3f);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f %f",vVec.x, vVec.y, vVec.z);
+				sprintf(msTempCharArray, "%f %f %f",vVec.x, vVec.y, vVec.z);
 				return msTempCharArray; break;
 			}
 
@@ -477,7 +480,7 @@ namespace hpl {
 			case eSerializeType_Matrixf:
 			{
 				cMatrixf &Mtx = PointerValue(pVal,cMatrixf);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f %f %f "
+				sprintf(msTempCharArray, "%f %f %f %f "
 										 "%f %f %f %f "
 										 "%f %f %f %f "
 										 "%f %f %f %f",
@@ -492,7 +495,7 @@ namespace hpl {
 			case eSerializeType_Color:
 			{
 				cColor Col = PointerValue(pVal,cColor);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f %f %f",Col.r, Col.g, Col.b, Col.a);
+				sprintf(msTempCharArray, "%f %f %f %f",Col.r, Col.g, Col.b, Col.a);
 				return msTempCharArray; break;
 			}
 
@@ -500,7 +503,7 @@ namespace hpl {
 			case eSerializeType_Rect2l:
 			{
 				cRect2l &vR = PointerValue(pVal,cRect2l);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%d %d %d %d",vR.x, vR.y, vR.w, vR.h);
+				sprintf(msTempCharArray, "%d %d %d %d",vR.x, vR.y, vR.w, vR.h);
 				return msTempCharArray; break;
 			}
 
@@ -508,7 +511,7 @@ namespace hpl {
 			case eSerializeType_Rect2f:
 				{
 					cRect2f &vR = PointerValue(pVal,cRect2f);
-					snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f %f %f",vR.x, vR.y, vR.w, vR.h);
+					sprintf(msTempCharArray, "%f %f %f %f",vR.x, vR.y, vR.w, vR.h);
 					return msTempCharArray; break;
 				}
 
@@ -516,7 +519,7 @@ namespace hpl {
 			case eSerializeType_Planef:
 			{
 				cPlanef &vP = PointerValue(pVal,cPlanef);
-				snprintf(msTempCharArray,sizeof(msTempCharArray), "%f %f %f %f",vP.a, vP.b, vP.c, vP.d);
+				sprintf(msTempCharArray, "%f %f %f %f",vP.a, vP.b, vP.c, vP.d);
 				return msTempCharArray; break;
 			}
 
@@ -833,7 +836,7 @@ namespace hpl {
 			}
 		}
 
-		delete pContIt;
+		hplDelete(pContIt);
 	}
 
 
@@ -911,7 +914,7 @@ namespace hpl {
 					*pValuePtr = pSavedClass->mpCreateFunc();
 				}
 				else {
-					delete pValuePtr;
+					hplDelete(pValuePtr);
 					*pValuePtr = pSavedClass->mpCreateFunc();
 				}
 
@@ -1024,7 +1027,7 @@ namespace hpl {
 				LoadFromElement(pData,pVarElem);
 				pCont->AddVoidClass(pData);
 
-				delete pData;
+				hplDelete(pData);
 			}
 		}
 		// CLASS POINTER ////////////////////////////////////////////
@@ -1037,9 +1040,9 @@ namespace hpl {
 			iContainerIterator *pContIt = pCont->CreateIteratorPtr();
 			while(pContIt->HasNext()){
 				iSerializable *pContData = (iSerializable*)pContIt->NextPtr();
-				delete pContData;
+				hplDelete(pContData);
 			}
-			delete pContIt;
+			hplDelete(pContIt);
 			pCont->Clear();
 
 			TiXmlElement *pVarElem = apElement->FirstChildElement();
@@ -1066,14 +1069,14 @@ namespace hpl {
 			for(; pVarElem != NULL; pVarElem = pVarElem->NextSiblingElement())
 			{
 				const char* sVal = pVarElem->Attribute("val");
-				auto pData = new char[SizeOfType(type)];
+				void *pData = hplMalloc(SizeOfType(type));
 
 				if(gbLog) Log("%s Element var val '%s' type: %d\n",GetTabs(),sVal,type);
 
 				StringToValue(pData,0,type,sVal);
 				pCont->AddVoidClass(pData);
 
-				delete[] pData;
+				hplFree(pData);
 			}
 		}
 

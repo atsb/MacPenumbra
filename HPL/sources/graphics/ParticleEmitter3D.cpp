@@ -17,9 +17,10 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "graphics/ParticleEmitter3D.h"
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "graphics/Graphics.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "math/Math.h"
 
 #include "game/Game.h"
@@ -99,7 +100,7 @@ namespace hpl {
 
 	iParticleEmitter3D::~iParticleEmitter3D()
 	{
-		delete mpVtxBuffer;
+		hplDelete(mpVtxBuffer);
 	}
 
 	//-----------------------------------------------------------------------
@@ -193,7 +194,7 @@ namespace hpl {
 		apTex[2] = aPos.z;
 	}
 
-	void iParticleEmitter3D::UpdateGraphics(cCamera *apCamera,float afFrameTime, cRenderList *apRenderList)
+	void iParticleEmitter3D::UpdateGraphics(cCamera3D *apCamera,float afFrameTime, cRenderList *apRenderList)
 	{
 		if(apCamera==NULL) return;
 
@@ -558,7 +559,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cMatrixf* iParticleEmitter3D::GetModelMatrix(cCamera *apCamera)
+	cMatrixf* iParticleEmitter3D::GetModelMatrix(cCamera3D *apCamera)
 	{
 		if(apCamera)
 		{
@@ -639,7 +640,7 @@ namespace hpl {
 
 	iSaveData* iParticleEmitter3D::CreateSaveData()
 	{
-		//return new cSaveData_iParticleEmitter3D();
+		//return hplNew( cSaveData_iParticleEmitter3D, () );
 		return NULL;
 	}
 

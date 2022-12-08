@@ -24,7 +24,6 @@
 #include "math/MathTypes.h"
 #include "graphics/GraphicsTypes.h"
 #include "system/SystemTypes.h"
-#include "system/MemoryPool.h"
 #include "scene/Light3D.h"
 #include "graphics/Material.h"
 #include "graphics/OcclusionQuery.h"
@@ -33,7 +32,7 @@
 namespace hpl {
 
 	class iRenderable;
-	class cCamera;
+	class cCamera3D;
 	class cGraphics;
 
 	class iRenderState;
@@ -149,8 +148,8 @@ namespace hpl {
 		cRenderList(cGraphics *apGraphics);
 		~cRenderList();
 
-		void SetCamera(cCamera *apCamera){ mpCamera = apCamera;}
-		cCamera *GetCamera(){ return mpCamera;}
+		void SetCamera(cCamera3D* apCamera){ mpCamera = apCamera;}
+		cCamera3D* GetCamera(){ return mpCamera;}
 
 		bool Add(iRenderable* apObject);
 		void Clear();
@@ -216,7 +215,7 @@ namespace hpl {
 		cMemoryPool<iRenderState>* m_poolRenderState;
 		cMemoryPool<cRenderNode>* m_poolRenderNode;
 
-		cCamera *mpCamera;
+		cCamera3D* mpCamera;
 
 		cGraphics *mpGraphics;
 	};

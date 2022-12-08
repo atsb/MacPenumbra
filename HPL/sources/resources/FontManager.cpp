@@ -18,12 +18,14 @@
  */
 #include "resources/FontManager.h"
 #include "system/String.h"
+#include "system/LowLevelSystem.h"
 #include "resources/Resources.h"
 #include "graphics/Graphics.h"
 #include "graphics/LowLevelGraphics.h"
 #include "resources/ImageManager.h"
+
 #include "graphics/FontData.h"
-#include "system/Log.h"
+
 
 namespace hpl {
 
@@ -34,7 +36,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cFontManager::cFontManager(cGraphics* apGraphics,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
@@ -54,21 +57,21 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	FontData* cFontManager::CreateFontData(const tString& asName, int alSize,unsigned short alFirstChar,
+	iFontData* cFontManager::CreateFontData(const tString& asName, int alSize,unsigned short alFirstChar,
 											unsigned short alLastChar)
 	{
 		tString sPath;
-		FontData* pFont;
+		iFontData* pFont;
 		tString asNewName = cString::ToLowerCase(asName);
 
 		BeginLoad(asName);
 
-		pFont = static_cast<FontData*>(this->FindLoadedResource(asNewName,sPath));
+		pFont = static_cast<iFontData*>(this->FindLoadedResource(asNewName,sPath));
 
 		if(pFont==NULL && sPath!="")
 		{
-			pFont = new FontData(asNewName);
-			pFont->SetUp(mpGraphics->GetDrawer());
+			pFont = mpGraphics->GetLowLevel()->CreateFontData(asNewName);
+			pFont->SetUp(mpGraphics->GetDrawer(),mpLowLevelResources);
 
 			tString sExt = cString::ToLowerCase(cString::GetFileExt(asName));
 
@@ -76,7 +79,7 @@ namespace hpl {
 			if(sExt == "fnt")
 			{
 				if(pFont->CreateFromBitmapFile(sPath)==false){
-					delete pFont;
+					hplDelete(pFont);
 					EndLoad();
 					return NULL;
 				}
@@ -84,11 +87,12 @@ namespace hpl {
 			else
 			{
 				Error("Font '%s' has an unkown extension!\n",asName.c_str());
-				delete pFont;
+				hplDelete(pFont);
 				EndLoad();
 				return NULL;
 			}
 
+			//mpResources->GetImageManager()->FlushAll();
 			AddResource(pFont);
 		}
 
@@ -114,7 +118,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

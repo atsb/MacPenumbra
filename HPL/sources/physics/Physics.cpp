@@ -21,10 +21,14 @@
 
 #include "physics/PhysicsWorld.h"
 #include "physics/SurfaceData.h"
+#include "system/LowLevelSystem.h"
 #include "system/String.h"
-#include "system/Log.h"
 
-#include "tinyXML/tinyxml.h"
+#include "haptic/Haptic.h"
+#include "haptic/HapticSurface.h"
+#include "haptic/LowLevelHaptic.h"
+
+#include "impl/tinyXML/tinyxml.h"
 
 namespace hpl {
 
@@ -123,7 +127,7 @@ namespace hpl {
 
 	cSurfaceData *cPhysics::CreateSurfaceData(const tString& asName)
 	{
-		cSurfaceData *pData = new cSurfaceData(asName, this,mpResources);
+		cSurfaceData *pData = hplNew( cSurfaceData, (asName, this,mpResources) );
 
 		m_mapSurfaceData.insert(tSurfaceDataMap::value_type(asName, pData));
 
@@ -140,15 +144,15 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	bool cPhysics::LoadSurfaceData(const tString& asFile)
+	bool cPhysics::LoadSurfaceData(const tString& asFile, cHaptic *apHaptic)
 	{
 		//////////////////////////////////
 		//Open document
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(asFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, (asFile.c_str()) );
 		if(pXmlDoc->LoadFile()==false)
 		{
 			Error("Couldn't load XML file '%s'!\n",asFile.c_str());
-			delete pXmlDoc;
+			hplDelete(pXmlDoc);
 			return false;
 		}
 
@@ -239,12 +243,62 @@ namespace hpl {
 				pHitData->SetPSPrio(cString::ToInt(pHitElem->Attribute("PSPrio"),10));
 			}
 
+			/////////////////////////
+			//Get Haptic Data
+			if(cHaptic::GetIsUsed() && apHaptic)
+			{
+				eHapticSurfaceType surfaceType = GetHapticSurface(pChildElem->Attribute("HapticType"));
+
+				float fDeadHeight= cString::ToFloat(pChildElem->Attribute("HapticDeadHeight"), 0.004f);
+				float fStickyStiffness= cString::ToFloat(pChildElem->Attribute("HapticStickyStiffness"), 0.6f);
+				float fDeviation= cString::ToFloat(pChildElem->Attribute("HapticDeviation"), 0.1f);
+				float fMean= cString::ToFloat(pChildElem->Attribute("HapticMean"), 0.5f);
+				float fDamping= cString::ToFloat(pChildElem->Attribute("HapticDamping"), 0.0f);
+				float fStiffness= cString::ToFloat(pChildElem->Attribute("HapticStiffness"), 0.9f);
+				float fDynamicFriction= cString::ToFloat(pChildElem->Attribute("HapticDynamicFriction"), 0.2f);
+				float fStartingFriction= cString::ToFloat(pChildElem->Attribute("HapticStartingFriction"), 0.3f);
+				float fTangentStiffness= cString::ToFloat(pChildElem->Attribute("HapticTangentStiffness"), 0.7f);
+				float fStoppingFriction= cString::ToFloat(pChildElem->Attribute("HapticStoppingFriction"), 0.1f);
+
+				iHapticSurface *pSurface = NULL;
+
+				if(surfaceType == eHapticSurfaceType_Simple)
+				{
+					pSurface = apHaptic->GetLowLevel()->CreateSimpleSurface(sName,fDamping,fStiffness);
+				}
+				else if(surfaceType == eHapticSurfaceType_Frictional)
+				{
+					pSurface = apHaptic->GetLowLevel()->CreateFrictionalSurface(sName,fDamping,fStiffness,
+																				fDynamicFriction,fStartingFriction,
+																				fTangentStiffness,fStoppingFriction);
+				}
+				else if(surfaceType == eHapticSurfaceType_Rough)
+				{
+					pSurface = apHaptic->GetLowLevel()->CreateRoughSurface(sName,fStickyStiffness,fMean,
+																				fDamping,fStiffness,
+																				fDynamicFriction,fStartingFriction,
+																				fTangentStiffness,fStoppingFriction);
+				}
+				else if(surfaceType == eHapticSurfaceType_Sticky)
+				{
+					pSurface = apHaptic->GetLowLevel()->CreateStickySurface(sName,fDeadHeight,fStickyStiffness,
+																			fDamping,fStiffness,
+																			fDynamicFriction,fStartingFriction,
+																			fTangentStiffness,fStoppingFriction);
+				}
+
+				pData->SetHapticSurface(pSurface);
+
+			}
+
+
+
 			/*Log("Added %s e: %f sf: %f kf: %f emode: %d fmode: %d\n", pData->GetName().c_str(),
 					pData->GetElasticity(), pData->GetStaticFriction(), pData->GetKineticFriction(),
 					pData->GetElasticityCombMode(), pData->GetFrictionCombMode());*/
 		}
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 		return true;
 
 		return true;
@@ -254,6 +308,23 @@ namespace hpl {
 	//////////////////////////////////////////////////////////////////////////
 	// PRIVATE METHODS
 	//////////////////////////////////////////////////////////////////////////
+
+	//-----------------------------------------------------------------------
+
+	eHapticSurfaceType cPhysics::GetHapticSurface(const char *apName)
+	{
+		if(apName == NULL) return eHapticSurfaceType_Simple;
+
+		tString sMode = cString::ToLowerCase(apName);
+
+		if(sMode == "simple")		return eHapticSurfaceType_Simple;
+		if(sMode == "frictional")	return eHapticSurfaceType_Frictional;
+		if(sMode == "rough")		return eHapticSurfaceType_Rough;
+		if(sMode == "sticky")		return eHapticSurfaceType_Sticky;
+		Warning("Could not find haptic surface type '%s'\n",apName);
+
+		return eHapticSurfaceType_Simple;
+	}
 
 	//-----------------------------------------------------------------------
 

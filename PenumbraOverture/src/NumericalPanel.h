@@ -48,8 +48,8 @@ public:
 	const cRect2f& GetRect(){return mRect;}
 
 private:
-	const cGfxObject *mpGfxUp;
-	const cGfxObject *mpGfxDown;
+	cGfxObject *mpGfxUp;
+	cGfxObject *mpGfxDown;
 
 	float mfAlpha;
 	bool mbOver;
@@ -104,8 +104,8 @@ private:
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;
 
-	const cGfxObject *mpGfxBackground;
-	const cGfxObject *mpGfxPanel;
+	cGfxObject *mpGfxBackground;
+	cGfxObject *mpGfxPanel;
 
 	bool mbMouseIsDown;
 

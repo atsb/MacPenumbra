@@ -20,11 +20,11 @@
 #include "graphics/Renderable.h"
 #include "scene/MeshEntity.h"
 #include "graphics/Material.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "math/Math.h"
 #include "graphics/RenderState.h"
 #include "graphics/Renderer3D.h"
-// #include "graphics/RendererPostEffects.h"
+#include "graphics/RendererPostEffects.h"
 #include "graphics/Graphics.h"
 
 
@@ -137,15 +137,15 @@ namespace hpl {
 	cRenderList::cRenderList(cGraphics *apGraphics)
 	{
 		mfFrameTime = 0;
-		mTempNode.mpState = new iRenderState();
+		mTempNode.mpState = hplNew( iRenderState, () );
 
 		mlRenderCount=0;
 		mlLastRenderCount =0;
 
 		mpGraphics = apGraphics;
 
-		m_poolRenderState = new cMemoryPool<iRenderState>(3000, NULL);
-		m_poolRenderNode = new cMemoryPool<cRenderNode>(3000, NULL);
+		m_poolRenderState = hplNew( cMemoryPool<iRenderState>, (3000, NULL));
+		m_poolRenderNode = hplNew( cMemoryPool<cRenderNode>, (3000, NULL));
 
 		g_poolRenderState = m_poolRenderState;
 		g_poolRenderNode = m_poolRenderNode;
@@ -156,10 +156,10 @@ namespace hpl {
 	cRenderList::~cRenderList()
 	{
 		Clear();
-		delete mTempNode.mpState;
+		hplDelete(mTempNode.mpState);
 
-		delete m_poolRenderState;
-		delete m_poolRenderNode;
+		hplDelete(m_poolRenderState);
+		hplDelete(m_poolRenderNode);
 
 		g_poolRenderState = NULL;
 		g_poolRenderNode = NULL;
@@ -401,10 +401,9 @@ namespace hpl {
 				m_setObjects.insert(apObject);
 
 				//MotionBlur
-				if(false // mpGraphics->GetRendererPostEffects()->GetMotionBlurActive()
+				if(mpGraphics->GetRendererPostEffects()->GetMotionBlurActive()
 					|| mpGraphics->GetRenderer3D()->GetRenderSettings()->mbFogActive
-					|| false // mpGraphics->GetRendererPostEffects()->GetDepthOfFieldActive()
-				)
+					|| mpGraphics->GetRendererPostEffects()->GetDepthOfFieldActive())
 				{
 					m_setMotionBlurObjects.insert(apObject);
 
@@ -614,21 +613,36 @@ namespace hpl {
 			pNode = InsertNode(pNode, pTempNode);
 		}
 
-		/////// GPU PROGRAM //////////////
+		/////// VERTEX PROGRAM //////////////
 		{
 			//Log("\nVertex program level\n");
 			//pTempNode = m_poolRenderNode->Create();
 			//pTempState = m_poolRenderState->Create();
 			//pTempNode->mpState = pTempState;
 
-			pTempState->mType = eRenderStateType_GPUProgram;
+			pTempState->mType = eRenderStateType_VertexProgram;
 
-			pTempState->mpProgram = pMaterial->GetProgramEx(aPassType,alPass,apLight);
+			pTempState->mpVtxProgram = pMaterial->GetVertexProgram(aPassType,alPass,apLight);
 			pTempState->mpVtxProgramSetup = pMaterial->GetVertexProgramSetup(aPassType,alPass,apLight);
-			pTempState->mpFragProgramSetup = pMaterial->GetFragmentProgramSetup(aPassType,alPass,apLight);
 			pTempState->mbUsesLight = pMaterial->VertexProgramUsesLight(aPassType, alPass,apLight);
 			pTempState->mbUsesEye = pMaterial->VertexProgramUsesEye(aPassType, alPass,apLight);
 			pTempState->mpLight = apLight;
+
+			pNode = InsertNode(pNode, pTempNode);
+		}
+
+		/////// FRAGMENT PROGRAM //////////////
+		{
+			//Log("\nFragment program level\n");
+			//pTempNode = m_poolRenderNode->Create();
+			//pTempState = m_poolRenderState->Create();
+			//pTempNode->mpState = pTempState;
+
+
+			pTempState->mType = eRenderStateType_FragmentProgram;
+
+			pTempState->mpFragProgram = pMaterial->GetFragmentProgram(aPassType,alPass,apLight);
+			pTempState->mpFragProgramSetup = pMaterial->GetFragmentProgramSetup(aPassType,alPass,apLight);
 
 			pNode = InsertNode(pNode, pTempNode);
 		}

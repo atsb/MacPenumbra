@@ -38,7 +38,7 @@ cEffect_Underwater::cEffect_Underwater(cInit *apInit, cGraphicsDrawer *apDrawer)
 	mpInit = apInit;
 	mpDrawer = apDrawer;
 
-	mpWhiteGfx = mpDrawer->CreateGfxObject("effect_white.jpg",eGfxMaterialType::Smoke);
+	mpWhiteGfx = mpDrawer->CreateGfxObject("effect_white.jpg","smoke2d");
 
 	Reset();
 }
@@ -92,6 +92,14 @@ void cEffect_Underwater::Reset()
 cEffect_ShakeScreen::cEffect_ShakeScreen(cInit *apInit)
 {
 	mpInit = apInit;
+
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics)
+	{
+		mpForce = mpInit->mpGame->GetHaptic()->GetLowLevel()->CreateSinusWaveForce(
+																cVector3f(0,1,0),0.1f,5);
+	}
+#endif
 }
 
 cEffect_ShakeScreen::~cEffect_ShakeScreen()
@@ -157,6 +165,21 @@ void cEffect_ShakeScreen::Update(float afTimeStep)
 	mvAdd.x = cMath::RandRectf(-fLargest,fLargest);
 	mvAdd.y = cMath::RandRectf(-fLargest,fLargest);
 	mvAdd.z = cMath::RandRectf(-fLargest,fLargest);
+
+#ifdef INCLUDE_HAPTIC
+	if(mpForce)
+	{
+		if(mlstShakes.empty()==false)
+		{
+			mpForce->SetActive(true);
+			mpForce->SetAmp(fLargest*12);
+		}
+		else
+		{
+			mpForce->SetActive(false);
+		}
+	}
+#endif
 }
 
 void cEffect_ShakeScreen::Reset()
@@ -178,7 +201,7 @@ cEffect_SaveEffect::cEffect_SaveEffect(cInit *apInit, cGraphicsDrawer *apDrawer)
 	mpInit = apInit;
 	mpDrawer = apDrawer;
 
-	mpFlashGfx = mpDrawer->CreateGfxObject("effect_white.jpg",eGfxMaterialType::DiffuseAlpha);
+	mpFlashGfx = mpDrawer->CreateGfxObject("effect_white.jpg","diffalpha2d");
 
 	Reset();
 }
@@ -216,8 +239,8 @@ void cEffect_SaveEffect::NormalSave(const cVector3f &avPos, cGameSaveArea *apSav
 	mpInit->mpPlayer->GetLookAt()->SetActive(true);
 	mpInit->mpPlayer->GetLookAt()->SetTarget(avPos,2.1f,4);
 
-//	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
-//	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0.8f);
+	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(true);
+	mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailAmount(0.8f);
 
 	mfFlashAlpha =0;
 	mFlashColor = cColor(	216.0f / 255.0f, 
@@ -349,7 +372,7 @@ void cEffect_SaveEffect::NormalSaveUpdate(float afTimeStep)
 			mbActive = false;
 			mpInit->mpPlayer->SetActive(true);
 			mpInit->mpPlayer->GetLookAt()->SetActive(false);
-//			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
+			mpInit->mpGame->GetGraphics()->GetRendererPostEffects()->SetImageTrailActive(false);
 
 			/////////////
 			//Display message
@@ -444,7 +467,7 @@ cEffect_DepthOfField::cEffect_DepthOfField(cInit *apInit)
 {
 	mbDisabled = false;
 	mpInit = apInit;
-//	mpPostEffects = apInit->mpGame->GetGraphics()->GetRendererPostEffects();
+	mpPostEffects = apInit->mpGame->GetGraphics()->GetRendererPostEffects();
 
 	Reset();
 }
@@ -467,11 +490,11 @@ void cEffect_DepthOfField::SetDisabled(bool abX)
 
 	if(mbDisabled)
 	{
-//		mpPostEffects->SetDepthOfFieldActive(false);
+		mpPostEffects->SetDepthOfFieldActive(false);
 	}
 	else if(mbActive)
 	{
-//		mpPostEffects->SetDepthOfFieldActive(true);
+		mpPostEffects->SetDepthOfFieldActive(true);
 	}
 
 }
@@ -482,8 +505,7 @@ void cEffect_DepthOfField::SetActive(bool abX, float afFadeTime)
 	if(mbDisabled) return;
 	
 	if(mbActive)
-		;
-//		mpPostEffects->SetDepthOfFieldActive(true);
+		mpPostEffects->SetDepthOfFieldActive(true);
 	
 	if(afFadeTime >0)
 		mfFadeSpeed = 1 / afFadeTime;
@@ -495,9 +517,9 @@ void cEffect_DepthOfField::SetActive(bool abX, float afFadeTime)
 
 void cEffect_DepthOfField::SetUp(float afNearPlane, float afFocalPlane, float afFarPlane)
 {
-//	mpPostEffects->SetDepthOfFieldNearPlane(afNearPlane);
-//	mpPostEffects->SetDepthOfFieldFocalPlane(afFocalPlane);
-//	mpPostEffects->SetDepthOfFieldFarPlane(afFarPlane);
+	mpPostEffects->SetDepthOfFieldNearPlane(afNearPlane);
+	mpPostEffects->SetDepthOfFieldFocalPlane(afFocalPlane);
+	mpPostEffects->SetDepthOfFieldFarPlane(afFarPlane);
 }
 
 void cEffect_DepthOfField::Update(float afTimeStep)
@@ -521,11 +543,11 @@ void cEffect_DepthOfField::Update(float afTimeStep)
 		mfMaxBlur -= afTimeStep * mfFadeSpeed;
 		if(mfMaxBlur <0) {
 			mfMaxBlur =0;
-//			mpPostEffects->SetDepthOfFieldActive(false);
+			mpPostEffects->SetDepthOfFieldActive(false);
 		}
 	}
 
-//	mpPostEffects->SetDepthOfFieldMaxBlur(mfMaxBlur);
+	mpPostEffects->SetDepthOfFieldMaxBlur(mfMaxBlur);
 }
 
 
@@ -567,7 +589,7 @@ cEffect_Flash::cEffect_Flash(cInit *apInit, cGraphicsDrawer *apDrawer)
 	mpInit = apInit;
 	mpDrawer = apDrawer;
 
-	mpWhiteGfx = mpDrawer->CreateGfxObject("effect_white.jpg",eGfxMaterialType::DiffuseAdditive);
+	mpWhiteGfx = mpDrawer->CreateGfxObject("effect_white.jpg","diffadditive2d");
 
 	Reset();
 }
@@ -855,13 +877,13 @@ cEffectHandler::cEffectHandler(cInit *apInit)  : iUpdateable("EffectHandler")
 	mpInit = apInit;
 	mpDrawer = mpInit->mpGame->GetGraphics()->GetDrawer();
 
-	mpFlash = new cEffect_Flash(mpInit,mpDrawer);
-	mpWaveGravity = new cEffect_WaveGravity(mpInit);
-	mpSubTitle = new cEffect_SubTitle(mpInit,mpDrawer);
-	mpDepthOfField = new cEffect_DepthOfField(mpInit);
-	mpSaveEffect = new cEffect_SaveEffect(mpInit,mpDrawer);
-	mpShakeScreen = new cEffect_ShakeScreen(mpInit);
-	mpUnderwater = new cEffect_Underwater(mpInit,mpDrawer);
+	mpFlash = hplNew( cEffect_Flash,(mpInit, mpDrawer) );
+	mpWaveGravity = hplNew( cEffect_WaveGravity,(mpInit) );
+	mpSubTitle = hplNew( cEffect_SubTitle,(mpInit,mpDrawer) );
+	mpDepthOfField = hplNew( cEffect_DepthOfField,(mpInit) );
+	mpSaveEffect = hplNew( cEffect_SaveEffect,(mpInit,mpDrawer) );
+	mpShakeScreen = hplNew( cEffect_ShakeScreen,(mpInit) );
+	mpUnderwater = hplNew( cEffect_Underwater,(mpInit,mpDrawer) );
 
 	Reset();
 }
@@ -870,13 +892,13 @@ cEffectHandler::cEffectHandler(cInit *apInit)  : iUpdateable("EffectHandler")
 
 cEffectHandler::~cEffectHandler(void)
 {
-	delete  mpFlash ;
-	delete  mpWaveGravity ;
-	delete  mpSubTitle ;
-	delete  mpDepthOfField ;
-	delete  mpSaveEffect ;
-	delete  mpShakeScreen ;
-	delete  mpUnderwater ;
+	hplDelete( mpFlash );
+	hplDelete( mpWaveGravity );
+	hplDelete( mpSubTitle );
+	hplDelete( mpDepthOfField );
+	hplDelete( mpSaveEffect );
+	hplDelete( mpShakeScreen );
+	hplDelete( mpUnderwater );
 }
 
 //-----------------------------------------------------------------------

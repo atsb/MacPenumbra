@@ -9,10 +9,15 @@
 /* Begin PBXBuildFile section */
 		8E84E76725FD5B7600DC6065 /* ModelExport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8E84E76525FD5B7600DC6065 /* ModelExport.cpp */; };
 		8EA48713260FFBA9000D1AB7 /* libHPL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E9F74DE25522A70000324E8 /* libHPL.a */; };
-		8EAA3A3D2641D948005883C9 /* SDL2.framework in Copy Frameworks into .app */ = {isa = PBXBuildFile; fileRef = 8EB7C3A9254F545C00277667 /* SDL2.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8EA48715260FFBB0000D1AB7 /* libangelscript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EA48714260FFBB0000D1AB7 /* libangelscript.a */; };
+		8EB7C3AF254F546300277667 /* Cg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EB7C3AA254F545C00277667 /* Cg.framework */; };
+		8EB7C3B0254F546300277667 /* Cg.framework in Copy Frameworks into .app */ = {isa = PBXBuildFile; fileRef = 8EB7C3AA254F545C00277667 /* Cg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8EB7C3B1254F546600277667 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EB7C3A9254F545C00277667 /* SDL2.framework */; };
+		8EB7C3B2254F546600277667 /* SDL2.framework in Copy Frameworks into .app */ = {isa = PBXBuildFile; fileRef = 8EB7C3A9254F545C00277667 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		8EB7C3B3254F546800277667 /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EB7C3AB254F545C00277667 /* SDL2_image.framework */; };
+		8EB7C3B4254F546800277667 /* SDL2_image.framework in Copy Frameworks into .app */ = {isa = PBXBuildFile; fileRef = 8EB7C3AB254F545C00277667 /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		8EB7C3CF254F5E3D00277667 /* libnewton.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8EB7C3CB254F5E3D00277667 /* libnewton.a */; };
 		8EB7C3DF254F649C00277667 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8EB7C395254E48A900277667 /* Images.xcassets */; };
-		8EC7AEEF26B8ABF200193C45 /* DebugMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8EC7AEED26B8ABF200193C45 /* DebugMenu.cpp */; };
 		DB063026111D3E3F0048C5E9 /* AttackHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DBF84A1F0AC76D8F00BB15CD /* AttackHandler.cpp */; };
 		DB063027111D3E3F0048C5E9 /* ButtonHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DBF84A210AC76D8F00BB15CD /* ButtonHandler.cpp */; };
 		DB063028111D3E3F0048C5E9 /* CharacterMove.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DBF84A230AC76D8F00BB15CD /* CharacterMove.cpp */; };
@@ -95,7 +100,9 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				8EAA3A3D2641D948005883C9 /* SDL2.framework in Copy Frameworks into .app */,
+				8EB7C3B4254F546800277667 /* SDL2_image.framework in Copy Frameworks into .app */,
+				8EB7C3B0254F546300277667 /* Cg.framework in Copy Frameworks into .app */,
+				8EB7C3B2254F546600277667 /* SDL2.framework in Copy Frameworks into .app */,
 			);
 			name = "Copy Frameworks into .app";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -105,10 +112,12 @@
 /* Begin PBXFileReference section */
 		8E84E76525FD5B7600DC6065 /* ModelExport.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ModelExport.cpp; sourceTree = "<group>"; };
 		8E84E76625FD5B7600DC6065 /* ModelExport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ModelExport.h; sourceTree = "<group>"; };
+		8EA48714260FFBB0000D1AB7 /* libangelscript.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libangelscript.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		8EB7C395254E48A900277667 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		8EB7C3A9254F545C00277667 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SDL2.framework; sourceTree = "<group>"; };
-		8EC7AEED26B8ABF200193C45 /* DebugMenu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DebugMenu.cpp; sourceTree = "<group>"; };
-		8EC7AEEE26B8ABF200193C45 /* DebugMenu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DebugMenu.h; sourceTree = "<group>"; };
+		8EB7C3AA254F545C00277667 /* Cg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Cg.framework; sourceTree = "<group>"; };
+		8EB7C3AB254F545C00277667 /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SDL2_image.framework; sourceTree = "<group>"; };
+		8EB7C3CB254F5E3D00277667 /* libnewton.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libnewton.a; sourceTree = "<group>"; };
 		DB06307A111D3E3F0048C5E9 /* PenumbraOverture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PenumbraOverture.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB2707770ACCDEE40054ACA3 /* GameEnemy_Spider.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GameEnemy_Spider.cpp; sourceTree = "<group>"; };
 		DB2707780ACCDEE40054ACA3 /* GameEnemy_Spider.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = GameEnemy_Spider.h; sourceTree = "<group>"; };
@@ -234,7 +243,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8EA48715260FFBB0000D1AB7 /* libangelscript.a in Frameworks */,
+				8EB7C3CF254F5E3D00277667 /* libnewton.a in Frameworks */,
 				8EA48713260FFBA9000D1AB7 /* libHPL.a in Frameworks */,
+				8EB7C3AF254F546300277667 /* Cg.framework in Frameworks */,
+				8EB7C3B3254F546800277667 /* SDL2_image.framework in Frameworks */,
 				8EB7C3B1254F546600277667 /* SDL2.framework in Frameworks */,
 				DB063068111D3E3F0048C5E9 /* OpenGL.framework in Frameworks */,
 				DB063069111D3E3F0048C5E9 /* OpenAL.framework in Frameworks */,
@@ -265,8 +278,6 @@
 				DBFBA01B0B65E4660021DAE2 /* Credits.h */,
 				DBF84A250AC76D8F00BB15CD /* DeathMenu.cpp */,
 				DBF84A260AC76D8F00BB15CD /* DeathMenu.h */,
-				8EC7AEED26B8ABF200193C45 /* DebugMenu.cpp */,
-				8EC7AEEE26B8ABF200193C45 /* DebugMenu.h */,
 				DBF84A270AC76D8F00BB15CD /* EffectHandler.cpp */,
 				DBF84A280AC76D8F00BB15CD /* EffectHandler.h */,
 				DBF84A290AC76D8F00BB15CD /* FadeHandler.cpp */,
@@ -275,14 +286,14 @@
 				DBF84A2C0AC76D8F00BB15CD /* GameArea.h */,
 				DBCEE6260B4B365C0088A7E3 /* GameDamageArea.cpp */,
 				DBCEE6270B4B365C0088A7E3 /* GameDamageArea.h */,
+				DBF84A310AC76D8F00BB15CD /* GameEnemy.cpp */,
+				DBF84A320AC76D8F00BB15CD /* GameEnemy.h */,
 				DBF84A2F0AC76D8F00BB15CD /* GameEnemy_Dog.cpp */,
 				DBF84A300AC76D8F00BB15CD /* GameEnemy_Dog.h */,
 				DB2707770ACCDEE40054ACA3 /* GameEnemy_Spider.cpp */,
 				DB2707780ACCDEE40054ACA3 /* GameEnemy_Spider.h */,
 				DBCEE6280B4B365C0088A7E3 /* GameEnemy_Worm.cpp */,
 				DBCEE6290B4B365C0088A7E3 /* GameEnemy_Worm.h */,
-				DBF84A310AC76D8F00BB15CD /* GameEnemy.cpp */,
-				DBF84A320AC76D8F00BB15CD /* GameEnemy.h */,
 				DBF84A330AC76D8F00BB15CD /* GameEntity.cpp */,
 				DBF84A340AC76D8F00BB15CD /* GameEntity.h */,
 				DBCEE62A0B4B365C0088A7E3 /* GameForceArea.cpp */,
@@ -335,8 +346,6 @@
 				DBF84A600AC76D8F00BB15CD /* MapHandler.h */,
 				DBFBA01E0B65E4660021DAE2 /* MapLoadText.cpp */,
 				DBFBA01F0B65E4660021DAE2 /* MapLoadText.h */,
-				8E84E76525FD5B7600DC6065 /* ModelExport.cpp */,
-				8E84E76625FD5B7600DC6065 /* ModelExport.h */,
 				DBF84A610AC76D8F00BB15CD /* Notebook.cpp */,
 				DBF84A620AC76D8F00BB15CD /* Notebook.h */,
 				DBF84A630AC76D8F00BB15CD /* NumericalPanel.cpp */,
@@ -348,13 +357,13 @@
 				DBF84A6A0AC76D8F00BB15CD /* PlayerHelper.cpp */,
 				DBF84A6B0AC76D8F00BB15CD /* PlayerHelper.h */,
 				DBF84A6C0AC76D8F00BB15CD /* PlayerMoveStates.h */,
+				DBF84A730AC76D8F00BB15CD /* PlayerState.h */,
 				DBF84A6D0AC76D8F00BB15CD /* PlayerState_Interact.cpp */,
 				DBF84A6E0AC76D8F00BB15CD /* PlayerState_Interact.h */,
 				DBF84A6F0AC76D8F00BB15CD /* PlayerState_Misc.cpp */,
 				DBF84A700AC76D8F00BB15CD /* PlayerState_Misc.h */,
 				DBF84A710AC76D8F00BB15CD /* PlayerState_Weapon.cpp */,
 				DBF84A720AC76D8F00BB15CD /* PlayerState_Weapon.h */,
-				DBF84A730AC76D8F00BB15CD /* PlayerState.h */,
 				DBFBA0200B65E4660021DAE2 /* PreMenu.cpp */,
 				DBFBA0210B65E4660021DAE2 /* PreMenu.h */,
 				DBCEE62E0B4B365C0088A7E3 /* RadioHandler.cpp */,
@@ -371,6 +380,8 @@
 				DBF84A7C0AC76D8F00BB15CD /* Triggers.cpp */,
 				DBF84A7D0AC76D8F00BB15CD /* Triggers.h */,
 				DB294DD00C11D2B2005DA55C /* Version.h */,
+				8E84E76525FD5B7600DC6065 /* ModelExport.cpp */,
+				8E84E76625FD5B7600DC6065 /* ModelExport.h */,
 			);
 			name = Source;
 			path = src;
@@ -397,6 +408,9 @@
 		DBF84A9A0AC76E5E00BB15CD /* dependencies */ = {
 			isa = PBXGroup;
 			children = (
+				8EB7C3CB254F5E3D00277667 /* libnewton.a */,
+				8EB7C3AA254F545C00277667 /* Cg.framework */,
+				8EB7C3AB254F545C00277667 /* SDL2_image.framework */,
 				8EB7C3A9254F545C00277667 /* SDL2.framework */,
 			);
 			name = dependencies;
@@ -406,6 +420,7 @@
 		DBF84A9B0AC76E7E00BB15CD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8EA48714260FFBB0000D1AB7 /* libangelscript.a */,
 				DBF9A3CE119A659300CCFDC9 /* HPL.xcodeproj */,
 				DBF84A9A0AC76E5E00BB15CD /* dependencies */,
 				DBCEE71E0B4B53550088A7E3 /* OpenAL.framework */,
@@ -452,7 +467,7 @@
 		DBF8483A0AC76CC500BB15CD /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1340;
+				LastUpgradeCheck = 1310;
 			};
 			buildConfigurationList = DBF8483B0AC76CC500BB15CD /* Build configuration list for PBXProject "PenumbraOverture" */;
 			compatibilityVersion = "Xcode 3.1";
@@ -522,7 +537,6 @@
 				DB063035111D3E3F0048C5E9 /* GameMusicHandler.cpp in Sources */,
 				DB063036111D3E3F0048C5E9 /* GameObject.cpp in Sources */,
 				DB063037111D3E3F0048C5E9 /* GameSaveArea.cpp in Sources */,
-				8EC7AEEF26B8ABF200193C45 /* DebugMenu.cpp in Sources */,
 				DB063038111D3E3F0048C5E9 /* GameScripts.cpp in Sources */,
 				DB063039111D3E3F0048C5E9 /* GameStickArea.cpp in Sources */,
 				DB06303A111D3E3F0048C5E9 /* GameSwingDoor.cpp in Sources */,
@@ -604,7 +618,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.frictionalgames.PenumbraOverture;
 				PRODUCT_NAME = PenumbraOverture;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				USER_HEADER_SEARCH_PATHS = "../HPL/sources ../dependencies/include ../dependencies/sources/";
+				USER_HEADER_SEARCH_PATHS = "../HPL/sources ../dependencies/include";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -639,7 +653,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.frictionalgames.PenumbraOverture;
 				PRODUCT_NAME = PenumbraOverture;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				USER_HEADER_SEARCH_PATHS = "../HPL/sources ../dependencies/include ../dependencies/sources/";
+				USER_HEADER_SEARCH_PATHS = "../HPL/sources ../dependencies/include";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -685,8 +699,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
-				HEADER_SEARCH_PATHS = ../dependencies/sources/AngelScript/include;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -735,8 +748,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
-				HEADER_SEARCH_PATHS = ../dependencies/sources/AngelScript/include;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SYMROOT = "";

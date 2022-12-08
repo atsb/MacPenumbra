@@ -18,6 +18,7 @@
  */
 #include "scene/Light.h"
 
+#include "system/LowLevelSystem.h"
 #include "math/Math.h"
 
 #include "scene/World3D.h"

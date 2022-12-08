@@ -28,8 +28,6 @@
 #include "script/ScriptVar.h"
 
 #include "game/SaveGame.h"
-#include "system/System.h"
-
 
 class TiXmlElement;
 
@@ -40,9 +38,12 @@ namespace hpl {
 	class cSound;
 	class cPhysics;
 	class cScene;
+	class cSystem;
 	class cAI;
+	class cHaptic;
 
-	class cCamera;
+	class iCamera;
+	class cCamera3D;
 	class cNode3D;
 	class cLight3DSpot;
 	class cLight3DPoint;
@@ -181,7 +182,8 @@ namespace hpl {
 	{
 	public:
 		cWorld3D(tString asName,cGraphics *apGraphics,cResources *apResources,cSound* apSound,
-					cPhysics *apPhysics, cScene *apScene, cAI *apAI);
+					cPhysics *apPhysics, cScene *apScene,cSystem *apSystem, cAI *apAI,
+					cHaptic *apHaptic);
 		~cWorld3D();
 
 		tString GetName(){ return msName;}
@@ -206,6 +208,8 @@ namespace hpl {
 		cPhysics* GetPhysics(){ return mpPhysics;}
 		cResources* GetResources(){ return mpResources;}
 		cSound* GetSound(){ return mpSound;}
+		cSystem* GetSystem(){ return mpSystem;}
+		cHaptic* GetHaptic(){ return mpHaptic;}
 
 		iEntity3D* CreateEntity(const tString& asName, const cMatrixf &a_mtxTransform,
 								const tString& asFile, bool abLoadReferences);
@@ -337,7 +341,9 @@ namespace hpl {
 		cResources *mpResources;
 		cPhysics *mpPhysics;
 		cScene *mpScene;
+		cSystem *mpSystem;
 		cAI *mpAI;
+		cHaptic *mpHaptic;
 
 		iPhysicsWorld *mpPhysicsWorld;
 		bool mbAutoDeletePhysicsWorld;

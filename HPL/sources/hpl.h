@@ -19,15 +19,13 @@
 #ifndef HPL_HPL_H
 #define HPL_HPL_H
 
-#include "system/SystemTypes.h"
 #include "system/System.h"
+#include "system/SystemTypes.h"
 #include "system/String.h"
-#include "system/Files.h"
-#include "system/Log.h"
 #include "system/LogicTimer.h"
+#include "system/LowLevelSystem.h"
 #include "system/SerializeClass.h"
 #include "system/Container.h"
-#include "system/UpdateTimerMacros.h"
 
 #include "input/Input.h"
 #include "input/InputDevice.h"
@@ -36,6 +34,7 @@
 #include "input/Action.h"
 #include "input/ActionKeyboard.h"
 #include "input/ActionMouseButton.h"
+#include "input/ActionHaptic.h"
 #include "input/LowLevelInput.h"
 
 #include "game/Game.h"
@@ -47,13 +46,14 @@
 #include "graphics/Graphics.h"
 #include "graphics/Renderer3D.h"
 #include "graphics/RenderList.h"
-// #include "graphics/RendererPostEffects.h"
+#include "graphics/RendererPostEffects.h"
 #include "graphics/MaterialHandler.h"
 #include "graphics/MeshCreator.h"
 #include "graphics/ParticleSystem3D.h"
 #include "graphics/ParticleEmitter3D_UserData.h"
 #include "graphics/FontData.h"
 #include "graphics/GraphicsDrawer.h"
+#include "graphics/GfxObject.h"
 #include "graphics/FontData.h"
 #include "graphics/Texture.h"
 #include "graphics/GPUProgram.h"
@@ -79,6 +79,7 @@
 #include "math/CRC.h"
 
 #include "resources/Resources.h"
+#include "resources/LowLevelResources.h"
 #include "resources/FileSearcher.h"
 #include "resources/ImageManager.h"
 #include "resources/ResourceImage.h"
@@ -97,11 +98,10 @@
 #include "resources/MeshLoader.h"
 #include "resources/ConfigFile.h"
 #include "resources/EntityLoader_Object.h"
-#include "resources/LoadImage.h"
 
 #include "scene/Scene.h"
 #include "scene/World3D.h"
-#include "scene/Camera.h"
+#include "scene/Camera3D.h"
 #include "scene/RenderableContainer.h"
 #include "scene/MeshEntity.h"
 #include "scene/Light3DPoint.h"
@@ -148,6 +148,13 @@
 #include "script/Script.h"
 #include "script/ScriptFuncs.h" // sigh, this is only for cScriptJointCallback
 
-#include "tinyXML/tinyxml.h"
+#include "haptic/Haptic.h"
+#include "haptic/LowLevelHaptic.h"
+#include "haptic/HapticShape.h"
+#include "haptic/HapticForce.h"
+#include "haptic/HapticSurface.h"
+
+#include "impl/tinyXML/tinyxml.h"
+
 
 #endif // HPL_HPL_H

@@ -18,9 +18,10 @@
  */
 #include "resources/MeshManager.h"
 #include "system/String.h"
-#include "system/Log.h"
+#include "system/System.h"
 #include "resources/Resources.h"
 #include "graphics/Mesh.h"
+#include "system/LowLevelSystem.h"
 #include "resources/MeshLoaderHandler.h"
 #include "resources/FileSearcher.h"
 
@@ -34,7 +35,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cMeshManager::cMeshManager(cGraphics* apGraphic,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphic;
 		mpResources = apResources;
@@ -124,7 +126,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

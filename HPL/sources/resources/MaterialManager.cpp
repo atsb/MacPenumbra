@@ -16,16 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "resources/MaterialManager.h"
 #include "system/String.h"
-#include "system/Log.h"
+#include "system/System.h"
 #include "graphics/Graphics.h"
 #include "resources/TextureManager.h"
 #include "resources/Resources.h"
 #include "graphics/Material.h"
+#include "system/LowLevelSystem.h"
 #include "graphics/MaterialHandler.h"
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
+
 
 
 namespace hpl {
@@ -37,7 +38,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cMaterialManager::cMaterialManager(cGraphics* apGraphics,cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpGraphics = apGraphics;
 		mpResources = apResources;
@@ -125,7 +127,7 @@ namespace hpl {
 
 		if(apResource->HasUsers()==false){
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 
@@ -192,7 +194,7 @@ namespace hpl {
 
 		if(pMaterial==NULL && sPath!="")
 		{
-			TiXmlDocument *pDoc = new TiXmlDocument(sPath.c_str());
+			TiXmlDocument *pDoc = hplNew( TiXmlDocument, (sPath.c_str()) );
 			if(!pDoc->LoadFile()){
 				return "";
 			}
@@ -201,14 +203,14 @@ namespace hpl {
 
 			TiXmlElement *pMain = pRoot->FirstChildElement("Main");
 			if(pMain==NULL){
-				delete pDoc;
+				hplDelete(pDoc);
 				Error("Main child not found in '%s'\n",sPath.c_str());
 				return "";
 			}
 
 			tString sPhysicsName = cString::ToString(pMain->Attribute("PhysicsMaterial"),"Default");
 
-			delete pDoc;
+			hplDelete(pDoc);
 
 			return sPhysicsName;
 		}
@@ -228,9 +230,9 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 	iMaterial* cMaterialManager::LoadFromFile(const tString& asName,const tString& asPath)
 	{
-		TiXmlDocument *pDoc = new TiXmlDocument(asPath.c_str());
+		TiXmlDocument *pDoc = hplNew( TiXmlDocument, (asPath.c_str()) );
 		if(!pDoc->LoadFile()){
-			delete pDoc;
+			hplDelete(pDoc);
 			return NULL;
 		}
 
@@ -240,14 +242,14 @@ namespace hpl {
 		//Main
 		TiXmlElement *pMain = pRoot->FirstChildElement("Main");
 		if(pMain==NULL){
-			delete pDoc;
+			hplDelete(pDoc);
 			Error("Main child not found.\n");
 			return NULL;
 		}
 
 		const char* sType = pMain->Attribute("Type");
 		if(sType ==NULL){
-			delete pDoc;
+			hplDelete(pDoc);
 			Error("Type not found.\n");
 			return NULL;
 		}
@@ -259,7 +261,7 @@ namespace hpl {
 
 		iMaterial* pMat = mpGraphics->GetMaterialHandler()->Create(asName,sType);
 		if(pMat==NULL){
-			delete pDoc;
+			hplDelete(pDoc);
 			Error("Invalid material type '%s'\n",sType);
 			return NULL;
 		}
@@ -274,7 +276,7 @@ namespace hpl {
 		//Textures
 		TiXmlElement *pTexRoot = pRoot->FirstChildElement("TextureUnits");
 		if(pTexRoot==NULL){
-			delete pDoc;
+			hplDelete(pDoc);
 			Error("TextureUnits child not found.\n");
 			return NULL;
 		}
@@ -288,7 +290,7 @@ namespace hpl {
 			TiXmlElement *pTexChild = pTexRoot->FirstChildElement(GetTextureString(it->mType).c_str());
 			if(pTexChild==NULL){
 				/*Error("Texture unit missing!");
-				delete pMat;
+				hplDelete(pMat);
 				return NULL;*/
 				continue;
 			}
@@ -339,8 +341,8 @@ namespace hpl {
 			pTex->SetAnimMode(animMode);
 
 			if(pTex==NULL){
-				delete pDoc;
-				delete pMat;
+				hplDelete(pDoc);
+				hplDelete(pMat);
 				return NULL;
 			}
 
@@ -357,7 +359,7 @@ namespace hpl {
 		//Custom
 		pMat->LoadData(pRoot);
 
-		delete pDoc;
+		hplDelete(pDoc);
 
 		return pMat;
 	}
@@ -366,11 +368,10 @@ namespace hpl {
 
 	eTextureTarget cMaterialManager::GetTarget(const tString& asType)
 	{
-		const auto lowerType = cString::ToLowerCase(asType);
-		if (lowerType == "cube") return eTextureTarget_CubeMap;
-		else if (lowerType == "1d") return eTextureTarget_1D;
-		else if (lowerType == "2d") return eTextureTarget_2D;
-		else if (lowerType == "3d") return eTextureTarget_3D;
+		if(cString::ToLowerCase(asType) == "cube") return eTextureTarget_CubeMap;
+		else if(cString::ToLowerCase(asType) == "1D") return eTextureTarget_1D;
+		else if(cString::ToLowerCase(asType) == "2D") return eTextureTarget_2D;
+		else if(cString::ToLowerCase(asType) == "3D") return eTextureTarget_3D;
 
 		return eTextureTarget_2D;
 	}

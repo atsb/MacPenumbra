@@ -18,6 +18,7 @@
  */
 #include "resources/Resources.h"
 
+#include "resources/LowLevelResources.h"
 #include "resources/FileSearcher.h"
 #include "resources/ImageManager.h"
 #include "resources/GpuProgramManager.h"
@@ -31,15 +32,14 @@
 #include "resources/MeshLoaderHandler.h"
 #include "resources/SoundEntityManager.h"
 #include "resources/AnimationManager.h"
+#include "resources/VideoManager.h"
 #include "resources/ConfigFile.h"
 #include "resources/LanguageFile.h"
-#include "resources/impl/MeshLoaderGLTF2.h"
-#include "resources/impl/MeshLoaderCollada.h"
+#include "system/System.h"
 
-#include "system/Log.h"
-#include "system/Files.h"
+#include "system/LowLevelSystem.h"
 
-#include "tinyXML/tinyxml.h"
+#include "impl/tinyXML/tinyxml.h"
 
 namespace hpl {
 
@@ -49,12 +49,13 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cResources::cResources(iLowLevelGraphics *apLowLevelGraphics)
+	cResources::cResources(iLowLevelResources *apLowLevelResources,iLowLevelGraphics *apLowLevelGraphics)
 		: iUpdateable("Resources")
 	{
+		mpLowLevelResources = apLowLevelResources;
 		mpLowLevelGraphics = apLowLevelGraphics;
 
-		mpFileSearcher = new cFileSearcher();
+		mpFileSearcher = hplNew( cFileSearcher, (mpLowLevelResources) );
 
 		mpDefaultEntity3DLoader = NULL;
 		mpDefaultArea3DLoader = NULL;
@@ -72,24 +73,25 @@ namespace hpl {
 		STLMapDeleteAll(m_mEntity3DLoaders);
 		STLMapDeleteAll(m_mArea3DLoaders);
 
-		delete mpFontManager;
-		delete mpScriptManager;
-		delete mpParticleManager;
-		delete mpSoundManager;
-		delete mpMeshManager;
-		delete mpMaterialManager;
-		delete mpGpuProgramManager;
-		delete mpImageManager;
-		delete mpTextureManager;
-		delete mpSoundEntityManager;
-		delete mpAnimationManager;
+		hplDelete(mpFontManager);
+		hplDelete(mpScriptManager);
+		hplDelete(mpParticleManager);
+		hplDelete(mpSoundManager);
+		hplDelete(mpMeshManager);
+		hplDelete(mpMaterialManager);
+		hplDelete(mpGpuProgramManager);
+		hplDelete(mpImageManager);
+		hplDelete(mpTextureManager);
+		hplDelete(mpSoundEntityManager);
+		hplDelete(mpAnimationManager);
+		hplDelete(mpVideoManager);
 
 		Log(" All resources deleted\n");
 
-		delete mpFileSearcher;
-		delete mpMeshLoaderHandler;
+		hplDelete(mpFileSearcher);
+		hplDelete(mpMeshLoaderHandler);
 
-		if(mpLanguageFile) delete mpLanguageFile;
+		if(mpLanguageFile) hplDelete(mpLanguageFile);
 
 		mlstManagers.clear();
 		Log("--------------------------------------------------------\n\n");
@@ -103,44 +105,49 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	void cResources::Init(cGraphics* apGraphics, cSound *apSound, cScript *apScript, cScene *apScene)
+	void cResources::Init(cGraphics* apGraphics, cSystem *apSystem, cSound *apSound, cScript *apScript, cScene *apScene)
 	{
 		Log("Initializing Resources Module\n");
 		Log("--------------------------------------------------------\n");
+
+		mpLowLevelSystem = apSystem->GetLowLevel();
 
 		Log(" Setting default directories\n");
 		AddBaseDirectories();
 
 		Log(" Creating resource managers\n");
 
-		mpImageManager = new cImageManager(mpFileSearcher, mpLowLevelGraphics);
+		mpImageManager = hplNew( cImageManager,(mpFileSearcher,mpLowLevelGraphics,mpLowLevelResources,mpLowLevelSystem) );
 		mlstManagers.push_back(mpImageManager);
-		mpGpuProgramManager = new cGpuProgramManager(mpFileSearcher, mpLowLevelGraphics);
+		mpGpuProgramManager = hplNew( cGpuProgramManager,(mpFileSearcher,mpLowLevelGraphics,mpLowLevelResources,mpLowLevelSystem) );
 		mlstManagers.push_back(mpGpuProgramManager);
-		mpParticleManager = new cParticleManager(apGraphics, this);
+		mpParticleManager = hplNew( cParticleManager,(apGraphics, this) );
 		mlstManagers.push_back(mpParticleManager);
-		mpSoundManager = new cSoundManager(apSound, this);
+		mpSoundManager = hplNew( cSoundManager,(apSound, this) );
 		mlstManagers.push_back(mpParticleManager);
-		mpFontManager = new cFontManager(apGraphics, this);
+		mpFontManager = hplNew( cFontManager,(apGraphics, this) );
 		mlstManagers.push_back(mpFontManager);
-		mpScriptManager = new cScriptManager(apScript, this);
+		mpScriptManager = hplNew( cScriptManager,(apScript, this) );
 		mlstManagers.push_back(mpScriptManager);
-		mpTextureManager = new cTextureManager(apGraphics, this);
+		mpTextureManager = hplNew( cTextureManager,(apGraphics, this) );
 		mlstManagers.push_back(mpTextureManager);
-		mpMaterialManager = new cMaterialManager(apGraphics, this);
+		mpMaterialManager = hplNew( cMaterialManager,(apGraphics, this) );
 		mlstManagers.push_back(mpMaterialManager);
-		mpMeshManager = new cMeshManager(apGraphics, this);
+		mpMeshManager = hplNew( cMeshManager,(apGraphics, this) );
 		mlstManagers.push_back(mpMeshManager);
-		mpSoundEntityManager = new cSoundEntityManager(apSound, this);
+		mpSoundEntityManager = hplNew( cSoundEntityManager,(apSound, this) );
 		mlstManagers.push_back(mpSoundEntityManager);
-		mpAnimationManager = new cAnimationManager(apGraphics, this);
+		mpAnimationManager = hplNew( cAnimationManager,(apGraphics, this) );
 		mlstManagers.push_back(mpAnimationManager);
+		mpVideoManager = hplNew( cVideoManager,(apGraphics, this) );
+		mlstManagers.push_back(mpVideoManager);
 
 		Log(" Misc Creation\n");
 
-		mpMeshLoaderHandler = new cMeshLoaderHandler(this, apScene);
-		mpMeshLoaderHandler->AddLoader(new cMeshLoaderGLTF2(mpLowLevelGraphics));
-		mpMeshLoaderHandler->AddLoader(new cMeshLoaderCollada(mpLowLevelGraphics));
+		mpMeshLoaderHandler = hplNew( cMeshLoaderHandler,(this, apScene) );
+
+		mpLowLevelResources->AddMeshLoaders(mpMeshLoaderHandler);
+		mpLowLevelResources->AddVideoLoaders(mpVideoManager);
 
 		Log("--------------------------------------------------------\n\n");
 	}
@@ -169,11 +176,11 @@ namespace hpl {
 
 	bool cResources::LoadResourceDirsFile(const tString &asFile)
 	{
-		TiXmlDocument* pXmlDoc = new TiXmlDocument(asFile.c_str());
+		TiXmlDocument* pXmlDoc = hplNew( TiXmlDocument, (asFile.c_str()) );
 		if(pXmlDoc->LoadFile()==false)
 		{
 			Error("Couldn't load XML file '%s'!\n",asFile.c_str());
-			delete  pXmlDoc;
+			hplDelete( pXmlDoc);
 			return false;
 		}
 
@@ -193,7 +200,7 @@ namespace hpl {
 			AddResourceDir(sPath);
 		}
 
-		delete pXmlDoc;
+		hplDelete(pXmlDoc);
 		return true;
 	}
 
@@ -262,22 +269,22 @@ namespace hpl {
 			Warning("No localised language extensions file found for language '%s', using English fallback\n", asFile.c_str());
 		}
 
-		cLanguageFile *pNewLangFile = new cLanguageFile(this);
+		cLanguageFile *pNewLangFile = hplNew( cLanguageFile, (this) );
 
 		bool bSuccess = pNewLangFile->LoadFromFile(sOrigPath);
 		if (bSuccess==false) {
-			delete pNewLangFile;
+			hplDelete(pNewLangFile);
 			return false;
 		}
 		bSuccess = pNewLangFile->LoadFromFile(sRehatchedPath);
 		if (bSuccess==false) {
-			delete pNewLangFile;
+			hplDelete(pNewLangFile);
 			return false;
 		}
 
 		// everything loaded, exchange old for new
 		if(mpLanguageFile){
-			delete mpLanguageFile;
+			hplDelete(mpLanguageFile);
 		}
 		mpLanguageFile = pNewLangFile;
 
@@ -353,6 +360,13 @@ namespace hpl {
 		}
 
 		return it->second;
+	}
+
+	//-----------------------------------------------------------------------
+
+	iLowLevelResources* cResources::GetLowLevel()
+	{
+		return mpLowLevelResources;
 	}
 
 	//-----------------------------------------------------------------------

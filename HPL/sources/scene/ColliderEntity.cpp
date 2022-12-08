@@ -62,7 +62,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cMatrixf* cColliderEntity::GetModelMatrix(cCamera *apCamera)
+	cMatrixf* cColliderEntity::GetModelMatrix(cCamera3D *apCamera)
 	{
 		return &GetWorldMatrix();
 	}

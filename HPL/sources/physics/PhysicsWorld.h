@@ -158,7 +158,7 @@ namespace hpl {
 		//! @{
 
 		virtual iPhysicsJointBall* CreateJointBall(const tString &asName,
-											const cVector3f& avPivotPoint,const cVector3f& avPinDir,
+											const cVector3f& avPivotPoint,
 											iPhysicsBody* apParentBody, iPhysicsBody *apChildBody)=0;
 		virtual iPhysicsJointHinge* CreateJointHinge(const tString &asName,
 											const cVector3f& avPivotPoint,const cVector3f& avPinDir,
@@ -231,8 +231,6 @@ namespace hpl {
 							bool abCalcDist, bool abCalcNormal, bool abCalcPoint,
 							bool abUsePrefilter=false)=0;
 
-		virtual void RenderShapeDebugGeometry(iCollideShape *apShape, const cMatrixf& a_mtxTransform,
-											  iLowLevelGraphics *apLowLevel, const cColor& aColor)=0;
 		virtual void RenderDebugGeometry(iLowLevelGraphics *apLowLevel, const cColor& aColor)=0;
 
 		virtual bool CheckShapeCollision(	iCollideShape* apShapeA, const cMatrixf& a_mtxA,

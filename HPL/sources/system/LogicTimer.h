@@ -19,7 +19,10 @@
 #ifndef HPL_LOGICTIMER_H
 #define HPL_LOGICTIMER_H
 
+
 namespace hpl {
+
+	class iLowLevelSystem;
 
 	class cLogicTimer
 	{
@@ -27,10 +30,11 @@ namespace hpl {
 		/**
 		 *
 		 * \param alUpdatesPerSec Number of updates per second.
+		 * \param *apLowLevelSystem
 		 * \return
 		 */
-		cLogicTimer(int alUpdatesPerSec);
-		~cLogicTimer() = default;
+		cLogicTimer(int alUpdatesPerSec,iLowLevelSystem *apLowLevelSystem);
+		~cLogicTimer();
 
 		/**
 		 * Reset the time. Do this when the logical update of the game has been ide, ie while loading.
@@ -68,6 +72,8 @@ namespace hpl {
 		 */
 		float GetStepSize();
 
+
+
 	private:
 		void Update();
 
@@ -76,6 +82,8 @@ namespace hpl {
 
 		int mlMaxUpdates;
 		int mlUpdateCount;
+
+		iLowLevelSystem *mpLowLevelSystem;
 	};
 
 };

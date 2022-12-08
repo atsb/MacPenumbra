@@ -57,7 +57,7 @@ void cEntityLoader_GameSwingDoor::BeforeLoad(TiXmlElement *apRootElem, const cMa
 void cEntityLoader_GameSwingDoor::AfterLoad(TiXmlElement *apRootElem, const cMatrixf &a_mtxTransform,
 										 cWorld3D *apWorld)
 {
-	cGameSwingDoor *pObject = new cGameSwingDoor(mpInit,mpEntity->GetName());
+	cGameSwingDoor *pObject = hplNew( cGameSwingDoor, (mpInit,mpEntity->GetName()) );
 
 	pObject->msFileName = msFileName;
 	pObject->m_mtxOnLoadTransform = a_mtxTransform;
@@ -66,6 +66,9 @@ void cEntityLoader_GameSwingDoor::AfterLoad(TiXmlElement *apRootElem, const cMat
 	pObject->SetBodies(mvBodies);
 	pObject->SetJoints(mvJoints);
 	pObject->SetMeshEntity(mpEntity);
+#ifdef INCLUDE_HAPTIC
+	pObject->SetHapticShapes(mvHapticShapes);
+#endif
 
 	///////////////////////////////////
 	// Load game properties
@@ -202,6 +205,9 @@ void cGameSwingDoor::OnPlayerInteract()
 	float fDist = mpInit->mpPlayer->GetPickedDist();
 
 	if(fDist > mfMaxInteractDist) return;
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics && mpInit->mpPlayer->mbProxyTouching==false) return;
+#endif
 
 	//Set some properties
 	mpInit->mpPlayer->mfForwardUpMul = 1.0f;
@@ -211,8 +217,27 @@ void cGameSwingDoor::OnPlayerInteract()
 	mpInit->mpPlayer->mfRightMul = 1.0f;
 
 	mpInit->mpPlayer->mfCurrentMaxInteractDist = mfMaxInteractDist;
-	mpInit->mpPlayer->SetPushBody(mpInit->mpPlayer->GetPickedBody());
-	mpInit->mpPlayer->ChangeState(ePlayerState_Move);
+
+#ifdef INCLUDE_HAPTIC
+	if(mpInit->mbHasHaptics)
+	{
+		mpInit->mpPlayer->mbPickAtPoint = true;
+		mpInit->mpPlayer->mbRotateWithPlayer = false;
+		mpInit->mpPlayer->mbUseNormalMass = false;
+		mpInit->mpPlayer->mfGrabMassMul = 1;
+
+		mpInit->mpPlayer->mbCanBeThrown = true;
+
+		mpInit->mpPlayer->SetPushBody(mpInit->mpPlayer->GetPickedBody());
+		mpInit->mpPlayer->ChangeState(ePlayerState_Grab);
+	}
+	else
+#endif
+	{
+		mpInit->mpPlayer->SetPushBody(mpInit->mpPlayer->GetPickedBody());
+		mpInit->mpPlayer->ChangeState(ePlayerState_Move);
+	}
+
 }
 
 //-----------------------------------------------------------------------
@@ -378,7 +403,7 @@ void cGameSwingDoor::SetupBreakObject()
 	{
 		cParticleSystem3D *pPS  = mpInit->mpGame->GetResources()->GetParticleManager()->CreatePS3D(
 			"",msBreakPS,1,cMatrixf::Identity);
-		delete  pPS ;
+		hplDelete( pPS );
 	}
 	if(msBreakSound!="")
 	{
@@ -416,7 +441,7 @@ iGameEntity* cGameSwingDoor_SaveData::CreateEntity()
 
 iGameEntity_SaveData* cGameSwingDoor::CreateSaveData()
 {
-	return new cGameSwingDoor_SaveData();
+	return hplNew( cGameSwingDoor_SaveData, () );
 }
 
 //-----------------------------------------------------------------------

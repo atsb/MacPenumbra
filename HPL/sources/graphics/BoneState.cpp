@@ -22,6 +22,7 @@
 
 #include "math/Math.h"
 
+#include "system/LowLevelSystem.h"
 
 namespace hpl {
 

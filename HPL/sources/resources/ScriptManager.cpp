@@ -16,11 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "resources/ScriptManager.h"
 #include "system/String.h"
-#include "system/Log.h"
+#include "system/System.h"
 #include "resources/Resources.h"
+#include "system/LowLevelSystem.h"
+
+
 
 namespace hpl {
 
@@ -31,7 +33,8 @@ namespace hpl {
 	//-----------------------------------------------------------------------
 
 	cScriptManager::cScriptManager(cScript* apScript, cResources *apResources)
-		: iResourceManager(apResources->GetFileSearcher())
+		: iResourceManager(apResources->GetFileSearcher(), apResources->GetLowLevel(),
+							apResources->GetLowLevelSystem())
 	{
 		mpScript = apScript;
 		mpResources = apResources;
@@ -68,7 +71,7 @@ namespace hpl {
 			pScript = mpScript->CreateScript(asNewName);
 
 			if (pScript->CreateFromFile(sPath)==false){
-				delete pScript;
+				hplDelete(pScript);
 				EndLoad();
 				return nullptr;
 			}
@@ -98,7 +101,7 @@ namespace hpl {
 
 		if (apResource->HasUsers()==false) {
 			RemoveResource(apResource);
-			delete apResource;
+			hplDelete(apResource);
 		}
 	}
 

@@ -124,7 +124,7 @@ private:
 
 	float mfVoiceVol;
 
-	FontData *mpFont;
+	iFontData *mpFont;
 
 	bool mbActive;
 
