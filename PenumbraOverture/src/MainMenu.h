@@ -48,9 +48,6 @@ enum eMainMenuState
 	eMainMenuState_OptionsKeySetupMove,
 	eMainMenuState_OptionsKeySetupAction,
 	eMainMenuState_OptionsKeySetupMisc,
-	
-	eMainMenuState_Tools,
-	eMainMenuState_ToolsExportModels,
 
 	eMainMenuState_GraphicsRestart,
 

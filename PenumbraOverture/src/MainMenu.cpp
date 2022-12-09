@@ -54,14 +54,11 @@ static eMainMenuState gvMenuBackStates[] = {
 		eMainMenuState_Options,//eMainMenuState_OptionsSound,
 		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupMove,
 		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupAction,
-		eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupMisc,
-	
-		eMainMenuState_Start,//eMainMenuState_Tools
-		eMainMenuState_Tools,//eMainMenuState_ToolsExportModels
+        eMainMenuState_OptionsControls,//eMainMenuState_OptionsKeySetupMisc,
 
-		eMainMenuState_Options,//eMainMenuState_GraphicsRestart,
+        eMainMenuState_Options,//eMainMenuState_GraphicsRestart,
 
-		eMainMenuState_Start,	//eMainMenuState_FirstStart,
+        eMainMenuState_Start,    //eMainMenuState_FirstStart,
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -2900,9 +2897,7 @@ void cMainMenu::CreateWidgets()
 	vPos.y += 51;
 	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Load Game"),eMainMenuState_LoadGameSpot)) ); 
 	vPos.y += 51;
-	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Options"),eMainMenuState_Options)) ); 
-	vPos.y += 51;
-	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Tools"),eMainMenuState_Tools)) );
+	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Options"),eMainMenuState_Options)) );
 	vPos.y += 51;
 	AddWidgetToState(eMainMenuState_Start,hplNew( cMainMenuWidget_MainButton,(mpInit,vPos,kTranslate("MainMenu","Exit"),eMainMenuState_Exit)) );
 	
@@ -3061,12 +3056,6 @@ void cMainMenu::CreateWidgets()
 	AddWidgetToState(eMainMenuState_Exit,hplNew( cMainMenuWidget_Quit,(mpInit,vPos,kTranslate("MainMenu","Yes"),20,eFontAlign_Center)) ); 
 	vPos.y += 29;
 	AddWidgetToState(eMainMenuState_Exit,hplNew( cMainMenuWidget_Button,(mpInit,vPos,kTranslate("MainMenu","No"),eMainMenuState_Start,20,eFontAlign_Center)) );
-
-	///////////////////////////////////
-	// Tools
-	///////////////////////////////////
-	vPos = vTextStart;//cVector3f(400, 260, 40);
-	AddWidgetToState(eMainMenuState_Tools,hplNew( cMainMenuWidget_ExportModels,(mpInit,vPos,kTranslate("MainMenu","ExportModels"),25,eFontAlign_Center)) );
 
 	///////////////////////////////////
 	// Options
