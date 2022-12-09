@@ -750,30 +750,6 @@ void cMainMenuWidget_Quit::OnMouseDown(eMButton aButton)
 //-----------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////////////
-// EXPORT MODELS
-//////////////////////////////////////////////////////////////////////////
-
-//-----------------------------------------------------------------------
-
-cMainMenuWidget_ExportModels::cMainMenuWidget_ExportModels(cInit *apInit, const cVector3f &avPos,
-												 const tWString& asText,
-												 cVector2f avFontSize, eFontAlign aAlignment)
-												 : cMainMenuWidget_Button(apInit,avPos,
-												 asText,eMainMenuState_LastEnum,avFontSize,aAlignment)
-{
-
-}
-//-----------------------------------------------------------------------
-
-void cMainMenuWidget_ExportModels::OnMouseDown(eMButton aButton)
-{
-	ExportModels(mpInit->mpGame);
-}
-
-
-//-----------------------------------------------------------------------
-
-//////////////////////////////////////////////////////////////////////////
 // RESUME
 //////////////////////////////////////////////////////////////////////////
 
@@ -1411,25 +1387,17 @@ public:
 
 	void OnMouseDown(eMButton aButton)
 	{
-		int iNextFile = mlCurrentFile;
-		if(aButton == eMButton_Left)
+		if(aButton  == eMButton_Left)
 		{
-			iNextFile++;
-			if(iNextFile >= (int)mvFiles.size()) iNextFile=0;
+			mlCurrentFile++;
+			if(mlCurrentFile >= (int)mvFiles.size()) mlCurrentFile=0;
 		}
-		else if(aButton == eMButton_Right)
+		else if(aButton  == eMButton_Right)
 		{
-			iNextFile--;
-			if(iNextFile < 0) iNextFile= (int)mvFiles.size()-1;
-		}
-		
-		if (iNextFile == mlCurrentFile) {
-			// [ZM] this is almost always the case as Penumbra did not come with bundled translations
-			// prevents a user DoSing the game by repeat clicking on Language
-			return;
+			mlCurrentFile--;
+			if(mlCurrentFile < 0) mlCurrentFile= (int)mvFiles.size()-1;
 		}
 
-		mlCurrentFile = iNextFile;
 		gpLanguageText->msText = cString::SetFileExtW(mvFiles[mlCurrentFile],_W(""));
 		mpInit->msLanguageFile = cString::To8Char(mvFiles[mlCurrentFile]);
 
@@ -1439,7 +1407,8 @@ public:
 		}
 		else
 		{
-			mpInit->mpGame->GetResources()->SetupResourceDirsForLanguage(mpInit->msLanguageFile);
+			mpInit->mpGame->GetResources()->LoadResourceDirsFile("resources.cfg");
+			mpInit->mpGame->GetResources()->SetLanguageFile(mpInit->msLanguageFile);
 			mpInit->mpMainMenu->UpdateWidgets();
 		}
 	}
@@ -3493,7 +3462,6 @@ void cMainMenu::CreateWidgets()
 
 	vPos.y += 29;
 	// Set the default to what's really being used
-//	mpInit->msDeviceName = tString(OAL_Info_GetDeviceName());
 	mpInit->msDeviceName = tString("Generic");
 
 	sText = cString::To16Char(mpInit->msDeviceName);

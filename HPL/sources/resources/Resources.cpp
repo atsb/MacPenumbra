@@ -112,9 +112,6 @@ namespace hpl {
 
 		mpLowLevelSystem = apSystem->GetLowLevel();
 
-		Log(" Setting default directories\n");
-		AddBaseDirectories();
-
 		Log(" Creating resource managers\n");
 
 		mpImageManager = hplNew( cImageManager,(mpFileSearcher,mpLowLevelGraphics,mpLowLevelResources,mpLowLevelSystem) );
@@ -218,16 +215,6 @@ namespace hpl {
 		return true;
 	}
 
-	void cResources::AddBaseDirectories() {
-		// core graphics files
-		AddResourceDir("core/programs");
-		AddResourceDir("core/textures");
-
-		// rehatched core graphics overrides
-		AddResourceDir("rehatched/core/programs");
-		AddResourceDir("rehatched/core/textures");
-	}
-
 	/**
 	 * Reset resource directory search paths to built-ins + game specific
 	 * paths specified in a resources.cfg file.
@@ -237,7 +224,6 @@ namespace hpl {
 	void cResources::SetupResourceDirsForLanguage(const tString &asLangFile)
 	{
 		mpFileSearcher->ClearDirectories();
-		AddBaseDirectories();
 		LoadResourceDirsFile("resources.cfg");
 		LoadResourceDirsFile("rehatched/resources.cfg");
 		SetLanguageFile(asLangFile);
@@ -251,32 +237,16 @@ namespace hpl {
 		// /config was already the de-facto only position for them and with resource
 		// overloading this makes path handling setup less awkward.
 		tString sOrigPath = "config/" + asFile;
-		tString sRehatchedPath = "rehatched/config/" + asFile;
 
 		if (FileExists(cString::To16Char(sOrigPath)) == false)
 		{
 			Error("Couldn't find language file '%s'\n",asFile.c_str());
 			return false;
 		}
-		if (FileExists(cString::To16Char(sRehatchedPath)) == false)
-		{
-			sRehatchedPath = "rehatched/config/English.lang";
-			if(FileExists(cString::To16Char(sRehatchedPath)) == false) {
-				Error("Couldn't load language extensions file '%s'\n", sRehatchedPath.c_str());
-				return false;
-			}
-			
-			Warning("No localised language extensions file found for language '%s', using English fallback\n", asFile.c_str());
-		}
 
 		cLanguageFile *pNewLangFile = hplNew( cLanguageFile, (this) );
 
 		bool bSuccess = pNewLangFile->LoadFromFile(sOrigPath);
-		if (bSuccess==false) {
-			hplDelete(pNewLangFile);
-			return false;
-		}
-		bSuccess = pNewLangFile->LoadFromFile(sRehatchedPath);
 		if (bSuccess==false) {
 			hplDelete(pNewLangFile);
 			return false;

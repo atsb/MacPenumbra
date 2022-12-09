@@ -279,13 +279,7 @@ bool cInit::Init(tString asCommandLine)
 	mlFSAA = mpConfig->GetInt("Graphics","FSAA",0);
 	mbPostEffects = mpConfig->GetBool("Graphics","PostEffects",true);
 	
-	// Rehatched: High is now Classic, lower than Classic is no longer supported
-	eMaterialQuality iQuality = static_cast<eMaterialQuality>(mpConfig->GetInt("Graphics","ShaderQuality",eMaterialQuality_Classic));
-	if (iQuality != eMaterialQuality_Classic) {
-		// until we do the work, _higher_ than classic is also not supported
-		iQuality = eMaterialQuality_Classic;
-	}
-	iMaterial::SetQuality(iQuality);
+	iMaterial::SetQuality((eMaterialQuality)mpConfig->GetInt("Graphics","ShaderQuality",eMaterialQuality_Classic));
 	
 	mPhysicsAccuracy = (ePhysicsAccuracy)mpConfig->GetInt("Physics","Accuracy",ePhysicsAccuracy_High);
 	mfPhysicsUpdatesPerSec = mpConfig->GetFloat("Physics","UpdatesPerSec",60.0f);
@@ -414,13 +408,7 @@ bool cInit::Init(tString asCommandLine)
 
 	mpEffectHandler->GetDepthOfField()->SetDisabled(!mpConfig->GetBool("Graphics", "DepthOfField", true));
 
-	// Rehatched: restrict texture scale to full original size
-	int iTextureScale = mpConfig->GetInt("Graphics","TextureSizeLevel",0);
-	if (iTextureScale != 0) {
-		iTextureScale = 0;
-	}
-	mpGame->GetResources()->GetMaterialManager()->SetTextureSizeLevel(iTextureScale);
-
+	mpGame->GetResources()->GetMaterialManager()->SetTextureSizeLevel(mpConfig->GetInt("Graphics","TextureSizeLevel",0));
 	mpGame->GetResources()->GetMaterialManager()->SetTextureFilter((eTextureFilter)mpConfig->GetInt("Graphics","TextureFilter",0));
 	mpGame->GetResources()->GetMaterialManager()->SetTextureAnisotropy(mpConfig->GetFloat("Graphics","TextureAnisotropy",1.0f));
 

@@ -130,7 +130,7 @@ namespace hpl {
 		void SetupResourceDirsForLanguage(const tString &asLangFile);
 		bool AddResourceDir(const tString &asDir, const tString &asMask = "*.*");
 		bool LoadResourceDirsFile(const tString &asFile);
-
+        bool SetLanguageFile(const tString &asFile);
 		const tWString& Translate(const tString& asCat, const tString& asName);
 
 		void AddEntity3DLoader(iEntity3DLoader* apLoader, bool abSetAsDefault=false);
@@ -156,9 +156,6 @@ namespace hpl {
 		iLowLevelSystem* GetLowLevelSystem(){ return mpLowLevelSystem;}
 
 	private:
-		void AddBaseDirectories();
-		bool SetLanguageFile(const tString &asFile);
-
 		iLowLevelResources *mpLowLevelResources;
 		iLowLevelGraphics *mpLowLevelGraphics;
 		iLowLevelSystem *mpLowLevelSystem;
