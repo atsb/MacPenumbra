@@ -2,11 +2,7 @@ NakedPenumbra - Based on Vanilla and Rehatched
 ==============
 A project to create a modernised version of Frictional Games' HPL1 game engine and Penumbra game series source code.  Aiming to be as close to vanilla as possible.
 
-NOTE: Currently this is NOT ARM64 compatible for Macs due to a CG.Framework dependency.  Otherwise, for x86_64 Intel Mac users, this is playable.
-
 NOTE: This is currently under heavy development.  We WILL have a proper universal macOS version eventually!  Contributors are welcome.
-
-NOTE: GNU/Linux support remains and should be buildable.  PR's welcome.
 
 Building
 --------
