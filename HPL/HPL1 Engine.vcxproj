@@ -138,7 +138,7 @@
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;angelscript.lib;Newton.lib;opengl32.lib;glext.lib;glew32.lib;Cg.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\SDL2\lib\x64;$(SolutionDir)3rdparty\AngelScript\x64\Release;$(SolutionDir)3rdparty\Newton\x64\Release;$(SolutionDir)3rdparty\OpenAL 1.1 SDK\libs\Win64;$(SolutionDir)3rdparty\GLEW\lib\x64;$(SolutionDir)3rdparty\Cg\lib.x64;$(SolutionDIr)3rdparty\glext\lib\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\SDL2\lib\x64;$(SolutionDir)3rdparty\AngelScript\x64\Release;$(SolutionDir)3rdparty\Newton\x64\Release;$(SolutionDir)3rdparty\OpenAL 1.1 SDK\libs\Win64;$(SolutionDir)3rdparty\GLEW\lib\x64;$(SolutionDir)3rdparty\Cg\lib.x64;$(SolutionDIr)3rdparty\glext\lib\x64\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

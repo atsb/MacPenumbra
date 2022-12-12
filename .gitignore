@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+*.tlog
+*.pdb
+*.log
+*.recipe
+*.idb
+*.db-wal
+*.db-shm
+*.db
+*.opendb
+*.log
+*.log
+*.lock
+*.vsidx
