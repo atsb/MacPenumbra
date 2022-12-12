@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifdef WIN32
+#ifdef _WIN32
 #pragma comment(lib, "OpenGL32.lib")
 #pragma comment(lib, "GLu32.lib")
 #pragma comment(lib, "GLaux.lib")
@@ -26,6 +26,9 @@
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+#elif _WIN32
+#include <GL/glew.h>
+#include <GL/gl.h>
 #else
 #include <GL/gl.h>
 #endif
@@ -579,7 +582,7 @@ namespace hpl {
 
 	iGpuProgram* cLowLevelGraphicsSDL::CreateGpuProgram(const tString& asName, eGpuProgramType aType)
 	{
-		return hplNew( cCGProgram, (asName,mCG_Context, aType) );
+		return hplNew(cCGProgram, (asName,mCG_Context, aType));
 	}
 
 	//-----------------------------------------------------------------------

@@ -64,8 +64,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 
-	cGLState_EnvMapReflect::cGLState_EnvMapReflect()
-		: iGLStateProgram("Internal_Diffuse")
+	cGLState_EnvMapReflect::cGLState_EnvMapReflect() : iGLStateProgram("Internal_Diffuse")
 	{
 	}
 

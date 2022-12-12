@@ -16,6 +16,15 @@ All dependencies are included in the repository. This is mostly because many of 
 * Copy the built application and the `rehatched` folder into your pre-existing Penumbra game folder
 * Run the app (macOS 11.5 or newer required)
 
+### Windows (WIP)
+
+* Open the Visual Studio 2022 Solution
+* Select for now the release/x64 target 
+* Build it
+* Copy the built application and the `rehatched` folder into your pre-existing Penumbra game folder
+* Run the game (Windows xp x64 bit or newer is required to play)
+
+
 Project Links
 -------------
 This repo encompasses 2 repos from Frictional Games:

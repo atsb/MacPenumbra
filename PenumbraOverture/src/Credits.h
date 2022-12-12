@@ -19,7 +19,7 @@
 #ifndef GAME_CREDITS_H
 #define GAME_CREDITS_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 
@@ -51,7 +51,6 @@ public:
 
 	void OnExit();
 private:
-	void LoadConfig();
 
 	cInit *mpInit;
 	cGraphicsDrawer *mpDrawer;

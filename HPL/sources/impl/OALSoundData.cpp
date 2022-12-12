@@ -7,7 +7,7 @@
 #include "system/String.h"
 #include "impl/OALSoundData.h"
 #include "impl/OALSoundChannel.h"
-#include "impl/stb_vorbis.h"
+#include "stb/stb_vorbis.h"
 #include "impl/WAVFile.h"
 
 namespace hpl {

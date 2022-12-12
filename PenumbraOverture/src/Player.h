@@ -19,7 +19,7 @@
 #ifndef GAME_PLAYER_H
 #define GAME_PLAYER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 using namespace hpl;
 

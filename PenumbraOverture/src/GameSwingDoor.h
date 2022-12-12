@@ -19,7 +19,7 @@
 #ifndef GAME_GAME_SWING_DOOR_H
 #define GAME_GAME_SWING_DOOR_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameEntity.h"
 
 using namespace hpl;

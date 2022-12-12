@@ -12,7 +12,7 @@
 
 #include "impl/OALSoundChannel.h"
 #include "impl/OALSoundData.h"
-#include "impl/stb_vorbis.h"
+#include "stb/stb_vorbis.h"
 
 static const int STREAM_BUF_SAMPLES = 22050;
 

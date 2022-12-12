@@ -19,7 +19,7 @@
 #ifndef GAME_MAP_HANDLER_H
 #define GAME_MAP_HANDLER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 // Linux X11 Defines This
 #undef DestroyAll

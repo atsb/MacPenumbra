@@ -227,9 +227,8 @@ void cHapticGameCamera::OnPostSceneDraw()
 		pLowGfx->SetTexture(0, pSubMesh->GetMaterial()->GetTexture(eMaterialTexture_Diffuse));
 
 		mpVtxProgram->Bind();
-		mpVtxProgram->SetMatrixf(	"worldViewProj",eGpuProgramMatrix_ViewProjection,
-									eGpuProgramMatrixOp_Identity);
-
+		cMatrixf mxt;
+		mpVtxProgram->SetMatrixf("worldViewProj", mxt);//, eGpuProgramMatrix_ViewProjection); //todo: | eGpuProgramMatrixOp_Identity);
 		pVtxBuff->Bind();
 		pVtxBuff->Draw();
 		pVtxBuff->Draw();

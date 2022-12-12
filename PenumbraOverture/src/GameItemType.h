@@ -19,7 +19,7 @@
 #ifndef GAME_GAME_ITEM_TYPE_H
 #define GAME_GAME_ITEM_TYPE_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 using namespace hpl;
 

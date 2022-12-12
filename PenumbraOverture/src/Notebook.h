@@ -19,7 +19,7 @@
 #ifndef GAME_NOTE_BOOK_H
 #define GAME_NOTE_BOOK_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

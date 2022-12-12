@@ -19,7 +19,7 @@
 #ifndef GAME_GRAPHICS_HELPER_H
 #define GAME_GRAPHICS_HELPER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

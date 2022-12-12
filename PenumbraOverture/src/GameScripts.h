@@ -19,7 +19,7 @@
 #ifndef GAME_SCRIPTS_H
 #define GAME_SCRIPTS_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

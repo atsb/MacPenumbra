@@ -29,7 +29,12 @@ namespace hpl {
 	public:
 		static long FileLength(const tWString& asFileName);
 		static long FileLength(FILE *pFile);
-		static void FindFileInDir(tWStringList &alstStrings,tWString asDir, tWString asMask);
+#ifdef _WIN32
+		static void FindFileInDir(tWStringList& alstStrings, const char* asDir, int8_t asMask);
+		static void FindFileInDir(tWStringList& alstStrings, tWString asDir, tWString asMask);
+#else
+		static void FindFileInDir(tWStringList &alstStrings, tWString asDir, tWString asMask);
+#endif
 	};
 }
 

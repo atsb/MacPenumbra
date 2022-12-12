@@ -19,7 +19,7 @@
 #ifndef GAME_INVENTORY_H
 #define GAME_INVENTORY_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 using namespace hpl;
 

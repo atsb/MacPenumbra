@@ -19,6 +19,9 @@
 #include "impl/OcclusionQueryOGL.h"
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+#elif _WIN32
+#include <gl/glew.h>
+#include <gl/GL.h>
 #else
 #include <GL/gl.h>
 #endif
@@ -33,8 +36,9 @@ namespace hpl {
 
 	cOcclusionQueryOGL::cOcclusionQueryOGL()
 	{
-		glGenQueriesARB(1, (GLuint *)&mlQueryId);
-		mlLastSampleCount =0;
+		mlLastSampleCount = 0;
+		mlQueryId = 0;
+		glGenQueriesARB(1, &mlQueryId);
 	}
 
 	//-----------------------------------------------------------------------
@@ -65,10 +69,10 @@ namespace hpl {
 	bool cOcclusionQueryOGL::FetchResults()
 	{
 		int lAvailable=0;
-		glGetQueryObjectivARB(mlQueryId,GL_QUERY_RESULT_AVAILABLE_ARB,(GLint *)&lAvailable);
+		glGetQueryObjectivARB(mlQueryId, GL_QUERY_RESULT_AVAILABLE_ARB,(GLint *)&lAvailable);
 		if(lAvailable==0) return false;
 
-		glGetQueryObjectivARB(mlQueryId,GL_QUERY_RESULT_ARB,(GLint *)&mlLastSampleCount);
+		glGetQueryObjectivARB(mlQueryId, GL_QUERY_RESULT_ARB,(GLint *)&mlLastSampleCount);
 		return true;
 	}
 

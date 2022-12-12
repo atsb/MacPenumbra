@@ -129,8 +129,7 @@ namespace hpl {
 		bool SetVec2f(const tString& asName, float afX,float afY){return false;}
 		bool SetVec3f(const tString& asName, float afX,float afY,float afZ){return false;}
 		bool SetVec4f(const tString& asName, float afX,float afY,float afZ, float afW){return false;}
-		bool SetMatrixf(const tString& asName, const cMatrixf& mMtx){return false;}
-		bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType){return false;}
+		bool SetMatrixf(const tString& asName, const cMatrixf& mMtx) { return false; }
 		bool SetTexture(const tString& asName,iTexture* apTexture, bool abAutoDisable=true){return false;}
 		bool SetTextureToUnit(int alUnit, iTexture* apTexture){return false;}
 

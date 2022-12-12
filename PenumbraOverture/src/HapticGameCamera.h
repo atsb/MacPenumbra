@@ -19,7 +19,7 @@
 #ifndef GAME_HAPTIC_GAME_CAMERA_H
 #define GAME_HAPTIC_GAME_CAMERA_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

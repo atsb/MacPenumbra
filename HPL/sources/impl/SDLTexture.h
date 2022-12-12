@@ -25,6 +25,10 @@
 
 #if defined(__APPLE__)&&defined(__MACH__)
 #include <OpenGL/glu.h>
+#elif _WIN32
+#include <GL/glext.h>
+#include <GL/GL.h>
+#include <GL/glut.h>
 #else
 #include <GL/glu.h>
 #endif

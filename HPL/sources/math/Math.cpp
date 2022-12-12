@@ -20,9 +20,8 @@
 
 #include "system/LowLevelSystem.h"
 #include "math/Math.h"
-#include <math.h>
 #include <stdlib.h>
-#include <time.h>
+#include <ctime>
 #include <map>
 
 namespace hpl {
@@ -82,7 +81,7 @@ namespace hpl {
 	{
 		if(alSeed==-1)
 		{
-			srand((unsigned)time(NULL) );
+			srand((unsigned)std::time(NULL) );
 		}
 		else
 		{

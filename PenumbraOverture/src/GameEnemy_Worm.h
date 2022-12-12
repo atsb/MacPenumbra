@@ -19,7 +19,7 @@
 #ifndef GAME_GAME_ENEMY_WORM_H
 #define GAME_GAME_ENEMY_WORM_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameEnemy.h"
 
 using namespace hpl;

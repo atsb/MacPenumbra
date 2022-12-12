@@ -19,7 +19,7 @@
 #ifndef GAME_GAME_FORCE_AREA_H
 #define GAME_GAME_FORCE_AREA_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameEntity.h"
 
 using namespace hpl;

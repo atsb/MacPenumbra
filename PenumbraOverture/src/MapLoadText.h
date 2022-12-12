@@ -19,7 +19,7 @@
 #ifndef GAME_MAP_LOAD_TEXT_H
 #define GAME_MAP_LOAD_TEXT_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

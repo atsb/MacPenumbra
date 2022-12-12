@@ -24,7 +24,7 @@
 #define kCopyToVar(aVar, aVal)	(aVar->aVal = aVal)
 #define kCopyFromVar(aVar, aVal)(aVal = aVar->aVal)
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 using namespace hpl;
 

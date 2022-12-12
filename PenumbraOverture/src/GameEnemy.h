@@ -19,7 +19,7 @@
 #ifndef GAME_GAME_ENEMY_H
 #define GAME_GAME_ENEMY_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameEntity.h"
 
 #include "CharacterMove.h"

@@ -19,7 +19,7 @@
 #ifndef GAME_PLAYER_HANDS_H
 #define GAME_PLAYER_HANDS_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameTypes.h"
 
 using namespace hpl;

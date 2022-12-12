@@ -19,7 +19,7 @@
 #ifndef GAME_PRE_MENU_H
 #define GAME_PRE_MENU_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 
