@@ -154,7 +154,7 @@
 #include "haptic/HapticForce.h"
 #include "haptic/HapticSurface.h"
 
-#include "impl/tinyXML/tinyxml.h"
+#include "tinyXML/tinyxml.h"
 
 
 #endif // HPL_HPL_H

@@ -17,10 +17,15 @@
  * along with HPL1 Engine.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "impl/Platform.h"
+#include "i_opndir.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <unistd.h>
 #include <dirent.h>
+#else
+#include "i_opndir.h"
+#endif
 #include <wctype.h>
 #include "system/LowLevelSystem.h"
 
@@ -61,37 +66,64 @@ namespace hpl {
 	  }
 	}
 
+#ifdef _WIN32
+	void Platform::FindFileInDir(tWStringList& alstStrings, const char* asDir, int8_t asMask)
+#else
 	void Platform::FindFileInDir(tWStringList &alstStrings,tWString asDir, tWString asMask)
+#endif
 	{
 		//Log("Find Files in '%ls' with mask '%ls'\n",asDir.c_str(), asMask.c_str());
 		//Get the search string
 		wchar_t sSpec[256];
+		tWString asMaskHandle;
+		asMaskHandle = asMask;
+#ifdef _WIN32
+		wchar_t end = sizeof(asDir - 1);
+#else
 		wchar_t end = asDir[asDir.size()-1];
+#endif
 		//The needed structs
 		DIR *dirhandle;
 		dirent *_entry;
 		struct stat statbuff;
 		tWString fileentry;
 
+#ifdef _WIN32
+		dirhandle = opendir(cString::ToInt8(asDir, &asMask));
+		if (dirhandle) 
+			return;
+#else
 		if ((dirhandle = opendir(cString::To8Char(asDir).c_str()))==NULL) return;
-
+#endif
 		while ((_entry = readdir(dirhandle)) != NULL) {
+#ifdef _WIN32
+			if (end == _W('/'))
+				swprintf(sSpec, 256, _W("%ls%s"), asDir, _entry->d_name);
+			else
+				swprintf(sSpec, 256, _W("%ls/%s"), asDir, _entry->d_name);
+#else
 			if (end==_W('/'))
 				swprintf(sSpec,256,_W("%ls%s"),asDir.c_str(),_entry->d_name);
 			else
 				swprintf(sSpec,256,_W("%ls/%s"),asDir.c_str(),_entry->d_name);
-
+#endif
 			// skip unreadable
 			if (stat(cString::To8Char(sSpec).c_str(),&statbuff) ==-1) continue;
 			// skip directories
 			if (S_ISDIR(statbuff.st_mode)) continue;
 
+#ifdef _WIN32
+			fileentry.assign(cString::To16Char(asDir));
+#else
 			fileentry.assign(cString::To16Char(_entry->d_name));
-
-			if (!patiMatch(asMask.c_str(),fileentry.c_str())) continue;
+#endif
+#ifdef _WIN32
+			if (!patiMatch(asMaskHandle.c_str(), fileentry.c_str())) continue;
+#else
+			if (!patiMatch(asMask.c_str(), fileentry.c_str())) continue;
+#endif
 			alstStrings.push_back(fileentry);
 		}
 		closedir(dirhandle);
 	}
-
 }

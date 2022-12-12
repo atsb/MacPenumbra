@@ -19,7 +19,7 @@
 #ifndef GAME_INTRO_STORY_H
 #define GAME_INTRO_STORY_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

@@ -3,7 +3,7 @@
 #ifndef GAME_MODELEXPORT_H
 #define GAME_MODELEXPORT_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameTypes.h"
 
 void ExportModels(cGame *apGame);

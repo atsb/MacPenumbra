@@ -23,6 +23,10 @@
 #include <memory.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+#elif _WIN32
+#include <gl/glew.h>
+#include <gl/GL.h>
+#include <GL/glext.h>
 #else
 #include <GL/gl.h>
 #endif

@@ -19,7 +19,7 @@
 #ifndef GAME_BUTTON_HANDLER_H
 #define GAME_BUTTON_HANDLER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

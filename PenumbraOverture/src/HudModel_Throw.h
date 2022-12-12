@@ -19,7 +19,7 @@
 #ifndef GAME_HUD_MODEL_THROW_H
 #define GAME_HUD_MODEL_THROW_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "GameTypes.h"
 
 #include "PlayerHands.h"

@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Penumbra Overture.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "StdAfx.h"
 #include "PlayerState_WeaponHaptX.h"
 
 #include "Init.h"

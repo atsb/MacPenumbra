@@ -19,11 +19,11 @@
 //#include <vld.h>
 //Use this to check for memory leaks!
 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma comment(lib, "angelscript.lib")
 #define UNICODE
 #include <windows.h>
-#include <shlobj.h>
+#include <ShlObj.h>
 #endif
 
 #define _UNICODE
@@ -42,7 +42,7 @@
 
 #include "system/String.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <clocale>
 #include <langinfo.h>
 #include <unistd.h>
@@ -75,7 +75,7 @@ namespace hpl {
 
 extern int hplMain(const hpl::tString &asCommandLine);
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 int WINAPI WinMain(	HINSTANCE hInstance,  HINSTANCE hPrevInstance,LPSTR	lpCmdLine, int nCmdShow)
 {
@@ -184,7 +184,7 @@ namespace hpl {
 		if(mpFile) fclose(mpFile);
 
 
-		#ifdef WIN32
+		#ifdef _WIN32
 			mpFile = _wfopen(msFileName.c_str(),_W("w"));
 		#else
 			mpFile = fopen(cString::To8Char(msFileName).c_str(),"w");
@@ -249,13 +249,12 @@ namespace hpl {
 
 #ifdef STD_LOGGING
 		fprintf(stderr, "FATAL ERROR: %s", text);
-#endif
-
+#else
 		tString sMess = "FATAL ERROR: ";
 		sMess += text;
 		gLogWriter.Write(sMess);
-
-#ifdef WIN32
+#endif
+#ifdef _WIN32
 		MessageBox( NULL, cString::To16Char(text).c_str(), _W("FATAL ERROR"), MB_ICONERROR);
 #elif __MACOSX__
 		MacOSAlertBox(eMsgBoxType_Error, sMess, "");
@@ -277,10 +276,10 @@ namespace hpl {
 #ifdef STD_LOGGING
 		fprintf(stderr, "ERROR: %s", text);
 #endif
-
 		tString sMess = "ERROR: ";
 		sMess += text;
 		gLogWriter.Write(sMess);
+
 	}
 
 	void Warning(const char* fmt, ...)
@@ -296,7 +295,6 @@ namespace hpl {
 #ifdef STD_LOGGING
 		fprintf(stdout, "WARNING: %s", text);
 #endif
-
 		tString sMess = "WARNING: ";
 		sMess += text;
 		gLogWriter.Write(sMess);
@@ -315,7 +313,6 @@ namespace hpl {
 #ifdef STD_LOGGING
 		fprintf(stdout, "%s", text);
 #endif
-
 		tString sMess = "";
 		sMess += text;
 		gLogWriter.Write(sMess);
@@ -362,7 +359,7 @@ namespace hpl {
 
 	void CopyTextToClipboard(const tWString &asText)
 	{
-#ifdef WIN32
+#ifdef _WIN32
 		OpenClipboard(NULL);
 		EmptyClipboard();
 
@@ -384,7 +381,7 @@ namespace hpl {
 
 	tWString LoadTextFromClipboard()
 	{
-#ifdef WIN32
+#ifdef _WIN32
 		tWString sText=_W("");
 		OpenClipboard(NULL);
 
@@ -473,7 +470,7 @@ namespace hpl {
 
 		tWString sMess = _W("");
 
-		#ifdef WIN32
+		#ifdef _WIN32
 		sMess += text;
 
 		UINT lType = MB_OK;
@@ -547,7 +544,7 @@ namespace hpl {
 
 	void OpenBrowserWindow ( const tWString& asURL )
 	{
-		#ifdef WIN32
+		#ifdef _WIN32
 		ShellExecute ( NULL, _W("open"), asURL.c_str(), NULL, NULL, SW_SHOWNORMAL );
 		#elif defined(__linux__)
 		tString asTemp = "./openurl.sh "+cString::To8Char(asURL);
@@ -562,7 +559,7 @@ namespace hpl {
 
 	tWString GetSystemSpecialPath(eSystemPath aPathType)
 	{
-	#if defined(WIN32)
+	#if defined(_WIN32)
 		int type;
 		switch(aPathType)
 		{
@@ -599,7 +596,7 @@ namespace hpl {
 
 	bool FileExists(const tWString& asFileName)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		FILE *f = _wfopen(asFileName.c_str(),_W("r"));
 	#else
 		FILE *f = fopen(cString::To8Char(asFileName).c_str(),"r");
@@ -617,7 +614,7 @@ namespace hpl {
 
 	void RemoveFile(const tWString& asFilePath)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		_wremove(asFilePath.c_str());
 	#else
 		remove(cString::To8Char(asFilePath).c_str());
@@ -629,7 +626,7 @@ namespace hpl {
 	bool CloneFile(const tWString& asSrcFileName,const tWString& asDestFileName,
 		bool abFailIfExists)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		return CopyFile(asSrcFileName.c_str(),asDestFileName.c_str(),abFailIfExists)==TRUE;
 	#else
 		if (abFailIfExists && FileExists(asDestFileName)) {
@@ -647,7 +644,7 @@ namespace hpl {
 
 	bool CreateFolder(const tWString& asPath)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		return CreateDirectory(asPath.c_str(),NULL)==TRUE;
 	#else
 		return mkdir(cString::To8Char(asPath).c_str(),0755)==0;
@@ -656,7 +653,7 @@ namespace hpl {
 
 	bool FolderExists(const tWString& asPath)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		return GetFileAttributes(asPath.c_str())==FILE_ATTRIBUTE_DIRECTORY;
 	#else
 		struct stat statbuf;
@@ -667,7 +664,7 @@ namespace hpl {
 	bool IsFileLink(const tWString& asPath)
 	{
 	// Symbolic Links Not Supported under Windows
-	#ifndef WIN32
+	#ifndef _WIN32
 		struct stat statbuf;
 		if (lstat(cString::To8Char(asPath).c_str(), &statbuf) == 0) {
 			return statbuf.st_mode == S_IFLNK;
@@ -682,7 +679,7 @@ namespace hpl {
 	bool LinkFile(const tWString& asPointsTo, const tWString& asLink)
 	{
 	// Symbolic Links Not Supported under Windows
-	#ifndef WIN32
+	#ifndef _WIN32
 		tWString cmd = _W("ln -s \"") + asPointsTo + _W("\" \"") + asLink + _W("\"");
 		return (system(cString::To8Char(cmd).c_str()) == 0);
 	#else
@@ -692,7 +689,7 @@ namespace hpl {
 
 	bool RenameFile(const tWString& asFrom, const tWString& asTo)
 	{
-	#ifdef WIN32
+	#ifdef _WIN32
 		return false;
 	#else
 		return (rename(cString::To8Char(asFrom).c_str(), cString::To8Char(asTo).c_str()) == 0);
@@ -704,7 +701,7 @@ namespace hpl {
 	cDate FileModifiedDate(const tWString& asFilePath)
 	{
 		struct tm* pClock;
-	#ifdef WIN32
+	#ifdef _WIN32
 		struct _stat attrib;
 		_wstat(asFilePath.c_str(), &attrib);
 	#else
@@ -724,7 +721,7 @@ namespace hpl {
 	cDate FileCreationDate(const tWString& asFilePath)
 	{
 		struct tm* pClock;
-	#ifdef WIN32
+	#ifdef _WIN32
 		struct _stat attrib;
 		_wstat(asFilePath.c_str(), &attrib);
 	#else
@@ -750,11 +747,12 @@ namespace hpl {
 
 	bool HasWindowFocus(const tWString &asWindowCaption)
 	{
-		#ifdef WIN32
+		#ifdef _WIN32
 			HWND pWindowHandle = FindWindow(NULL, asWindowCaption.c_str());
 			return (pWindowHandle == GetFocus());
-		#endif
+		#else
 		return true;
+		#endif
 	}
 
 	//-----------------------------------------------------------------------

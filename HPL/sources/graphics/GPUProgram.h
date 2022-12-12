@@ -39,7 +39,8 @@ namespace hpl {
 		eGpuProgramMatrix_View,
 		eGpuProgramMatrix_Projection,
 		eGpuProgramMatrix_Texture,
-		eGpuProgramMatrix_ViewProjection
+		eGpuProgramMatrix_ViewProjection,
+		eGpuProgramMatrixOp_Identity
 	};
 
 
@@ -94,9 +95,15 @@ namespace hpl {
 		}
 		virtual bool SetVec4f(const tString& asName, float afX,float afY,float afZ, float afW)=0;
 
-		virtual bool SetMatrixf(const tString& asName, const cMatrixf& mMtx)=0;
-		virtual bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType)=0;
-
+		virtual bool SetMatrixf(const tString& asName, const cMatrixf& mMtx) = 0;
+#ifdef _WIN32
+		virtual bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType) 
+		{
+			return false;
+		}
+#else
+		virtual bool SetMatrixIdentityf(const tString& asName, eGpuProgramMatrix mType);
+#endif
 		virtual bool SetTexture(const tString& asName,iTexture* apTexture, bool abAutoDisable=true)=0;
 		virtual bool SetTextureToUnit(int alUnit, iTexture* apTexture)=0;
 

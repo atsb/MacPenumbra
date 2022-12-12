@@ -19,7 +19,7 @@
 #ifndef GAME_PLAYER_STATE_WEAPON_H
 #define GAME_PLAYER_STATE_WEAPON_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 #include "PlayerState.h"
 
 using namespace hpl;

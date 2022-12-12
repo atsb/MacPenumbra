@@ -38,6 +38,7 @@ namespace hpl {
 	{
 	public:
 		cGLState_EnvMapReflect();
+		~cGLState_EnvMapReflect(){}
 
 		void Bind();
 		void UnBind();

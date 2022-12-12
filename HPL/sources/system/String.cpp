@@ -389,6 +389,17 @@ namespace hpl {
 	}
 
 	//-----------------------------------------------------------------------
+#ifdef _WIN32
+	int8_t const *cString::ToInt8(const char* asString, int8_t *aiDefault)
+	{
+		if (asString == NULL)return aiDefault;
+
+		tString asTempString = ToLowerCase(asString);
+		return aiDefault;
+	}
+#endif
+	
+	//-----------------------------------------------------------------------
 
 	cColor cString::ToColor(const char* asString, const cColor& aDefault)
 	{

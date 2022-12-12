@@ -7,9 +7,13 @@
 #include "system/LowLevelSystem.h"
 #include "system/String.h"
 
-#define GL_GLEXT_LEGACY
+
 #ifdef __APPLE__
+#define GL_GLEXT_LEGACY
 #include <OpenGL/gl.h>
+#elif _WIN32
+#include <gl/glext.h>
+#include <gl/GL.h>
 #else
 #include <GL/gl.h>
 #endif

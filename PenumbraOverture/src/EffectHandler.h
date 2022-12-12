@@ -19,7 +19,7 @@
 #ifndef GAME_EFFECT_HANDLER_H
 #define GAME_EFFECT_HANDLER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 using namespace hpl;
 

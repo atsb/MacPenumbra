@@ -19,7 +19,7 @@
 #ifndef GAME_RADIO_HANDLER_H
 #define GAME_RADIO_HANDLER_H
 
-#include "StdAfx.h"
+#include <hpl.h>
 
 #include "GameTypes.h"
 

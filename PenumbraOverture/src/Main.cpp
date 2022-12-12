@@ -16,14 +16,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Penumbra Overture.  If not, see <http://www.gnu.org/licenses/>.
  */
-//#include <vld.h>
 
 #include "Init.h"
 
-#include <SDL2/SDL.h>
-
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
 
 int hplMain(const tString& asCommandLine)

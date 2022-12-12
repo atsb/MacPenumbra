@@ -6,9 +6,9 @@
 //
 
 #include "SDLBMPFile.h"
-#include "LowLevelSystem.h"
+#include "system/LowLevelSystem.h"
 
-#include <SDL2_image/SDL_image.h>
+#include <SDL2/SDL_image.h>
 
 namespace hpl {
 

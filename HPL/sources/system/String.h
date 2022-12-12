@@ -122,6 +122,9 @@ namespace hpl {
 		static tString ToString(const char* asString,tString asDefault);
 		static int ToInt(const char* asString,int alDefault);
 		static bool ToBool(const char* asString, bool abDefault);
+#ifdef _WIN32
+		static const int8_t *ToInt8(const char* asString, int8_t *aiDefault);
+#endif
 		static float ToFloat(const char* asString, float afDefault);
 		static cColor ToColor(const char* asString, const cColor& aDefault);
 		static cVector2f ToVector2f(const char* asString, const cVector2f& avDefault);

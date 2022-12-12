@@ -173,9 +173,16 @@ bool cInit::Init(tString asCommandLine)
 	}
 	#endif
 
-	tWString vDirs[] = { PERSONAL_RELATIVEPIECES //auto includes ,
+	tWString vDirs[] = 
+	{ 
+		0 //No dir yet.
+#ifdef WIP
+			PERSONAL_RELATIVEPIECES //auto includes ,
 			PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME_PARENT,
-			PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME};
+			PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME
+#endif
+	};
+	
 	int lDirNum = PERSONAL_RELATIVEPIECES_COUNT + 2;
 
 	//Check if directories exist and if not create

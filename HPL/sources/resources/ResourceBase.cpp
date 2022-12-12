@@ -19,7 +19,7 @@
 #include "resources/ResourceBase.h"
 
 #include "system/LowLevelSystem.h"
-
+#include <ctime>
 
 namespace hpl {
 
@@ -32,7 +32,7 @@ namespace hpl {
 
 	//-----------------------------------------------------------------------
 	iResourceBase::iResourceBase(tString asName,unsigned int alPrio){
-		mlTime = (unsigned long)time(NULL);
+		mlTime = (unsigned long)std::time(NULL);
 		mlPrio = alPrio;
 		mlHandle = 0;
 		mlUserCount =0;
@@ -50,7 +50,7 @@ namespace hpl {
 	void iResourceBase::IncUserCount()
 	{
 		mlUserCount++;
-		mlTime = (unsigned long)time(NULL);
+		mlTime = (unsigned long)std::time(NULL);
 	}
 
 	//-----------------------------------------------------------------------

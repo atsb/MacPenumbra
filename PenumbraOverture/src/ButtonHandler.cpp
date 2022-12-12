@@ -282,7 +282,7 @@ void cButtonHandler::Update(float afTimeStep)
 #ifdef INCLUDE_HAPTIC
 		   || (mpInit->mbHasHaptics && mpInput->BecameTriggerd("MouseClickRight")
 #endif
-		)
+		))
 		{
 			mpInit->mpMainMenu->OnMouseDown(eMButton_Right);
 			mpInput->BecameTriggerd("Examine");
